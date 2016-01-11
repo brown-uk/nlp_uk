@@ -52,13 +52,6 @@ class NlpUkExample {
 		return sb.toString()
 	}
 	
-	def analyzePageTyzhden() {
-		new URL("http://tyzhden.ua/Columns/50/155282").text	
-		
-	
-	}
-	
-	
 	
 	static void main(String[] argv) {
 		def nlpUk = new NlpUkExample()
