@@ -58,7 +58,7 @@ class TagText {
 
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: true, 'Output file')
-		cli.m(longOpt: 'omonims', 'Print omonims')
+		cli.m(longOpt: 'homonims', 'Print homonims')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 
 
