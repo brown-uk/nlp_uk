@@ -28,6 +28,29 @@ class TagText {
 		return sb.toString()
 	}
 
+	def getOmonims(String text) {
+		List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
+
+		def sb = new StringBuilder()
+		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+			for(AnalyzedTokenReadings readings: analyzedSentence.getTokens()) {
+				if( readings.size() > 1 ) {
+					if( readings.getReadings()[0].getPOSTag().equals(JLanguageTool.SENTENCE_END_TAGNAME) )
+						continue
+
+					if( readings.getReadings()[-1].getPOSTag().equals(JLanguageTool.SENTENCE_END_TAGNAME) ) {
+						if( readings.size() == 2 )
+							continue
+						readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
+					}
+
+					sb.append(readings.join("|")).append("\n");
+				}
+			}
+		}
+		return sb.toString()
+	}
+
 
 	static void main(String[] argv) {
 
@@ -35,6 +58,7 @@ class TagText {
 
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: true, 'Output file')
+		cli.m(longOpt: 'omonims', 'Print omonims')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 
 
@@ -55,8 +79,13 @@ class TagText {
 		def textToAnalyze = new File(options.input).text
 		def outputFile = new File(options.output)
 
-		def analyzed = nlpUk.analyzeText(textToAnalyze);
-
+		def analyzed
+		if( options.m ) {
+			analyzed = nlpUk.getOmonims(textToAnalyze)
+		}
+		else {
+			analyzed = nlpUk.analyzeText(textToAnalyze)
+		}
 		outputFile.text = analyzed
 	}
 
