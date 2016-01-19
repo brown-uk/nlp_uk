@@ -26,10 +26,16 @@ class TagText {
 		return sb.toString()
 	}
 
-	def getOmonims(String text) {
+	def getHomonims(String text) {
 		List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
 
+		def homonimMap = [:]
+		
 		def sb = new StringBuilder()
+		
+		def title = "Частота\tКіл-ть\tМіж ч. м.\tОмоніми\n"
+		sb.append(title)
+		
 		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
 			for(AnalyzedTokenReadings readings: analyzedSentence.getTokens()) {
 				if( readings.size() > 1 ) {
@@ -42,10 +48,25 @@ class TagText {
 						readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
 					}
 
-					sb.append(readings.join("|")).append("\n");
+					def homonim = readings.join("|")
+					int cnt = homonimMap.get(homonim, 0)
+					homonimMap.put(homonim, cnt+1)
 				}
 			}
 		}
+		
+		homonimMap = homonimMap.sort { -it.value }
+		
+		homonimMap.each{ k, v ->
+			def items = k.split("\\|")
+			def homonimCount = items.size()
+			def posHomonimCount = items.collect { it.split(":", 2)[0] }.unique().size()
+			
+			def str = String.sprintf("%6d\t%d\t%d\t%s\n", v, homonimCount, posHomonimCount, k)
+			
+			sb.append(str)
+		}
+		
 		return sb.toString()
 	}
 
@@ -79,7 +100,7 @@ class TagText {
 
 		def analyzed
 		if( options.m ) {
-			analyzed = nlpUk.getOmonims(textToAnalyze)
+			analyzed = nlpUk.getHomonims(textToAnalyze)
 		}
 		else {
 			analyzed = nlpUk.analyzeText(textToAnalyze)
