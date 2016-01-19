@@ -15,8 +15,6 @@ class TagText {
 	//	JLanguageTool langTool = new JLanguageTool(new Ukrainian())
 	JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
 
-	TagText() {
-	}
 
 	def analyzeText(String text) {
 		List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
