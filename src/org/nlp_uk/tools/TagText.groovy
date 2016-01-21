@@ -48,7 +48,7 @@ class TagText {
 						readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
 					}
 
-					def homonim = readings.join("|")
+					def homonim = readings.getToken() + ": " + readings.join("|")
 					int cnt = homonimMap.get(homonim, 0)
 					homonimMap.put(homonim, cnt+1)
 				}
