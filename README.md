@@ -4,19 +4,19 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 
 Використовує мову groovy (http://www.groovy-lang.org/)
 
-Демонстрація можливостей для простих речень:
+### Демонстрація можливостей для простих речень:
 groovy src/org/nlp_uk/demo/NlpUkExample.groovy
 
 * Показує розбиття тексту на речення
 * Показує аналіз лексем у тексті
 * Показує перевірку граматики та стилю
 
-Демонстрація аналізу тексту вебсторінки:
+### Демонстрація аналізу тексту вебсторінки:
 groovy src/org/nlp_uk/demo/NlpUkWebPage.groovy
 
 * Звантажує текст з архіву статті журналу «Тиждень» і виводить частоту вживання лем та тег частини мови
 
-Утиліта аналізу тексту:
+###Утиліта аналізу тексту:
 groovy TagText.groovy -i <input_file> -o <output_file>
 
 * Аналізує текст і записує результат у виходовий файл:
@@ -30,18 +30,18 @@ groovy TagText.groovy -i <input_file> -o <output_file>
 
 
 
-Як працювати з dict_uk та nlp_uk разом:
+### Як працювати з dict__uk та nlp__uk разом:
 * Витягнути всі три проекти (git clone)
-** https://github.com/arysin/dict_uk
-** https://github.com/arysin/nlp_uk
-** https://github.com/languagetool-org/languagetool
+  * https://github.com/arysin/dict_uk
+  * https://github.com/arysin/nlp_uk
+  * https://github.com/languagetool-org/languagetool
 * Зібрати словник (в dict_uk)
-** gradle expandForRules
+  * gradle expandForRules
 * Скинути файли словника в languagetool (в dict_uk/distr/language-dict-uk)
-** gradle copyDictFiles
+  * gradle copyDictFiles
 * Зібрати ядро LT та український модуль (в languagetool):
-** build.sh languagetool-core install
-** build.sh languagetool-language-modules/uk install
+  * build.sh languagetool-core install
+  * build.sh languagetool-language-modules/uk install
 * Запустити потрібний скрипт в модулі nlp_uk 
 
-ЗАУВАГА: якщо nlp_uk не підхоплює останню версію LT/словника, можливо потрібно очистити кеш grape (найпростіше стерти каталог $HOME/.groovy/grapes)
+**ЗАУВАГА**: якщо nlp_uk не підхоплює останню версію LT/словника, можливо потрібно очистити кеш grape (найпростіше стерти каталог $HOME/.groovy/grapes)
