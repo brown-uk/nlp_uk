@@ -33,7 +33,7 @@ class TagText {
 		
 		def sb = new StringBuilder()
 		
-		def title = "Частота\tКіл-ть\tМіж ч. м.\tОмоніми\n"
+		def title = "Частота\tКіл-ть\tМіж ч. м.\tСлово\tОмоніми\n"
 		sb.append(title)
 		
 		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
@@ -48,7 +48,7 @@ class TagText {
 						readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
 					}
 
-					def homonim = readings.getToken() + ": " + readings.join("|")
+					def homonim = readings.getToken() + "\t" + readings.join("|")
 					int cnt = homonimMap.get(homonim, 0)
 					homonimMap.put(homonim, cnt+1)
 				}
