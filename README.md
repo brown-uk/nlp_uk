@@ -30,7 +30,7 @@ groovy TagText.groovy -i <input_file> -o <output_file>
 
 
 
-### Як працювати з dict__uk та nlp__uk разом:
+### Як вносити зміни в *dict_uk/languagetool* і аналізувати їх в *nlp_uk*:
 * Витягнути всі три проекти (git clone)
   * https://github.com/arysin/dict_uk
   * https://github.com/arysin/nlp_uk
