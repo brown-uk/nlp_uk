@@ -5,10 +5,12 @@
   * https://github.com/languagetool-org/languagetool
   * створити файл dict_uk/distr/language-dict-uk/gradle.properties зі шляхом languagetool, напр. 
 	`languagetoolDictDestDir = /home/username/work/languagetool/languagetool-language-modules/uk/src/main/resources/org/languagetool/resource/uk`
+* Зібрати ядро і утиліти LT (в теці languagetool):
+  * build.sh languagetool-core install
+  * build.sh languagetool-tools install
 * Зібрати словник і скинути файли словника в languagetool (в теці dict_uk):
   * gradle expandForRules deployToLT
-* Зібрати ядро LT та український модуль (в теці languagetool):
-  * build.sh languagetool-core install
+* Зібрати український модуль LT (в теці languagetool):
   * build.sh languagetool-language-modules/uk install
 * Запустити потрібний скрипт в модулі nlp_uk 
 
