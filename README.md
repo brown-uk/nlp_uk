@@ -1,6 +1,6 @@
 This is a project to demonstrate NLP API from LanguageTool for Ukrainian language.
 
-Це — проект демонстрації API для обробляння природної мови в LangaugeTool для української мови.
+Це — проект демонстрації API для обробляння природної мови в LanguageTool для української мови.
 
 Використовує мову groovy (http://www.groovy-lang.org/)
 
