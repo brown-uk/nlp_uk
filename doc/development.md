@@ -16,7 +16,7 @@
   * build.sh languagetool-core install
   * build.sh languagetool-tools install
 * Зібрати словник і скинути файли словника в languagetool (в теці dict_uk):
-  * gradle expandForRules deployToLT
+  * gradle expand deployToLT
 * Зібрати український модуль LT (в теці languagetool):
   * build.sh languagetool-language-modules/uk install
 * Запустити потрібний скрипт в модулі nlp_uk 
