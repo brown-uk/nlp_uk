@@ -14,9 +14,9 @@ class Inflect {
     UkrainianSynthesizer synth = new UkrainianSynthesizer();
 
 
-	def inflectWord(String word, String tag) {
+	def inflectWord(String word, String tag, boolean regexp) {
         def token = new AnalyzedToken("", "", word);
-        return synth.synthesize(token, tag);
+        return synth.synthesize(token, tag, regexp);
 	}
 
 	static void main(String[] argv) {
@@ -24,12 +24,13 @@ class Inflect {
         if( argv.length != 2 ) {
             System.err.println("Usage: Inflect.groovy <lemma> <tag>")
             System.err.println("e.g.: Inflect.groovy місто noun:inanim:n:v_rod")
+            System.err.println("or: Inflect.groovy місто noun:inanim:n:v_*")
             System.exit(1)
         }
 
 		def nlpUk = new Inflect()
 
-        println nlpUk.inflectWord(argv[0], argv[1])
+        println nlpUk.inflectWord(argv[0], argv[1], true)
 	}
 
 }
