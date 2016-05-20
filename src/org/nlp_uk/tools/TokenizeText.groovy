@@ -2,6 +2,8 @@ package org.nlp_uk.tools
 
 @Grab(group='org.languagetool', module='language-uk', version='3.3')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
+//@Grab(group='org.codehaus.gpars', module='gpars', version='1.2.1')
+
 
 import java.net.*
 import org.languagetool.*
@@ -10,49 +12,48 @@ import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
 import org.languagetool.tokenizers.uk.*
+//import groovyx.gpars.ParallelEnhancer
 
 class TokenizeText {
-	//	JLanguageTool langTool = new JLanguageTool(new Ukrainian())
-	//JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
-    SRXSentenceTokenizer sentTokenizer = new SRXSentenceTokenizer(new Ukrainian())
+	SRXSentenceTokenizer sentTokenizer = new SRXSentenceTokenizer(new Ukrainian())
 	UkrainianWordTokenizer wordTokenizer = new UkrainianWordTokenizer()
 
 	def splitSentences(String text) {
-	    List<String> tokenized = sentTokenizer.tokenize(text);
-	    
+		List<String> tokenized = sentTokenizer.tokenize(text);
+
 		def sb = new StringBuilder()
-	    for (String sent: tokenized) {
-			sb.append(sent.replaceAll("\n", "\\\\n")).append("\n")
+		for (String sent: tokenized) {
+			sb.append(sent.replace("\n", "\\n")).append("\n")
 		}
-		
+
 		return sb.toString()
 	}
 
 	def splitWords(String text) {
-		List<String> stokenized = sentTokenizer.tokenize(text);
+		List<String> sentences = sentTokenizer.tokenize(text);
+
+//		ParallelEnhancer.enhanceInstance(sentences)
 		
-		def sb = new StringBuilder()
-		for (String sent: stokenized) {
+		return sentences.collect { sent ->
 			def words = wordTokenizer.tokenize(sent)
-			
-			for(String word: words) {
-//				sb.append("\"").append(word.replaceAll("\n", "\\\\n")).append("\"").append(" ")
-				sb.append(word.replaceAll("\n", "\\\\n").replaceAll("\t", "\\\t")).append("|")
+
+			def sb = new StringBuilder()
+			words.each { word ->
+				sb.append(word.replace("\n", "\\n").replace("\t", "\\t")).append("|")
 			}
-			sb.append("\n")
-		}
-		
-		return sb.toString()
+			sb.toString()
+		}.join("\n") + "\n"
 	}
 
 	static void main(String[] argv) {
 
 		def cli = new CliBuilder()
-		
+
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: true, 'Output file')
 		cli.w(longOpt: 'words', 'Tokenize into words')
 		cli.s(longOpt: 'sentences', 'Tokenize into sentences (default)')
+		cli.q(longOpt: 'quiet', 'Less output')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 
 
@@ -69,9 +70,44 @@ class TokenizeText {
 
 		def nlpUk = new TokenizeText()
 
-		def textToAnalyze = new File(options.input).text
-		def outputFile = new File(options.output)
+		def outputFile
+		if( options.output != "-" ) {
+			outputFile = new File(options.output)
+			outputFile.setText('')	// to clear out output file
+		}
+		else {
+			outputFile = System.out
+		}
 
+		if( options.input == "-" ) {
+			if( ! options.quiet ) {
+				System.err.println ("reading from stdin...")
+			}
+			def buffer = ""
+			System.in.eachLine('UTF-8', 0, { line ->
+				buffer += line + "\n"
+				if( buffer.endsWith("\n\n") ) {
+					def analyzed = getAnalyzed(nlpUk, buffer, options)
+					outputFile.print(analyzed)
+					buffer = ""
+				}
+			})
+			if( buffer ) {
+				def analyzed = getAnalyzed(nlpUk, buffer, options)
+				outputFile.print(analyzed)
+			}
+		}
+		else {
+			def textToAnalyze = new File(options.input).getText('UTF-8')
+
+			def analyzed = getAnalyzed(nlpUk, textToAnalyze, options)
+
+			outputFile.setText(analyzed, 'UTF-8')
+		}
+
+	}
+
+	private static getAnalyzed(TokenizeText nlpUk, String textToAnalyze, options) {
 		def analyzed
 		if( options.w ) {
 			analyzed = nlpUk.splitWords(textToAnalyze)
@@ -79,8 +115,6 @@ class TokenizeText {
 		else {
 			analyzed = nlpUk.splitSentences(textToAnalyze)
 		}
-		
-		outputFile.text = analyzed
 	}
 
 }
