@@ -78,6 +78,7 @@ class TagText {
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: true, 'Output file')
 		cli.m(longOpt: 'homonims', 'Print homonims')
+		cli.q(longOpt: 'quiet', 'Less output')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 
 
@@ -95,9 +96,43 @@ class TagText {
 
 		def nlpUk = new TagText()
 
-		def textToAnalyze = new File(options.input).text
-		def outputFile = new File(options.output)
+		def outputFile
+		if( options.output != "-" ) {
+			outputFile = new File(options.output)
+			outputFile.setText('')	// to clear out output file
+		}
+		else {
+			outputFile = System.out
+		}
 
+		if( options.input == "-" ) {
+			if( ! options.quiet ) {
+				System.err.println ("reading from stdin...")
+			}
+			def buffer = ""
+			System.in.eachLine('UTF-8', 0, { line ->
+				buffer += line + "\n"
+				if( buffer.endsWith("\n\n") ) {
+					def analyzed = getAnalyzed(nlpUk, buffer, options)
+					outputFile.print(analyzed)
+					buffer = ""
+				}
+			})
+			if( buffer ) {
+				def analyzed = getAnalyzed(nlpUk, buffer, options)
+				outputFile.print(analyzed)
+			}
+		}
+		else {
+			def textToAnalyze = new File(options.input).getText('UTF-8')
+
+			def analyzed = getAnalyzed(nlpUk, textToAnalyze, options)
+
+			outputFile.setText(analyzed, 'UTF-8')
+		}
+	}
+
+	private static getAnalyzed(TagText nlpUk, String textToAnalyze, options) {
 		def analyzed
 		if( options.m ) {
 			analyzed = nlpUk.getHomonims(textToAnalyze)
@@ -105,7 +140,7 @@ class TagText {
 		else {
 			analyzed = nlpUk.analyzeText(textToAnalyze)
 		}
-		outputFile.text = analyzed
+		return analyzed
 	}
 
 }
