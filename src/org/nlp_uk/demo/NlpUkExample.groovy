@@ -1,6 +1,6 @@
 package org.nlp_uk.demo
 
-@Grab(group='org.languagetool', module='language-uk', version='3.3-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='3.4')
 
 import java.net.*
 import org.languagetool.*
