@@ -43,7 +43,7 @@ class TokenizeText {
 			def sb = new StringBuilder()
 			
 			if( onlyWords ) {
-			    System.err.println( words.findAll { it.trim() && ! WORD_PATTERN.matcher(it) }.join('\n') )
+//			    System.err.println( words.findAll { it.trim() && ! WORD_PATTERN.matcher(it) }.join('\n') )
 			    words = words.findAll { WORD_PATTERN.matcher(it) }
 			    
 			    sb.append(words.join(" "))
