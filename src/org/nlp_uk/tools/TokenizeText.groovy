@@ -12,9 +12,12 @@ import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
 import org.languagetool.tokenizers.uk.*
+import java.util.regex.*
 //import groovyx.gpars.ParallelEnhancer
 
 class TokenizeText {
+	def WORD_PATTERN = Pattern.compile(/(?i)[а-яіїєґa-z'0-9-]/)
+
 	SRXSentenceTokenizer sentTokenizer = new SRXSentenceTokenizer(new Ukrainian())
 	UkrainianWordTokenizer wordTokenizer = new UkrainianWordTokenizer()
 
@@ -29,7 +32,7 @@ class TokenizeText {
 		return sb.toString()
 	}
 
-	def splitWords(String text) {
+	def splitWords(String text, boolean onlyWords) {
 		List<String> sentences = sentTokenizer.tokenize(text);
 
 //		ParallelEnhancer.enhanceInstance(sentences)
@@ -38,8 +41,15 @@ class TokenizeText {
 			def words = wordTokenizer.tokenize(sent)
 
 			def sb = new StringBuilder()
+			
+			if( onlyWords ) {
+			    words = words.findAll { WORD_PATTERN.matcher(it) }
+			}
+			
+			def separator = onlyWords ? " " : "|"
+			
 			words.each { word ->
-				sb.append(word.replace("\n", "\\n").replace("\t", "\\t")).append("|")
+				sb.append(word.replace("\n", "\\n").replace("\t", "\\t")).append(separator)
 			}
 			sb.toString()
 		}.join("\n") + "\n"
@@ -52,6 +62,7 @@ class TokenizeText {
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: true, 'Output file')
 		cli.w(longOpt: 'words', 'Tokenize into words')
+		cli.u(longOpt: 'only_words', 'Remove non-words')
 		cli.s(longOpt: 'sentences', 'Tokenize into sentences (default)')
 		cli.q(longOpt: 'quiet', 'Less output')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
@@ -110,7 +121,7 @@ class TokenizeText {
 	private static getAnalyzed(TokenizeText nlpUk, String textToAnalyze, options) {
 		def analyzed
 		if( options.w ) {
-			analyzed = nlpUk.splitWords(textToAnalyze)
+			analyzed = nlpUk.splitWords(textToAnalyze, options.only_words)
 		}
 		else {
 			analyzed = nlpUk.splitSentences(textToAnalyze)
