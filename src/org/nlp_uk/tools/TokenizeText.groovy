@@ -16,7 +16,7 @@ import java.util.regex.*
 //import groovyx.gpars.ParallelEnhancer
 
 class TokenizeText {
-	def WORD_PATTERN = Pattern.compile(/(?i)[а-яіїєґa-z'0-9-]/)
+	def WORD_PATTERN = ~/[а-яіїєґА-ЯІЇЄҐa-zA-Z0-9]/
 
 	SRXSentenceTokenizer sentTokenizer = new SRXSentenceTokenizer(new Ukrainian())
 	UkrainianWordTokenizer wordTokenizer = new UkrainianWordTokenizer()
@@ -43,13 +43,15 @@ class TokenizeText {
 			def sb = new StringBuilder()
 			
 			if( onlyWords ) {
+			    System.err.println( words.findAll { it.trim() && ! WORD_PATTERN.matcher(it) }.join('\n') )
 			    words = words.findAll { WORD_PATTERN.matcher(it) }
+			    
+			    sb.append(words.join(" "))
 			}
-			
-			def separator = onlyWords ? " " : "|"
-			
-			words.each { word ->
-				sb.append(word.replace("\n", "\\n").replace("\t", "\\t")).append(separator)
+			else {
+			    words.each { word ->
+				sb.append(word.replace("\n", "\\n").replace("\t", "\\t")).append('|')
+			    }
 			}
 			sb.toString()
 		}.join("\n") + "\n"

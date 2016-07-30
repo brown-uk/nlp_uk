@@ -32,7 +32,7 @@ def print_output(p):
 
 
 
-cmd = ['groovy', 'TokenizeText.groovy', '-i', '-', '-o', '-', '-w', '-q']
+cmd = ['groovy', 'TokenizeText.groovy', '-i', '-', '-o', '-', '-w', '-u', '-q']
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
 threading.Thread(target=print_output, args=(p,)).start()
