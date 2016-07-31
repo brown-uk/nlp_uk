@@ -84,40 +84,36 @@ class TokenizeText {
 		def nlpUk = new TokenizeText()
 
 		def outputFile
-		if( options.output != "-" ) {
-			outputFile = new File(options.output)
-			outputFile.setText('')	// to clear out output file
-		}
-		else {
+		if( options.output == "-" ) {
 			outputFile = System.out
 		}
+		else {
+			outputFile = new File(options.output)
+			outputFile.setText('')	// to clear out output file
+			outputFile = new PrintStream(outputFile)
+		}
+		
+		if( ! options.quiet && options.input == "-" ) {
+			System.err.println ("reading from stdin...")
+		}
 
-		if( options.input == "-" ) {
-			if( ! options.quiet ) {
-				System.err.println ("reading from stdin...")
-			}
-			def buffer = ""
-			System.in.eachLine('UTF-8', 0, { line ->
-				buffer += line + "\n"
-				if( buffer.endsWith("\n\n") ) {
-					def analyzed = getAnalyzed(nlpUk, buffer, options)
-					outputFile.print(analyzed)
-					buffer = ""
-				}
-			})
-			if( buffer ) {
+		def inputFile = options.input == "-" ? System.in : new File(options.input)
+
+
+		def buffer = ""
+		inputFile.eachLine('UTF-8', 0, { line ->
+			buffer += line + "\n"
+
+			if( buffer.endsWith("\n\n") ) {
 				def analyzed = getAnalyzed(nlpUk, buffer, options)
 				outputFile.print(analyzed)
+				buffer = ""
 			}
+		})
+		if( buffer ) {
+			def analyzed = getAnalyzed(nlpUk, buffer, options)
+			outputFile.print(analyzed)
 		}
-		else {
-			def textToAnalyze = new File(options.input).getText('UTF-8')
-
-			def analyzed = getAnalyzed(nlpUk, textToAnalyze, options)
-
-			outputFile.setText(analyzed, 'UTF-8')
-		}
-
 	}
 
 	private static getAnalyzed(TokenizeText nlpUk, String textToAnalyze, options) {
