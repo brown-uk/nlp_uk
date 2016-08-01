@@ -9,12 +9,17 @@ import org.languagetool.rules.*
 import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
+import groovy.lang.Closure
 
 
-class TagText {
-	//	JLanguageTool langTool = new JLanguageTool(new Ukrainian())
+class LemmatizeText {
 	JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
 
+	def options
+	
+	LemmatizeText(options) {
+		this.options = options
+	}
 
 	def analyzeText(String text) {
 		List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
@@ -26,7 +31,7 @@ class TagText {
 			        sb.append(readings.token)
 			    }
 			    else {
-			        def lemmas = readings*.lemma.unique().join("|")
+			        def lemmas = options.firstLemma ? readings[0].getLemma() : readings*.lemma.unique().join("|")
 			        sb.append(lemmas)
 			    }
 			}
@@ -41,6 +46,7 @@ class TagText {
 
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: true, 'Output file')
+		cli.f(longOpt: 'firstLemma', 'Pick first lemma for homonyms')
 		cli.q(longOpt: 'quiet', 'Less output')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 
@@ -57,46 +63,52 @@ class TagText {
 		}
 
 
-		def nlpUk = new TagText()
+		def nlpUk = new LemmatizeText(options)
 
-		def outputFile
-		if( options.output != "-" ) {
-			outputFile = new File(options.output)
-			outputFile.setText('')	// to clear out output file
-		}
-		else {
-			outputFile = System.out
-		}
-
-		if( options.input == "-" ) {
-			if( ! options.quiet ) {
-				System.err.println ("reading from stdin...")
-			}
-			def buffer = ""
-			System.in.eachLine('UTF-8', 0, { line ->
-				buffer += line + "\n"
-				if( buffer.endsWith("\n\n") ) {
-					def analyzed = getAnalyzed(nlpUk, buffer, options)
-					outputFile.print(analyzed)
-					buffer = ""
-				}
-			})
-			if( buffer ) {
-				def analyzed = getAnalyzed(nlpUk, buffer, options)
-				outputFile.print(analyzed)
-			}
-		}
-		else {
-			def textToAnalyze = new File(options.input).getText('UTF-8')
-
-			def analyzed = getAnalyzed(nlpUk, textToAnalyze, options)
-
-			outputFile.setText(analyzed, 'UTF-8')
-		}
+		processByParagraph(options, { buffer->
+			return nlpUk.getAnalyzed(buffer)
+		})
 	}
 
-	private static getAnalyzed(TagText nlpUk, String textToAnalyze, options) {
-	    return nlpUk.analyzeText(textToAnalyze)
+	private getAnalyzed(String textToAnalyze) {
+	    return analyzeText(textToAnalyze)
+	}
+
+	
+	static void processByParagraph(options, Closure closure) {
+		def outputFile
+		if( options.output == "-" ) {
+			outputFile = System.out
+		}
+		else {
+			outputFile = new File(options.output)
+			outputFile.setText('')	// to clear out output file
+			outputFile = new PrintStream(outputFile)
+		}
+		
+		if( ! options.quiet && options.input == "-" ) {
+			System.err.println ("reading from stdin...")
+		}
+
+		def inputFile = options.input == "-" ? System.in : new File(options.input)
+
+
+		def buffer = ""
+		inputFile.eachLine('UTF-8', 0, { line ->
+			buffer += line + "\n"
+
+			if( buffer.endsWith("\n\n") ) {
+				def analyzed = closure(buffer)
+				outputFile.print(analyzed)
+				buffer = ""
+			}
+		})
+		
+		if( buffer ) {
+			def analyzed = closure(buffer)
+			outputFile.print(analyzed)
+		}
+
 	}
 
 }
