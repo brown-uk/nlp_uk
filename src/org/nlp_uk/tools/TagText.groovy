@@ -9,14 +9,19 @@ import org.languagetool.rules.*
 import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
+import groovy.lang.Closure
 
 
 class TagText {
-	//	JLanguageTool langTool = new JLanguageTool(new Ukrainian())
 	JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
+	def options
+	
+	TagText(options) {
+		this.options = options
+	}
 
 
-	def analyzeText(String text) {
+	def tagText(String text) {
 		List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
 
 		def sb = new StringBuilder()
@@ -26,49 +31,6 @@ class TagText {
 		return sb.toString()
 	}
 
-	def getHomonims(String text) {
-		List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
-
-		def homonimMap = [:]
-		
-		def sb = new StringBuilder()
-		
-		def title = "Частота\tКіл-ть\tМіж ч. м.\tСлово\tОмоніми\n"
-		sb.append(title)
-		
-		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-			for(AnalyzedTokenReadings readings: analyzedSentence.getTokens()) {
-				if( readings.size() > 1 ) {
-					if( readings.getReadings()[0].getPOSTag().equals(JLanguageTool.SENTENCE_END_TAGNAME) )
-						continue
-
-					if( readings.getReadings()[-1].getPOSTag().equals(JLanguageTool.SENTENCE_END_TAGNAME) ) {
-						if( readings.size() == 2 )
-							continue
-						readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
-					}
-
-					def homonim = readings.getToken() + "\t" + readings.join("|")
-					int cnt = homonimMap.get(homonim, 0)
-					homonimMap.put(homonim, cnt+1)
-				}
-			}
-		}
-		
-		homonimMap = homonimMap.sort { -it.value }
-		
-		homonimMap.each{ k, v ->
-			def items = k.split("\\|")
-			def homonimCount = items.size()
-			def posHomonimCount = items.collect { it.split(":", 2)[0] }.unique().size()
-			
-			def str = String.sprintf("%6d\t%d\t%d\t%s\n", v, homonimCount, posHomonimCount, k)
-			
-			sb.append(str)
-		}
-		
-		return sb.toString()
-	}
 
 
 	static void main(String[] argv) {
@@ -77,7 +39,6 @@ class TagText {
 
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: true, 'Output file')
-		cli.m(longOpt: 'homonims', 'Print homonims')
 		cli.q(longOpt: 'quiet', 'Less output')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 
@@ -94,8 +55,16 @@ class TagText {
 		}
 
 
-		def nlpUk = new TagText()
+		def nlpUk = new TagText(options)
 
+		processByParagraph(options, { buffer ->
+			return nlpUk.tagText(buffer)
+		});
+
+	}
+
+
+	static void processByParagraph(options, Closure closure) {
 		def outputFile
 		if( options.output == "-" ) {
 			outputFile = System.out
@@ -118,26 +87,17 @@ class TagText {
 			buffer += line + "\n"
 
 			if( buffer.endsWith("\n\n") ) {
-				def analyzed = getAnalyzed(nlpUk, buffer, options)
+				def analyzed = closure(buffer)
 				outputFile.print(analyzed)
 				buffer = ""
 			}
 		})
+		
 		if( buffer ) {
-			def analyzed = getAnalyzed(nlpUk, buffer, options)
+			def analyzed = closure(buffer)
 			outputFile.print(analyzed)
 		}
-	}
 
-	private static getAnalyzed(TagText nlpUk, String textToAnalyze, options) {
-		def analyzed
-		if( options.m ) {
-			analyzed = nlpUk.getHomonims(textToAnalyze)
-		}
-		else {
-			analyzed = nlpUk.analyzeText(textToAnalyze)
-		}
-		return analyzed
 	}
 
 }

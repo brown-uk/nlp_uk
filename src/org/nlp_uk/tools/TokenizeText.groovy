@@ -11,6 +11,9 @@ import org.languagetool.rules.*
 import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
+
+import groovy.lang.Closure
+
 import org.languagetool.tokenizers.uk.*
 import java.util.regex.*
 //import groovyx.gpars.ParallelEnhancer
@@ -20,6 +23,11 @@ class TokenizeText {
 
 	SRXSentenceTokenizer sentTokenizer = new SRXSentenceTokenizer(new Ukrainian())
 	UkrainianWordTokenizer wordTokenizer = new UkrainianWordTokenizer()
+	def options
+	
+	TokenizeText(options) {
+		this.options = options
+	}
 
 	def splitSentences(String text) {
 		List<String> tokenized = sentTokenizer.tokenize(text);
@@ -81,8 +89,23 @@ class TokenizeText {
 			System.exit(0)
 		}
 
-		def nlpUk = new TokenizeText()
+		def nlpUk = new TokenizeText(options)
 
+		processByParagraph(options, { buffer ->
+			return nlpUk.getAnalyzed(buffer)
+		})
+	}
+
+	def getAnalyzed(String textToAnalyze) {
+		if( options.w ) {
+			return splitWords(textToAnalyze, options.only_words)
+		}
+		else {
+			return splitSentences(textToAnalyze)
+		}
+	}
+
+	static void processByParagraph(options, Closure closure) {
 		def outputFile
 		if( options.output == "-" ) {
 			outputFile = System.out
@@ -105,25 +128,17 @@ class TokenizeText {
 			buffer += line + "\n"
 
 			if( buffer.endsWith("\n\n") ) {
-				def analyzed = getAnalyzed(nlpUk, buffer, options)
+				def analyzed = closure(buffer)
 				outputFile.print(analyzed)
 				buffer = ""
 			}
 		})
+		
 		if( buffer ) {
-			def analyzed = getAnalyzed(nlpUk, buffer, options)
+			def analyzed = closure(buffer)
 			outputFile.print(analyzed)
 		}
-	}
 
-	private static getAnalyzed(TokenizeText nlpUk, String textToAnalyze, options) {
-		def analyzed
-		if( options.w ) {
-			analyzed = nlpUk.splitWords(textToAnalyze, options.only_words)
-		}
-		else {
-			analyzed = nlpUk.splitSentences(textToAnalyze)
-		}
 	}
 
 }
