@@ -1,4 +1,7 @@
+#!/usr/bin/env groovy
+
 package org.nlp_uk.tools
+
 
 @Grab(group='org.languagetool', module='language-uk', version='3.4')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
@@ -13,10 +16,8 @@ import groovy.lang.Closure
 import groovy.transform.Field;
 
 
-
 @Field JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
 @Field def options
-
 
 
 def cli = new CliBuilder()
@@ -62,14 +63,14 @@ else {
 }
 
 
-outputFile.println("Частота\tКіл-ть\tМіж ч. м.\tСлово\tОмоніми")
+outputFile.println("Час-та\tОм.\tЛем\tСлово\tОмоніми")
 
 homonimMap.each{ k, v ->
-	def items = k.split("\\|")
+	def items = k.split("\t")[1].split("\\|")
 	def homonimCount = items.size()
 	def posHomonimCount = items.collect { it.split(":", 2)[0] }.unique().size()
 	
-	def str = String.sprintf("%6d\t%d\t%d\t%s", v, homonimCount, posHomonimCount, k)
+	def str = String.sprintf("%6d\t%d\t%d\t%s", v, homonimCount, posHomonimCount, k.replace("\t", "\t\t"))
 	
 	outputFile.println(str)
 }

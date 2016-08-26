@@ -1,3 +1,5 @@
+#!/usr/bin/env groovy
+
 package org.nlp_uk.tools
 
 @Grab(group='org.languagetool', module='language-uk', version='3.4')
@@ -26,7 +28,9 @@ class TagText {
 
 		def sb = new StringBuilder()
 		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-			sb.append(analyzedSentence).append("\n");
+		    def sentenceLine = analyzedSentence.toString()
+		    sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
+			sb.append(sentenceLine).append("\n");
 		}
 		return sb.toString()
 	}
@@ -39,6 +43,8 @@ class TagText {
 
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: true, 'Output file')
+		cli.l(longOpt: 'tokenPerLine', '1 token per line')
+		cli.d(longOpt: 'disabledRules', args:1, 'Comma-separated list of ids of disambigation rules to disable')
 		cli.q(longOpt: 'quiet', 'Less output')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 
@@ -56,6 +62,24 @@ class TagText {
 
 
 		def nlpUk = new TagText(options)
+		
+		if( options.disabledRules ) {
+		    if( ! options.quiet ) {
+		        System.err.println("Disabled rules: $options.disabledRules")
+		    }
+		    
+		    def allRules = nlpUk.langTool.language.disambiguator.disambiguator.disambiguationRules
+		    def rulesToDisable = options.disabledRules.split(",")
+
+		    def rulesNotFound = rulesToDisable - allRules.collect { it.id }
+		    if( rulesNotFound ) {
+		        System.err.println("WARNING: rules not found for ids: " + rulesNotFound.join(", "))
+		    }
+
+		    allRules.removeAll {
+		        it.id in rulesToDisable
+		    }
+		}
 
 		processByParagraph(options, { buffer ->
 			return nlpUk.tagText(buffer)
