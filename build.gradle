@@ -4,8 +4,6 @@ apply plugin: 'eclipse'
 
 compileJava.options.encoding = 'UTF-8'
 
-def ltLibDir=ltDir + '/languagetool-standalone/target/LanguageTool-*-SNAPSHOT/LanguageTool-*-SNAPSHOT/libs'
-
 
 buildscript {
   repositories {
@@ -21,8 +19,6 @@ buildscript {
 repositories {
     mavenCentral()
 }
-
-println 'libs: ' + fileTree(dir: ltLibDir, include: ['*.jar'], exclude: ['languagetool*.jar'])
 
 
 dependencies {
@@ -81,7 +77,6 @@ task prepareLtUk() {
     doLast {
         MavenCli cli = new MavenCli();
 
-        def testToRun="org.languagetool.tagging.disambiguation.rules.uk.UkrainianDisambiguationRuleTest"
         def projectRoot="$ltDir/languagetool-language-modules/uk"
         System.setProperty("maven.multiModuleProjectDirectory", projectRoot)
 
