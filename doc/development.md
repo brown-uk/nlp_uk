@@ -33,6 +33,8 @@
 	`ltDir=../languagetool`
 * Зібрати та встановити ядро LT (в теці nlp_uk):
   * ./gradlew installLtCore
+* Витягнути залежності LT (в теці nlp_uk):
+  * ./gradlew prepareLtUk
 * Працювати у циклі (в теці nlp_uk):
   * Зредагувати файл правил зняття омонімії (../languagetool/languagetool-language-modules/uk/src/main/resources/org/languagetool/resource/uk/disambiguation.xml)
   * Зібрати український модуль LT та протестувати правила:

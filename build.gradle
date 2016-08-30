@@ -22,6 +22,9 @@ repositories {
     mavenCentral()
 }
 
+println 'libs: ' + fileTree(dir: ltLibDir, include: ['*.jar'], exclude: ['languagetool*.jar'])
+
+
 dependencies {
     compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.4.7'
 
@@ -32,7 +35,8 @@ dependencies {
 
     compile files(ltDir + '/languagetool-core/target/classes')
     compile files(ltDir + '/languagetool-language-modules/uk/target/classes')
-    compile fileTree(dir: ltLibDir, include: ['*.jar'], exclude: ['languagetool*.jar'])
+    compile fileTree(dir: ltDir + '/languagetool-language-modules/uk/target/dependency', include: ['*.jar'], exclude: ['languagetool*.jar'])
+//    compile fileTree(dir: ltLibDir, include: ['*.jar'], exclude: ['languagetool*.jar'])
 
 //    testCompile 'junit:junit:4.12'
 }
@@ -73,6 +77,18 @@ task installLtCore() {
     }
 }
 
+task prepareLtUk() {
+    doLast {
+        MavenCli cli = new MavenCli();
+
+        def testToRun="org.languagetool.tagging.disambiguation.rules.uk.UkrainianDisambiguationRuleTest"
+        def projectRoot="$ltDir/languagetool-language-modules/uk"
+        System.setProperty("maven.multiModuleProjectDirectory", projectRoot)
+
+        cli.doMain(["dependency:copy-dependencies"].toArray(new String[0]), projectRoot, System.out, System.out);
+    }
+}
+
 task buildLtUk() {
     doLast {
         MavenCli cli = new MavenCli();
@@ -96,9 +112,11 @@ task devTagText (type: JavaExec, dependsOn: classes) {
 
     main = "org.nlp_uk.tools.TagText"
 
-    def outputFile=new File(inputFile).name.replaceFirst(/\.txt$/, '') + ".tagged.txt"
+    def inFile = project.hasProperty('inputFile') ? project.inputFile : ""
 
-    args "-i", inputFile, "-o", outputFile
+    def outputFile = new File(inFile).name.replaceFirst(/\.txt$/, '') + ".tagged.txt"
+
+    args "-i", inFile, "-o", outputFile
 
     if( project.hasProperty('disabledRules') ) {
         logger.lifecycle("Disabled rules: " + disabledRules.join(', '))
@@ -106,7 +124,7 @@ task devTagText (type: JavaExec, dependsOn: classes) {
     }
 
     doFirst {
-        logger.lifecycle("Tagging $inputFile...")
+        logger.lifecycle("Tagging $inFile...")
     }
 }
 
@@ -116,7 +134,9 @@ def get_diff_cmd(outputDir, file) {
 
 
 task devTagTextDiff(type: Exec) {
-    def fileToDiff = new File(inputFile).name.replaceFirst(/\.txt$/, '') + '.tagged.txt'
+    def inFile = project.hasProperty('inputFile') ? project.inputFile : ""
+
+    def fileToDiff = new File(inFile).name.replaceFirst(/\.txt$/, '') + '.tagged.txt'
     def cmd = get_diff_cmd('', fileToDiff)
 
     commandLine "sh", "-c", "${cmd}"
