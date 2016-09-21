@@ -27,7 +27,10 @@ new File(srcDir).eachFile { file ->
   def convertCmd
 
   if( lowercaseName.endsWith(".txt") ) {
-    // noop
+    if( srcDir != targetDir ) {
+      convertCmd = "cp $srcDir/$filename ."
+    }
+    //else noop
   }
   else if( lowercaseName.endsWith(".pdf") ) {
     convertCmd = "pdftotext -layout -nopgbrk -enc UTF-8 $srcDir/$filename $txtFilename"
@@ -69,7 +72,7 @@ new File(srcDir).eachFile { file ->
 }
 
 def exec(String cmd) {
-    println "Executing: $cmd"
+//    println "Executing: $cmd"
     def proc = cmd.execute()
 
     def b = new StringBuffer()
@@ -82,7 +85,7 @@ def exec(String cmd) {
         print proc.text
       }
     catch(Exception e) {
-      e.printStackTrace()
+      System.err.println("Failed to read stream: " + e.getMessage())
     }
 
     if( b )
