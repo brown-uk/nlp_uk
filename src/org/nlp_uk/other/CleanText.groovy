@@ -2,12 +2,20 @@
 
 // This script reads all .txt files in given directory (default is "txt/") 
 // and tries to find all with acceptable criterias for Ukrainian text (e.g. > 3k Ukrainian words)
+// output files go into <dir>/good/
+// NOTE:
 // it also tries to fix broken encoding
 // it also tries to clean up latin/cyrillic character mix
-// output files go into <dir>/good/
+// it also tries to replace weird apostrophe characters with correct one (')
+// it also tries to detect and skip two-column texts
+// it also tries to merge some simple word wraps
+
+@Grab(group='org.languagetool', module='language-uk', version='3.5-SNAPSHOT')
 
 
 import groovy.transform.Field
+import org.languagetool.tagging.uk.*
+import org.languagetool.*
 
 
 @Field def latToCyrMap = [
@@ -48,7 +56,9 @@ if( ! outDirFile.isDirectory() ) {
     return 1
 }
     
-    
+
+def tagger = new UkrainianTagger()
+
 
 new File(dir).eachFile { file->
     if( ! file.name.endsWith(".txt") )
@@ -70,6 +80,8 @@ new File(dir).eachFile { file->
         println "\tEncoding fixed: " + text[0..80]
     }
 
+
+
     if( text =~ /[а-яіїєґА-ЯІЇЄҐ]['’]?[a-zA-Z]/ ) {
         println "latin/cyrillic mix in $file.name"
         
@@ -82,6 +94,31 @@ new File(dir).eachFile { file->
 
     // fix weird apostrophes
     text = text.replaceAll(/([бпвмфгґкхжчшр])[\u0022`]([єїюя])/, /$1'$2/)
+
+
+    if( text =~ /[а-яїієґ]-  +[а-яіїєґ]/ ) {
+           println "ERROR: two columns detected in $file.name, skipping..."
+           return
+    }
+
+
+    if( text.contains("-\n") ) {
+        println "suspect word wraps: "
+        text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { it ->
+//            List<AnalyzedTokenReadings> tokens = tagger.tag(it)
+
+
+            if( tagger.getAnalyzedTokens(it[0])[0].hasNoTag()
+                    && ! tagger.getAnalyzedTokens(it[1] + it[3])[0].hasNoTag() ) {
+                print "."
+                it[1] + it[3] + (it[4] ?: "") + "\n" + it[2]
+            }
+            else {
+                it[0]
+            }
+        })
+        println ""
+    }
 
 
     if( text.split(/[ \t\n,;.]/).findAll{ it ==~ /[А-ЯІЇЄҐа-яіїєґ'’ʼ-]+/ }.size() < 3000 ) {
@@ -100,6 +137,10 @@ new File(dir).eachFile { file->
     new File("$outDir/$file.name").text = text
 }
 
+
+def unknownWord(word) {
+    tagger.getAnalyzedTokens(word)[0].hasNoTag()
+}
 
 
 
