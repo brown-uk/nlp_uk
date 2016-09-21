@@ -79,6 +79,13 @@ new File(dir).eachFile { file->
         
         println "\tEncoding fixed: " + text[0..80]
     }
+    else if( text.contains("") ) {
+        println "WARNING: cp1251 encoding in $file.name"
+
+        text = file.getText("cp1251")
+        
+        println "\tEncoding converted: " + text[0..80]
+    }
 
 
 
