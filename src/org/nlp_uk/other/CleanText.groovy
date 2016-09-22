@@ -114,11 +114,14 @@ new File(dir).eachFile { file->
     }
 
 
+    if( text.contains("\u00AD") ) {
+        println "removing soft hyphens: "
+        text = text.replaceAll(/\u00AD(\n?[ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, '$2$3$1')
+    }
+
     if( text.contains("-\n") ) {
         println "suspect word wraps: "
         text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { it ->
-//            List<AnalyzedTokenReadings> tokens = tagger.tag(it)
-
 
             if( tagger.getAnalyzedTokens(it[0])[0].hasNoTag()
                     && ! tagger.getAnalyzedTokens(it[1] + it[3])[0].hasNoTag() ) {

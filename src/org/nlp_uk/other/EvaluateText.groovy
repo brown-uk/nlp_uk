@@ -152,6 +152,8 @@ class CheckText {
 
             int matchCnt = 0
 
+            try {
+
             paragraphs.each { para ->
                 def matches = nlpUk.check(para, false, errorLines)
                 if( matches )
@@ -165,8 +167,13 @@ class CheckText {
             def wc = word_count(text)
             def rating = Math.round(matchCnt * 10000 / wc)/100
             ratings << rating + " " + matchCnt + " " + wc + " " + file.name
-        
+
             new File(outDir + "/" + file.name.replace(".txt", ".err.txt")).text = errorLines.join("\n")
+
+            }
+            catch(Exception e) {
+                e.printStackTrace();
+            }
         }
     
         new File("$outDir/ratings.txt").text = ratings.join("\n")
