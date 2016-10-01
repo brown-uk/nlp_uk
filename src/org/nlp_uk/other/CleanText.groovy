@@ -42,7 +42,20 @@ import org.languagetool.*
     'P' : 'Р',
     'T' : 'Т',
     'X' : 'Х',
-    'Y' : 'У'
+    'Y' : 'У',
+    "á" : "а́",
+    "Á" : "А́",
+    "é" : "е́",
+    "É" : "Е́",
+    "í" : "і́",
+    "Í" : "І́",
+    "ḯ" : "ї́",
+    "Ḯ" : "Ї́",
+    "ó" : "о́",
+    "Ó" : "О́",
+    "ú" : "и́",
+    "ý" : "у́",
+    "Ý" : "У́"
 ]
 
 @Field def cyrToLatMap = [:]
@@ -110,12 +123,12 @@ new File(dir).eachFile { file->
     }
 
     // fix weird apostrophes
-    text = text.replaceAll(/([бпвмфгґкхжчшр])[\u0022`]([єїюя])/, /$1'$2/)
+    text = text.replaceAll(/([бпвмфгґкхжчшр])[\u0022‘`]([єїюя])/, /$1'$2/)
 
 
     if( text =~ /[а-яїієґ]-  +[а-яіїєґ]/ ) {
-           println "ERROR: two columns detected in $file.name, skipping..."
-           return
+        println "ERROR: two columns detected in $file.name, skipping..."
+        return
     }
 
 
@@ -181,11 +194,11 @@ def removeMix(text) {
 
     // 1st tier
 
-    text = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])([aceiopxyABCEHIKMHOPTXY])/, { all, cyr, lat ->
+    text = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
         count1 += 1
         cyr + latToCyrMap[lat]
     })
-    text = text.replaceAll(/(?i)([aceiopxyABCEHIKMHOPTXY])([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
+    text = text.replaceAll(/(?i)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
         count1 += 1
         latToCyrMap[lat] + cyr
     })
