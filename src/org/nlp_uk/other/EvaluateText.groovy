@@ -24,9 +24,10 @@ class CheckText {
     private static final String RULES_TO_IGNORE="MORFOLOGIK_RULE_UK_UA,COMMA_PARENTHESIS_WHITESPACE,WHITESPACE_RULE," \
     + "EUPHONY_PREP_V_U,EUPHONY_CONJ_I_Y,EUPHONY_PREP_Z_IZ_ZI,EUPHONY_PREP_O_OB" \
     + "DATE_WEEKDAY1,DASH,UK_HIDDEN_CHARS,UPPER_INDEX_FOR_M,DEGREES_FOR_C,DIGITS_AND_LETTERS," \
-    + "UK_MIXED_ALPHABETS" //,UK_SIMPLE_REPLACE,UK_SIMPLE_REPLACE_SOFT,INVALID_DATE,YEAR_20001," \
-    
-    
+    + "UK_MIXED_ALPHABETS"
+    //,UK_SIMPLE_REPLACE,UK_SIMPLE_REPLACE_SOFT,INVALID_DATE,YEAR_20001,"
+
+
     final JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
     final SRXSentenceTokenizer stokenizer = new SRXSentenceTokenizer(new Ukrainian());
     final List<Rule> allRules = langTool.getAllRules()

@@ -18,6 +18,9 @@ import org.languagetool.tagging.uk.*
 import org.languagetool.*
 
 
+@Field static final MIN_SIZE = 2000
+
+
 @Field def latToCyrMap = [
     'a' : 'а',
     'c' : 'с',
@@ -77,6 +80,8 @@ new File(dir).eachFile { file->
            return
         }
         
+        text = text.replaceAll(/([бвгґдзклмнпрстфхцшщ])\?([єїюя])/, '$1\'$2')
+
         println "\tEncoding fixed: " + text[0..80]
     }
     else if( file.getText("cp1251").contains("ок") ) {
@@ -123,7 +128,7 @@ new File(dir).eachFile { file->
         println "suspect word wraps: "
         text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { it ->
 
-            if( tagger.getAnalyzedTokens(it[0])[0].hasNoTag()
+            if( tagger.getAnalyzedTokens(it[1] + "-" + it[3])[0].hasNoTag()
                     && ! tagger.getAnalyzedTokens(it[1] + it[3])[0].hasNoTag() ) {
                 print "."
                 it[1] + it[3] + (it[4] ?: "") + "\n" + it[2]
@@ -136,8 +141,8 @@ new File(dir).eachFile { file->
     }
 
 
-    if( text.split(/[ \t\n,;.]/).findAll{ it ==~ /[А-ЯІЇЄҐа-яіїєґ'’ʼ-]+/ }.size() < 3000 ) {
-        println "Less that 3k words in $file.name"
+    if( text.split(/[ \t\n,;.]/).findAll{ it ==~ /[А-ЯІЇЄҐа-яіїєґ'’ʼ-]+/ }.size() < MIN_SIZE ) {
+        println "Less that $MIN_SIZE words in $file.name"
         return
     }
 
@@ -182,7 +187,7 @@ def removeMix(text) {
     })
     text = text.replaceAll(/(?i)([aceiopxyABCEHIKMHOPTXY])([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
         count1 += 1
-        cyr + latToCyrMap[lat]
+        latToCyrMap[lat] + cyr
     })
 
     text = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ])([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
@@ -191,9 +196,9 @@ def removeMix(text) {
     })
     text = text.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])([bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
         count2 += 2
-        lat + cyrToLatMap[cyr]
+        cyrToLatMap[cyr] + lat
     })
-    
+
 
     // 2nd tier
 
