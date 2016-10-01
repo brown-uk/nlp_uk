@@ -135,7 +135,7 @@ class CheckText {
         nlpUk.langTool.disableRules(Arrays.asList(RULES_TO_IGNORE.split(",")))
 
 
-        def ratings = []
+        def ratings = ["коеф помил унік  слів файл"]
         new File("$outDir/ratings.txt").text = ""
 
         new File(dir).eachFile { file->
@@ -147,18 +147,21 @@ class CheckText {
             def errorLines = []
 
 
-            println("checking $file.name " + text.size() + " " + word_count(text))
+            println(String.format("checking $file.name, words: %d, size: %d", word_count(text), text.size()))
 
             def paragraphs = text.split("\n\n")
 
             int matchCnt = 0
+            int uniqueRules = 0
 
             try {
 
             paragraphs.each { para ->
                 def matches = nlpUk.check(para, false, errorLines)
-                if( matches )
+                if( matches ) {
                     matchCnt += matches.size()
+                    uniqueRules += matches.collect{ it.rule.id == "UK_SIMPLE_REPLACE" ? it.message : it.rule.id }.unique().size()
+                }
             }
 
             def matches = nlpUk.check("", true, errorLines)
@@ -167,7 +170,7 @@ class CheckText {
 
             def wc = word_count(text)
             def rating = Math.round(matchCnt * 10000 / wc)/100
-            ratings << rating + " " + matchCnt + " " + wc + " " + file.name
+            ratings << String.format("%1.2f %4d %4d %6d %s", rating, matchCnt, uniqueRules, wc, file.name)
 
             new File(outDir + "/" + file.name.replace(".txt", ".err.txt")).text = errorLines.join("\n")
 
