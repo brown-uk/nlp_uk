@@ -33,7 +33,7 @@ class LemmatizeText {
 			        sb.append(readings.token)
 			    }
 			    else {
-			        def lemmas = options.firstLemma ? readings[0].getLemma() : readings*.lemma.unique().join("|")
+			        def lemmas = options.firstLemma ? readings.readings[0].getLemma() : readings*.lemma.unique().join("|")
 			        sb.append(lemmas)
 			    }
 			}
@@ -99,7 +99,7 @@ class LemmatizeText {
 		inputFile.eachLine('UTF-8', 0, { line ->
 			buffer += line + "\n"
 
-			if( buffer.endsWith("\n\n") ) {
+			if( buffer.endsWith("\n\n") || buffer.size() > 200*1024 ) {
 				def analyzed = closure(buffer)
 				outputFile.print(analyzed)
 				buffer = ""
