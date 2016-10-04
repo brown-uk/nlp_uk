@@ -24,8 +24,8 @@ class CheckText {
     private static final String RULES_TO_IGNORE="MORFOLOGIK_RULE_UK_UA,COMMA_PARENTHESIS_WHITESPACE,WHITESPACE_RULE," \
     + "EUPHONY_PREP_V_U,EUPHONY_CONJ_I_Y,EUPHONY_PREP_Z_IZ_ZI,EUPHONY_PREP_O_OB" \
     + "DATE_WEEKDAY1,DASH,UK_HIDDEN_CHARS,UPPER_INDEX_FOR_M,DEGREES_FOR_C,DIGITS_AND_LETTERS," \
-    + "UK_MIXED_ALPHABETS"
-    //,UK_SIMPLE_REPLACE,UK_SIMPLE_REPLACE_SOFT,INVALID_DATE,YEAR_20001,"
+    + "UK_MIXED_ALPHABETS,UK_SIMPLE_REPLACE_SOFT"
+    //,UK_SIMPLE_REPLACE,INVALID_DATE,YEAR_20001,"
 
 
     final JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
@@ -160,13 +160,15 @@ class CheckText {
                 def matches = nlpUk.check(para, false, errorLines)
                 if( matches ) {
                     matchCnt += matches.size()
-                    uniqueRules += matches.collect{ it.rule.id == "UK_SIMPLE_REPLACE" ? it.message : it.rule.id }.unique().size()
+                    uniqueRules += getUniqueRuleCount(matches)
                 }
             }
 
             def matches = nlpUk.check("", true, errorLines)
-            if( matches )
-                   matchCnt += matches.size()
+            if( matches ) {
+                matchCnt += matches.size()
+                uniqueRules += getUniqueRuleCount(matches)
+            }
 
             def wc = word_count(text)
             def rating = Math.round(matchCnt * 10000 / wc)/100
@@ -179,10 +181,14 @@ class CheckText {
                 e.printStackTrace();
             }
         }
-    
+
         new File("$outDir/ratings.txt").text = ratings.join("\n")
 
     }
 
+
+    static getUniqueRuleCount(matches) {
+        matches.collect{ it.rule.id == "UK_SIMPLE_REPLACE" ? it.message : it.rule.id }.unique().size()
+    }
 }
 
