@@ -39,6 +39,7 @@ dependencies {
 
 compileGroovy {
     exclude '**/demo/**/*.groovy'
+    exclude '**/other/**/*.groovy'
 }
 
 sourceSets {
@@ -141,6 +142,23 @@ task devTagTextDiff(type: Exec) {
     }
 }
 
+
+task devTokenizeText (type: JavaExec, dependsOn: classes) {
+    systemProperties << ['groovy.grape.enable': 'false']
+    classpath = sourceSets.main.runtimeClasspath
+
+    main = "org.nlp_uk.tools.TokenizeText"
+
+    def inFile = project.hasProperty('inputFile') ? project.inputFile : ""
+
+    def outputFile = new File(inFile).name.replaceFirst(/\.txt$/, '') + ".tknized.txt"
+
+    args "-i", inFile, "-o", outputFile
+
+    doFirst {
+        logger.lifecycle("Tokenizing $inFile...")
+    }
+}
 
 
 // windows have non-unicode encoding set by default
