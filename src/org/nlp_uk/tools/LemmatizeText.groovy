@@ -77,6 +77,7 @@ class LemmatizeText {
 	}
 
 	
+	static int MAX_PARAGRAPH_SIZE =  200*1024;
 	static void processByParagraph(options, Closure closure) {
 		def outputFile
 		if( options.output == "-" ) {
@@ -99,7 +100,7 @@ class LemmatizeText {
 		inputFile.eachLine('UTF-8', 0, { line ->
 			buffer += line + "\n"
 
-			if( buffer.endsWith("\n\n") || buffer.size() > 200*1024 ) {
+			if( buffer.endsWith("\n\n") || buffer.size() > MAX_PARAGRAPH_SIZE ) {
 				def analyzed = closure(buffer)
 				outputFile.print(analyzed)
 				buffer = ""
