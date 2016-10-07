@@ -107,19 +107,23 @@ class TagText {
 		def inputFile = options.input == "-" ? System.in : new File(options.input)
 
 
-		def buffer = ""
+		def buffer = new StringBuilder()
 		inputFile.eachLine('UTF-8', 0, { line ->
-			buffer += line + "\n"
+			buffer.append(line).append("\n")
 
-			if( buffer.endsWith("\n\n") || buffer.size() > MAX_PARAGRAPH_SIZE ) {
-				def analyzed = closure(buffer)
+			def str = buffer.toString()
+			if( str.endsWith("\n\n") && str.trim().length() > 0
+			        || buffer.length() > MAX_PARAGRAPH_SIZE ) {
+
+				def analyzed = closure(str)
 				outputFile.print(analyzed)
-				buffer = ""
+
+				buffer = new StringBuilder()
 			}
 		})
 		
 		if( buffer ) {
-			def analyzed = closure(buffer)
+			def analyzed = closure(buffer.toString())
 			outputFile.print(analyzed)
 		}
 
