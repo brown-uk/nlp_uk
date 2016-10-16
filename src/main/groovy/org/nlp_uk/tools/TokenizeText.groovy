@@ -72,7 +72,7 @@ class TokenizeText {
 		def cli = new CliBuilder()
 
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
-		cli.o(longOpt: 'output', args:1, required: true, 'Output file')
+		cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .tokenized.txt)')
 		cli.w(longOpt: 'words', 'Tokenize into words')
 		cli.u(longOpt: 'only_words', 'Remove non-words')
 		cli.s(longOpt: 'sentences', 'Tokenize into sentences (default)')
@@ -90,6 +90,16 @@ class TokenizeText {
 			cli.usage()
 			System.exit(0)
 		}
+
+        // ugly way to define default value for output
+        if( ! options.output ) {
+            def argv2 = new ArrayList(Arrays.asList(argv))
+
+            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tokenized.txt"
+            argv2 << "-o" << outfile
+
+            options = cli.parse(argv2)
+        }
 
 		def nlpUk = new TokenizeText(options)
 

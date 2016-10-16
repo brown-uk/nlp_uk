@@ -42,7 +42,7 @@ class TagText {
 		def cli = new CliBuilder()
 
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
-		cli.o(longOpt: 'output', args:1, required: true, 'Output file')
+		cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .tagged.txt)')
 		cli.l(longOpt: 'tokenPerLine', '1 token per line')
 		cli.d(longOpt: 'disabledRules', args:1, 'Comma-separated list of ids of disambigation rules to disable')
 		cli.q(longOpt: 'quiet', 'Less output')
@@ -60,6 +60,15 @@ class TagText {
 			System.exit(0)
 		}
 
+        // ugly way to define default value for output
+        if( ! options.output ) {
+            def argv2 = new ArrayList(Arrays.asList(argv))
+
+            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tagged.txt"
+            argv2 << "-o" << outfile
+
+            options = cli.parse(argv2)
+        }
 
 		def nlpUk = new TagText(options)
 		
