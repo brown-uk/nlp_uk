@@ -42,6 +42,7 @@ compileGroovy {
     exclude '**/other/**/*.groovy'
 }
 
+/*
 sourceSets {
     main {
         groovy {
@@ -49,6 +50,7 @@ sourceSets {
         }
     }
 }
+*/
 
 eclipse {
   classpath {
@@ -108,11 +110,9 @@ task devTagText (type: JavaExec, dependsOn: classes) {
 
     main = "org.nlp_uk.tools.TagText"
 
-    def inFile = project.hasProperty('inputFile') ? project.inputFile : ""
+    def options = project.hasProperty('options') ? project.options : ""
 
-    def outputFile = new File(inFile).name.replaceFirst(/\.txt$/, '') + ".tagged.txt"
-
-    args "-i", inFile, "-o", outputFile
+    args options.split()
 
     if( project.hasProperty('disabledRules') ) {
         logger.lifecycle("Disabled rules: " + disabledRules.join(', '))
@@ -120,7 +120,7 @@ task devTagText (type: JavaExec, dependsOn: classes) {
     }
 
     doFirst {
-        logger.lifecycle("Tagging $inFile...")
+        logger.lifecycle("Tagging with options \"$options\"...")
     }
 }
 
@@ -149,14 +149,12 @@ task devTokenizeText (type: JavaExec, dependsOn: classes) {
 
     main = "org.nlp_uk.tools.TokenizeText"
 
-    def inFile = project.hasProperty('inputFile') ? project.inputFile : ""
+    def options = project.hasProperty('options') ? project.options : ""
 
-    def outputFile = new File(inFile).name.replaceFirst(/\.txt$/, '') + ".tknized.txt"
-
-    args "-i", inFile, "-o", outputFile
+    args options.split()
 
     doFirst {
-        logger.lifecycle("Tokenizing $inFile...")
+        logger.lifecycle("Tagging with options \"$options\"...")
     }
 }
 

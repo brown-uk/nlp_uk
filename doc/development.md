@@ -1,6 +1,7 @@
 ## Підхоплення змін в *languagetool* або *dict_uk* в скриптах *nlp_uk*
 
 Потрібно мати встановленим:
+
 * git
 * java (>=1.8)
 * maven
@@ -40,7 +41,7 @@
   * Зібрати український модуль LT та протестувати правила:
     * ./gradlew buildLtUk
   * Запустити завдання через gradle (наразі підтримується лише тегування):
-    `./gradlew devTagText -PinputFile=text/1.txt`
+    `./gradlew devTagText -Poptions="-i text/1.txt"`
     (вивід буде у файлі 1.tagged.txt)
   * На Unix/MacOS до попередньої команди можна додати завдання devTagTextDiff, воно створить файл 1.tagged.txt.diff з різницею між 1.tagged.txt.old і 1.tagged.txt
   * Можна вимикати правила зняття омонімії за допомогою параметра, напр. -PdisabledRules=NOUN_OR_ADJ_ROBOCHYI,CAPITAL_LETTER_INSIDE_SENTENCE
