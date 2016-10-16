@@ -1,6 +1,7 @@
 #!/bin/env groovy
 
-println "== " + args
+// this script tries to extract text from multiple document formats
+
 
 def srcDir = args.length > 0 ? args[0] : "pdf"
 def targetDir = args.length > 1 ? args[1] : "txt"

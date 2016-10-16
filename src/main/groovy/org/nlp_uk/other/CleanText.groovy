@@ -71,7 +71,7 @@ if( ! outDirFile.isDirectory() ) {
     System.err.println "Output dir $outDir does not exists"
     return 1
 }
-    
+
 
 def tagger = new UkrainianTagger()
 
@@ -80,16 +80,17 @@ new File(dir).eachFile { file->
     if( ! file.name.endsWith(".txt") )
         return
 
+    println "Looking at ${file.name}"
 
     def text = file.text
 
     if( text.contains("éîãî") ) {
-        println "WARNING: broken encoding in $file.name"
+        println "\tWARNING: broken encoding"
 
         text = new String(text.getBytes("cp1252"), "cp1251")
         
         if( text.contains("éîãî") ) {
-           println "ERROR: still broken: encoding mixed with good one in $file.name"
+           println "\tERROR: still broken: encoding mixed with good one"
            return
         }
         
@@ -98,12 +99,12 @@ new File(dir).eachFile { file->
         println "\tEncoding fixed: " + text[0..80]
     }
     else if( file.getText("cp1251").contains("ок") ) {
-        println "WARNING: cp1251 encoding in $file.name"
+        println "\tWARNING: cp1251 encoding"
 
         text = file.getText("cp1251")
         
         if( text.size() < 200 ) {
-            println "File size < 200 chars, probaby cp1251 conversion didn't work, skipping"
+            println "\tFile size < 200 chars, probaby cp1251 conversion didn't work, skipping"
             return
         }
         
@@ -111,61 +112,66 @@ new File(dir).eachFile { file->
     }
 
 
+    // fix weird apostrophes
+    text = text.replaceAll(/([бпвмфгґкхжчшр])[\u0022‘`]([єїюя])/, /$1'$2/)
 
-    if( text =~ /[а-яіїєґА-ЯІЇЄҐ]['’]?[a-zA-Z]/ ) {
-        println "latin/cyrillic mix in $file.name"
+    if( text.contains("\u00AD") ) {
+        println "\tremoving soft hyphens: "
+        text = text.replaceAll(/\u00AD(\n?[ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, '$2$3$1')
+    }
+
+
+    if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/ ) {
+        println "\tlatin/cyrillic mix in $file.name"
         
         text = removeMix(text)
         
-        if( text =~ /[а-яіїєґА-ЯІЇЄҐ]['’]?[a-zA-Z]/ ) {
+        if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/ ) {
             println "\tstill latin/cyrillic mix in $file.name"
         }
     }
 
-    // fix weird apostrophes
-    text = text.replaceAll(/([бпвмфгґкхжчшр])[\u0022‘`]([єїюя])/, /$1'$2/)
-
 
     if( text =~ /[а-яїієґ]-  +[а-яіїєґ]/ ) {
-        println "ERROR: two columns detected in $file.name, skipping..."
+        println "\tERROR: two columns detected, skipping..."
         return
     }
 
 
-    if( text.contains("\u00AD") ) {
-        println "removing soft hyphens: "
-        text = text.replaceAll(/\u00AD(\n?[ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, '$2$3$1')
-    }
-
     if( text.contains("-\n") ) {
-        println "suspect word wraps: "
+        println "\tsuspect word wraps: "
+        def cnt = 0
         text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { it ->
 
             if( tagger.getAnalyzedTokens(it[1] + "-" + it[3])[0].hasNoTag()
                     && ! tagger.getAnalyzedTokens(it[1] + it[3])[0].hasNoTag() ) {
                 print "."
                 it[1] + it[3] + (it[4] ?: "") + "\n" + it[2]
+                cnt += 1
             }
             else {
                 it[0]
             }
         })
-        println ""
+        if( cnt > 0 ) {
+            println ""
+        }
+        println "\t\t$cnt word wraps removed"
     }
 
 
     if( text.split(/[ \t\n,;.]/).findAll{ it ==~ /[А-ЯІЇЄҐа-яіїєґ'’ʼ-]+/ }.size() < MIN_SIZE ) {
-        println "Less that $MIN_SIZE words in $file.name"
+        println "\tLess that $MIN_SIZE words"
         return
     }
 
     if( text.count("і") < 10 || text.count("ї") < 10 ) {
-        println "Not enouogh Ukrainian letters in $file.name"
+        println "\tNot enough Ukrainian letters"
         return
     }
 
 
-    println "GOOD: $file.name"
+    println "GOOD: $file.name\n"
 
     new File("$outDir/$file.name").text = text
 }
@@ -194,20 +200,20 @@ def removeMix(text) {
 
     // 1st tier
 
-    text = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
+    text = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
         count1 += 1
         cyr + latToCyrMap[lat]
     })
-    text = text.replaceAll(/(?i)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
+    text = text.replaceAll(/(?i)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
         count1 += 1
         latToCyrMap[lat] + cyr
     })
 
-    text = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ])([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
+    text = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
         count2 += 2
         lat + cyrToLatMap[cyr]
     })
-    text = text.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])([bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
+    text = text.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
         count2 += 2
         cyrToLatMap[cyr] + lat
     })
@@ -215,12 +221,12 @@ def removeMix(text) {
 
     // 2nd tier
 
-    text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ])([aceiopxyABCEHIKMHOPTXY])([а-яіїєґА-ЯІЇЄҐ])/, { all, cyr, lat, cyr2 ->
+    text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ]['’ʼ]?)([aceiopxyABCEHIKMHOPTXY])(['’ʼ]?[а-яіїєґА-ЯІЇЄҐ])/, { all, cyr, lat, cyr2 ->
         count1 += 1
         cyr + latToCyrMap[lat] + cyr2
     })
 
-    text = text.replaceAll(/([a-zA-Z])([асеіорхуАВСЕНІКМНОРТХУ])([a-zA-Z])/, { all, lat, cyr, lat2 ->
+    text = text.replaceAll(/([a-zA-Z]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[a-zA-Z])/, { all, lat, cyr, lat2 ->
         count2 += 2
         lat + cyrToLatMap[cyr] + lat2
     })
