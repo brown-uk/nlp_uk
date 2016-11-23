@@ -18,7 +18,7 @@ import org.languagetool.tagging.uk.*
 import org.languagetool.*
 
 
-@Field static final MIN_SIZE = 2000
+@Field static final MIN_UKR_WORD_COUNT = 300
 
 
 @Field def latToCyrMap = [
@@ -111,6 +111,11 @@ new File(dir).eachFile { file->
         println "\tEncoding converted: " + text[0..80]
     }
 
+    if( text.contains("\uFFFD") ) {
+        println "\tFile contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD), skipping"
+        return
+    }
+
 
     // fix weird apostrophes
     text = text.replaceAll(/([бпвмфгґкхжчшр])[\u0022‘`]([єїюя])/, /$1'$2/)
@@ -160,8 +165,8 @@ new File(dir).eachFile { file->
     }
 
 
-    if( text.split(/[ \t\n,;.]/).findAll{ it ==~ /[А-ЯІЇЄҐа-яіїєґ'’ʼ-]+/ }.size() < MIN_SIZE ) {
-        println "\tLess that $MIN_SIZE words"
+    if( text.split(/[ \t\n,;.]/).findAll{ it ==~ /[А-ЯІЇЄҐа-яіїєґ'’ʼ-]+/ }.size() < MIN_UKR_WORD_COUNT ) {
+        println "\tLess that $MIN_UKR_WORD_COUNT words"
         return
     }
 
