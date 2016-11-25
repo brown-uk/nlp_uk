@@ -33,7 +33,7 @@ class EvaluateText {
     final List<Rule> allRules = langTool.getAllRules()
     int sentenceCount = 0;
     
-    CheckText() {
+    EvaluateText() {
     }
 
     def sentenceBuffer = []
@@ -131,7 +131,7 @@ class EvaluateText {
         }
 
 
-        def nlpUk = new CheckText()
+        def nlpUk = new EvaluateText()
         nlpUk.langTool.disableRules(Arrays.asList(RULES_TO_IGNORE.split(",")))
 
 
