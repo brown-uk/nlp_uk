@@ -21,7 +21,7 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 * Звантажує текст з архіву статті журналу «Тиждень» і виводить частоту вживання лем та тег частини мови
 
 ###Утиліта розбиття тексту:
-`groovy TagText.groovy -w -u -i <input_file> -o <output_file>`
+`groovy TokenizeText.groovy -w -u -i <input_file> -o <output_file>`
 
 * Аналізує текст і записує результат у виходовий файл:
   - розбиває на речення (`-s`) 
