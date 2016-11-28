@@ -5,7 +5,6 @@ package org.nlp_uk.tools
 @Grab(group='org.languagetool', module='language-uk', version='3.5')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
 
-import java.net.*
 import org.languagetool.*
 import org.languagetool.rules.*
 import org.languagetool.tokenizers.*

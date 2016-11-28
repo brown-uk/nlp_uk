@@ -6,7 +6,7 @@
 // NOTE: it disables some rules, like spelling, double whitespace etc
 
 
-package org.nlp_uk.tools
+package org.nlp_uk.other
 
 @Grab(group='org.languagetool', module='language-uk', version='3.5')
 

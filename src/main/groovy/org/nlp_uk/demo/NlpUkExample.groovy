@@ -2,7 +2,6 @@ package org.nlp_uk.demo
 
 @Grab(group='org.languagetool', module='language-uk', version='3.5')
 
-import java.net.*
 import org.languagetool.*
 import org.languagetool.rules.*
 import org.languagetool.tokenizers.*

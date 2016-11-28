@@ -7,7 +7,6 @@ package org.nlp_uk.tools
 //@Grab(group='org.codehaus.gpars', module='gpars', version='1.2.1')
 
 
-import java.net.*
 import org.languagetool.*
 import org.languagetool.rules.*
 import org.languagetool.tokenizers.*
