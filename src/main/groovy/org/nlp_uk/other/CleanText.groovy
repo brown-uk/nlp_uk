@@ -10,7 +10,7 @@
 // it also tries to detect and skip two-column texts
 // it also tries to merge some simple word wraps
 
-@Grab(group='org.languagetool', module='language-uk', version='3.6')
+@Grab(group='org.languagetool', module='language-uk', version='3.7')
 
 
 import groovy.transform.Field
@@ -18,7 +18,7 @@ import org.languagetool.tagging.uk.*
 import org.languagetool.*
 
 
-@Field static final MIN_UKR_WORD_COUNT = 300
+@Field static final MIN_UKR_WORD_COUNT = 250
 
 
 @Field def latToCyrMap = [
@@ -166,7 +166,7 @@ new File(dir).eachFile { file->
 
 
     if( text.split(/[ \t\n,;.]/).findAll{ it ==~ /[А-ЯІЇЄҐа-яіїєґ'’ʼ-]+/ }.size() < MIN_UKR_WORD_COUNT ) {
-        println "\tLess that $MIN_UKR_WORD_COUNT words"
+        println "\tLess than $MIN_UKR_WORD_COUNT words"
         return
     }
 

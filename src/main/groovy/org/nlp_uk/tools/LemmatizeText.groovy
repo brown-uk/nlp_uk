@@ -2,7 +2,7 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='3.6')
+@Grab(group='org.languagetool', module='language-uk', version='3.7')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
 
 import org.languagetool.*
