@@ -20,7 +20,7 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 
 * Звантажує текст з архіву статті журналу «Тиждень» і виводить частоту вживання лем та тег частини мови
 
-###Утиліта розбиття тексту:
+### Утиліта розбиття тексту:
 `groovy TokenizeText.groovy -w -u -i <input_file> -o <output_file>`
 
 * Аналізує текст і записує результат у виходовий файл:
@@ -28,7 +28,7 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
   - розбиває на токени (`-w`) (включно з пунктуацією) або на слова (`-w -u`)
 
 
-###Утиліта лематизації тексту:
+### Утиліта лематизації тексту:
 `groovy LemmatizeText.groovy -w -u -i <input_file> -o <output_file>`
 
 * Аналізує текст і записує результат у виходовий файл:
@@ -37,7 +37,7 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 
 Опція `-f` лишає тільки першу лему (в планах додати інформацію про частоти, щоб лишати тільки найчастотнішу)
 
-###Утиліта аналізу тексту:
+### Утиліта аналізу тексту:
 `groovy TagText.groovy -i <input_file> -o <output_file>`
 
 * Аналізує текст і записує результат у виходовий файл:
