@@ -135,11 +135,19 @@ new File(dir).eachFile { file->
             println "\tstill latin/cyrillic mix in $file.name"
         }
     }
+    
+    // latin a and i
+    text = text.replaceAll(/([а-яіїєґ]), a ([А-ЯІЇЄҐа-яіїєґ])/, '$1, а $2')
+    text = text.replaceAll(/([а-яіїєґ]) i ([А-ЯІЇЄҐа-яіїєґ])/, '$1 і $2')
 
 
     if( text =~ /[а-яїієґ]-  +[а-яіїєґ]/ ) {
         println "\tERROR: two columns detected, skipping..."
         return
+    }
+
+    if( text.contains("¬\n") ) {
+        text = text.replaceAll(/¬\n */, '')
     }
 
 
