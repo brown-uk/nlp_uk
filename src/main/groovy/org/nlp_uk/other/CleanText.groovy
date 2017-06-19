@@ -10,7 +10,7 @@
 // it also tries to detect and skip two-column texts
 // it also tries to merge some simple word wraps
 
-@Grab(group='org.languagetool', module='language-uk', version='3.7')
+@Grab(group='org.languagetool', module='language-uk', version='3.8-SNAPSHOT')
 
 
 import groovy.transform.Field
@@ -156,15 +156,19 @@ new File(dir).eachFile { file->
         def cnt = 0
         text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { it ->
 
-            if( tagger.getAnalyzedTokens(it[1] + "-" + it[3])[0].hasNoTag()
-                    && ! tagger.getAnalyzedTokens(it[1] + it[3])[0].hasNoTag() ) {
+            if( tagger.getAnalyzedTokens(it[1] + "-" + it[3])[0].hasNoTag() ) {
+              if( ! tagger.getAnalyzedTokens(it[1] + it[3])[0].hasNoTag() ) {
                 print "."
                 it[1] + it[3] + (it[4] ?: "") + "\n" + it[2]
                 cnt += 1
+			  }
+			  else {
+				  it[0]
+			  }
             }
-            else {
-                it[0]
-            }
+			else {
+				it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
+			}
         })
         if( cnt > 0 ) {
             println ""
