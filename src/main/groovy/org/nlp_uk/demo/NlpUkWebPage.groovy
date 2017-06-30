@@ -2,7 +2,7 @@ package org.nlp_uk.demo
 
 import groovy.util.slurpersupport.NodeChild
 import groovy.xml.XmlUtil;
-@Grab(group='org.languagetool', module='language-uk', version='3.7')
+@Grab(group='org.languagetool', module='language-uk', version='3.8')
 @Grab(group='org.codehaus.groovy.modules.http-builder', module='http-builder', version='0.7.1')
 
 import groovyx.net.http.*

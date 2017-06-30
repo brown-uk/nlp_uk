@@ -1,6 +1,6 @@
 package org.nlp_uk.demo
 
-@Grab(group='org.languagetool', module='language-uk', version='3.7')
+@Grab(group='org.languagetool', module='language-uk', version='3.8')
 
 import org.languagetool.*
 import org.languagetool.rules.*

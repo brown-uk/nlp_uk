@@ -2,7 +2,7 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='3.7')
+@Grab(group='org.languagetool', module='language-uk', version='3.8')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
 
 import org.languagetool.*
@@ -97,7 +97,7 @@ class TagText {
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .tagged.txt)')
 		cli.l(longOpt: 'tokenPerLine', '1 token per line')
-		cli.d(longOpt: 'disabledRules', args:1, 'Comma-separated list of ids of disambigation rules to disable')
+		cli.d(longOpt: 'disableDisamgigRules', args:1, 'Comma-separated list of ids of disambigation rules to disable')
 		cli.s(longOpt: 'homonymStats', 'Collect homohym statistics')
 		cli.q(longOpt: 'quiet', 'Less output')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
