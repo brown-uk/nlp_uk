@@ -53,3 +53,5 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 ## Ліцензія
 
 Проект LanguageTool API NLP UK розповсюджується за умов ліцензії [GPL версії 3](https://www.gnu.org/licenses/gpl.html)
+
+Copyright (c) 2017 Андрій Рисін (arysin@gmail.com)
