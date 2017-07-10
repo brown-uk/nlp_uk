@@ -112,8 +112,8 @@ new File(dir).eachFile { file->
     }
 
     if( text.contains("\uFFFD") ) {
-        println "\tFile contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD), skipping"
-        return
+        println "WARNING: File contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD), skipping"
+//        return
     }
 
 
@@ -141,7 +141,7 @@ new File(dir).eachFile { file->
     text = text.replaceAll(/([а-яіїєґ]) i ([А-ЯІЇЄҐа-яіїєґ])/, '$1 і $2')
 
 
-    if( text =~ /[а-яїієґ]-  +[а-яіїєґ]/ ) {
+    if( ! args.contains("-nc") && text =~ /[а-яїієґ]-  +[а-яіїєґ].{4}/ ) {
         println "\tERROR: two columns detected, skipping..."
         return
     }
