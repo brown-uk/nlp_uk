@@ -11,14 +11,14 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 ## Використання
 
 ### Демонстрація можливостей для простих речень:
-`groovy src/org/nlp_uk/demo/NlpUkExample.groovy`
+`groovy src/main/groovy/org/nlp_uk/demo/NlpUkExample.groovy`
 
 * Показує розбиття тексту на речення
 * Показує аналіз лексем у тексті
 * Показує перевірку граматики та стилю
 
 ### Демонстрація аналізу тексту вебсторінки:
-`groovy src/org/nlp_uk/demo/NlpUkWebPage.groovy`
+`groovy src/main/groovy/org/nlp_uk/demo/NlpUkWebPage.groovy`
 
 * Звантажує текст з архіву статті журналу «Тиждень» і виводить частоту вживання лем та тег частини мови
 
@@ -26,7 +26,7 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 `groovy TokenizeText.groovy -w -u -i <input_file> -o <output_file>`
 
 * Аналізує текст і записує результат у виходовий файл:
-  - розбиває на речення (`-s`) 
+  - розбиває на речення (`-s`)
   - розбиває на токени (`-w`) (включно з пунктуацією) або на слова (`-w -u`)
 
 
