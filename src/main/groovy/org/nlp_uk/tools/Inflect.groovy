@@ -1,6 +1,8 @@
+#!/bin/env groovy
+
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='3.7')
+@Grab(group='org.languagetool', module='language-uk', version='3.8')
 
 import org.languagetool.*
 import org.languagetool.language.*
@@ -21,9 +23,11 @@ class Inflect {
 	static void main(String[] argv) {
 
         if( argv.length != 2 ) {
-            System.err.println("Usage: Inflect.groovy <lemma> <tag>")
-            System.err.println("e.g.: Inflect.groovy місто noun:inanim:n:v_rod")
-            System.err.println("or: Inflect.groovy місто noun:inanim:n:v_*")
+            System.err.println("Використання: Inflect.groovy <lemma> <tag_regexp>")
+            System.err.println("Повертає всі словоформи зі словника, що відповідають заданій лемі та виразу тегів")
+            System.err.println("Опис тегів: https://github.com/brown-uk/dict_uk/blob/master/doc/tags.txt")
+            System.err.println("Напр.: Inflect.groovy місто noun:inanim:n:v_rod")
+            System.err.println("або: Inflect.groovy місто noun:inanim:n:v_.*")
             System.exit(1)
         }
 
