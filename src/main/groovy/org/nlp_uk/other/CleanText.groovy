@@ -10,7 +10,7 @@
 // it also tries to detect and skip two-column texts
 // it also tries to merge some simple word wraps
 
-@Grab(group='org.languagetool', module='language-uk', version='3.8')
+@Grab(group='org.languagetool', module='language-uk', version='3.9')
 
 
 import groovy.transform.Field
