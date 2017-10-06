@@ -7,19 +7,29 @@ package org.nlp_uk.tools
 
 import org.languagetool.*
 import org.languagetool.rules.*
+import org.languagetool.tagging.uk.IPOSTag
 import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
 import groovy.lang.Closure
+import groovy.xml.MarkupBuilder
 
 
 class TagText {
 	JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
 	def options
 	def homonymMap = [:]
+	StringWriter writer
+	MarkupBuilder xml
+	
 	
 	TagText(options) {
 		this.options = options
+		
+		if( options.xmlOutput ) {
+			writer = new StringWriter()
+			xml = new MarkupBuilder(writer)
+		}
 	}
 
 
@@ -28,9 +38,32 @@ class TagText {
 
 		def sb = new StringBuilder()
 		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-		    def sentenceLine = analyzedSentence.toString()
-		    sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
-			sb.append(sentenceLine).append("\n");
+			if( options.xmlOutput ) {
+				xml.'sentence'() {
+					analyzedSentence.getTokensWithoutWhitespace()[1..<-1].each { AnalyzedTokenReadings tokenReadings ->
+						'tokenReading'() {
+							tokenReadings.getReadings().each { AnalyzedToken tkn ->
+								if( tkn.getPOSTag() in [JLanguageTool.SENTENCE_END_TAGNAME, JLanguageTool.SENTENCE_START_TAGNAME] )
+									return
+									
+								if( tkn.getToken() ==~ /\p{Punct}/ ) {
+									'token'('value': tkn.getToken())
+								}
+								else {
+									'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': tkn.getPOSTag())
+								}
+							}
+						}
+					}
+				}
+				sb.append(writer.toString()).append("\n");
+				writer.getBuffer().setLength(0)
+			}
+			else {
+				def sentenceLine = analyzedSentence.toString()
+				sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
+				sb.append(sentenceLine).append("\n");
+			}
 		}
 		
 		if( options.homonymStats ) {
@@ -97,6 +130,7 @@ class TagText {
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .tagged.txt)')
 		cli.l(longOpt: 'tokenPerLine', '1 token per line')
+		cli.x(longOpt: 'xmlOutput', 'output in xml format')
 		cli.d(longOpt: 'disableDisamgigRules', args:1, 'Comma-separated list of ids of disambigation rules to disable')
 		cli.s(longOpt: 'homonymStats', 'Collect homohym statistics')
 		cli.q(longOpt: 'quiet', 'Less output')
@@ -171,9 +205,17 @@ class TagText {
 			System.err.println ("reading from stdin...")
 		}
 
+		if( ! options.quiet && options.xmlOutput ) {
+			System.err.println ("writing into xml format")
+		}
+		
 		def inputFile = options.input == "-" ? System.in : new File(options.input)
 
-
+		if( options.xmlOutput ) {
+			outputFile.println('<?xml version="1.0" encoding="UTF-8"?>')
+			outputFile.println('<text>\n')
+		}
+		
 		def buffer = new StringBuilder()
 		inputFile.eachLine('UTF-8', 0, { line ->
 			buffer.append(line).append("\n")
@@ -194,6 +236,8 @@ class TagText {
 			outputFile.print(analyzed)
 		}
 
+		outputFile.println('\n</text>\n')
+		
 		return outputFile
 	}
 
