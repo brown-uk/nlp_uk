@@ -19,9 +19,10 @@ class TagText {
 	JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
 	def options
 	def homonymMap = [:]
+	def unknownMap = [:].withDefault { 0 }
+	def frequencyMap = [:].withDefault { 0 }
 	StringWriter writer
 	MarkupBuilder xml
-	
 	
 	TagText(options) {
 		this.options = options
@@ -69,9 +70,28 @@ class TagText {
 		if( options.homonymStats ) {
 			collectHomonyms(analyzedSentences)
 		}
+		if( options.unknownStats ) {
+		    collectUnknown(analyzedSentences)
+		}
+		if( options.frequencyStats ) {
+		    collectFrequency(analyzedSentences)
+		}
 		
 		return sb.toString()
 	}
+
+	def collectUnknown(List<AnalyzedSentence> analyzedSentences) {
+   		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+		    analyzedSentence.getTokensWithoutWhitespace()[1..<-1].each { AnalyzedTokenReadings tokenReadings ->
+		        if( tokenReadings.getAnalyzedToken(0).getPOSTag() == null 
+		                && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/ 
+		                && ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
+		            unknownMap[tokenReadings.getToken()] += 1
+		        }
+		    }
+		}
+	}
+
 
 	def collectHomonyms(List<AnalyzedSentence> analyzedSentences) {
 		
@@ -96,6 +116,19 @@ class TagText {
 	}
 	
 
+	def collectFrequency(List<AnalyzedSentence> analyzedSentences) {
+   		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+		    analyzedSentence.getTokensWithoutWhitespace()[1..<-1].each { AnalyzedTokenReadings tokenReadings ->
+		        if( tokenReadings.getAnalyzedToken(0).getPOSTag() != null
+		                && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
+		                && ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
+		            frequencyMap[tokenReadings.getToken()] += 1
+		        }
+		    }
+		}
+	}
+
+
 	def printHomonymStats() {
 		
 		def printStream
@@ -104,7 +137,7 @@ class TagText {
 			printStream.println "\n\n"
 		}
 		else {
-			def outputFile = new File(options.output.replace(/\.txt/, '') + '.stats.txt')
+			def outputFile = new File(options.output.replaceFirst(/\.txt$/, '') + '.homonym.txt')
 			printStream = new PrintStream(outputFile)
 		}
 
@@ -123,6 +156,46 @@ class TagText {
 		}
 	}
 
+	def printUnknownStats() {
+		
+		def printStream
+		if( options.output == "-" ) {
+			printStream = System.out
+			printStream.println "\n\n"
+		}
+		else {
+			def outputFile = new File(options.output.replaceFirst(/\.txt$/, '') + '.unknown.txt')
+			printStream = new PrintStream(outputFile)
+		}
+
+		unknownMap
+		.sort { it.key }
+		.each{ k, v ->
+			def str = String.sprintf("%6d\t%s", v, k)
+			printStream.println(str)
+		}
+	}
+
+	def printFrequencyStats() {
+		
+		def printStream
+		if( options.output == "-" ) {
+			printStream = System.out
+			printStream.println "\n\n"
+		}
+		else {
+			def outputFile = new File(options.output.replaceFirst(/\.txt$/, '') + '.freq.txt')
+			printStream = new PrintStream(outputFile)
+		}
+
+		frequencyMap
+		.sort { it.key }
+		.each{ k, v ->
+			def str = String.sprintf("%6d\t%s", v, k)
+			printStream.println(str)
+		}
+	}
+
 	static void main(String[] argv) {
 
 		def cli = new CliBuilder()
@@ -133,6 +206,8 @@ class TagText {
 		cli.x(longOpt: 'xmlOutput', 'output in xml format')
 		cli.d(longOpt: 'disableDisamgigRules', args:1, 'Comma-separated list of ids of disambigation rules to disable')
 		cli.s(longOpt: 'homonymStats', 'Collect homohym statistics')
+		cli.u(longOpt: 'unknownStats', 'Collect unknown words statistics')
+		cli.w(longOpt: 'frequencyStats', 'Collect word frequency')
 		cli.q(longOpt: 'quiet', 'Less output')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 
@@ -185,6 +260,12 @@ class TagText {
 	
 		if( options.homonymStats ) {
 			nlpUk.printHomonymStats()
+		}
+		if( options.unknownStats ) {
+			nlpUk.printUnknownStats()
+		}
+		if( options.frequencyStats ) {
+			nlpUk.printFrequencyStats()
 		}
 	}
 
