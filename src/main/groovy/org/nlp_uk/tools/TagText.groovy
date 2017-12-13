@@ -21,6 +21,8 @@ class TagText {
 	def homonymMap = [:]
 	def unknownMap = [:].withDefault { 0 }
 	def frequencyMap = [:].withDefault { 0 }
+	def lemmaFrequencyMap = [:].withDefault { 0 }
+
 	StringWriter writer
 	MarkupBuilder xml
 	
@@ -76,7 +78,11 @@ class TagText {
 		if( options.frequencyStats ) {
 		    collectFrequency(analyzedSentences)
 		}
-		
+
+		if( options.lemmaStats ) {
+			collectLemmaFrequency(analyzedSentences)
+		}
+
 		return sb.toString()
 	}
 
@@ -128,6 +134,20 @@ class TagText {
 		}
 	}
 
+	def collectLemmaFrequency(List<AnalyzedSentence> analyzedSentences) {
+	   for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+		    analyzedSentence.getTokensWithoutWhitespace()[1..<-1].each { AnalyzedTokenReadings tokenReadings ->
+			    tokenReadings.getReadings()
+					.findAll { it.getLemma() \
+						&& tokenReadings.getToken() ==~ /[а-яіїєґА-ЯІЇЄҐ'-]+/
+					}
+					.unique()
+					.each {
+						lemmaFrequencyMap[ it.getLemma() ] += 1
+					}
+			}
+		}
+	}
 
 	def printHomonymStats() {
 		
@@ -196,6 +216,26 @@ class TagText {
 		}
 	}
 
+	def printLemmaFrequencyStats() {
+		
+		def printStream
+		if( options.output == "-" ) {
+			printStream = System.out
+			printStream.println "\n\n"
+		}
+		else {
+			def outputFile = new File(options.output.replaceFirst(/\.txt$/, '') + '.lemma.freq.txt')
+			printStream = new PrintStream(outputFile)
+		}
+
+		lemmaFrequencyMap
+		.sort { it.key }
+		.each{ k, v ->
+			def str = String.sprintf("%6d\t%s", v, k)
+			printStream.println(str)
+		}
+	}
+
 	static void main(String[] argv) {
 
 		def cli = new CliBuilder()
@@ -208,6 +248,7 @@ class TagText {
 		cli.s(longOpt: 'homonymStats', 'Collect homohym statistics')
 		cli.u(longOpt: 'unknownStats', 'Collect unknown words statistics')
 		cli.w(longOpt: 'frequencyStats', 'Collect word frequency')
+		cli.z(longOpt: 'lemmaStats', 'Collect lemma frequency')
 		cli.q(longOpt: 'quiet', 'Less output')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 
@@ -266,6 +307,9 @@ class TagText {
 		}
 		if( options.frequencyStats ) {
 			nlpUk.printFrequencyStats()
+		}
+		if( options.lemmaStats ) {
+			nlpUk.printLemmaFrequencyStats()
 		}
 	}
 
