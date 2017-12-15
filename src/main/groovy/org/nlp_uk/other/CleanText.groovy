@@ -152,7 +152,7 @@ new File(dir).eachFile { file->
 
 
     if( text.contains("-\n") ) {
-        println "\tsuspect word wraps: "
+        println "\tsuspect word wraps:"
         def cnt = 0
         text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { it ->
 
@@ -174,6 +174,12 @@ new File(dir).eachFile { file->
             println ""
         }
         println "\t\t$cnt word wraps removed"
+    }
+
+    if( text =~ /¬ *\n/ ) {
+        println "\tsuspect word wraps with ¬:"
+        text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)¬ *\n([ \t]*)([а-яіїєґ'ʼ’-]+)/, '$1$2')
+        println "\t\t¬ word wraps removed"
     }
 
 
