@@ -18,7 +18,8 @@ import groovy.xml.MarkupBuilder
 class TagText {
 	JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
 	def options
-	def homonymMap = [:]
+	def homonymFreqMap = [:].withDefault { 0 }
+	def homonymTokenMap = [:].withDefault{ new HashSet<>() }
 	def unknownMap = [:].withDefault { 0 }
 	def frequencyMap = [:].withDefault { 0 }
 	def lemmaFrequencyMap = [:].withDefault { 0 }
@@ -113,9 +114,9 @@ class TagText {
 						readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
 					}
 	
-					def homonim = readings.getToken() + "\t" + readings.join("|")
-					int cnt = homonymMap.get(homonim, 0)
-					homonymMap.put(homonim, cnt+1)
+					def key = readings.join("|")
+					homonymFreqMap[key] += 1
+					homonymTokenMap[key] << readings.getToken()
 				}
 			}
 		}
@@ -163,14 +164,19 @@ class TagText {
 
 		printStream.println("Час-та\tОм.\tЛем\tСлово\tОмоніми")
 		
-		homonymMap
+		homonymFreqMap
 		.sort { -it.value }
 		.each{ k, v ->
-			def items = k.split("\t")[1].split("\\|")
+			def items = k.split(/\|/)
 			def homonimCount = items.size()
 			def posHomonimCount = items.collect { it.split(":", 2)[0] }.unique().size()
 			
-			def str = String.sprintf("%6d\t%d\t%d\t%s", v, homonimCount, posHomonimCount, k.replace("\t", "\t\t"))
+			def lemmasHaveCaps = items.any { Character.isUpperCase(it.charAt(0)) }
+			if( ! lemmasHaveCaps ) {
+			    homonymTokenMap[k] = homonymTokenMap[k].collect { it.toLowerCase() }.unique()
+			}
+			
+			def str = String.sprintf("%6d\t%d\t%d\t%s\t\t%s", v, homonimCount, posHomonimCount, homonymTokenMap[k].join(","), k)
 			
 			printStream.println(str)
 		}
