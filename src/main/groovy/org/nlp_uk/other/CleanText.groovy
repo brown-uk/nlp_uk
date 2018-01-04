@@ -10,15 +10,16 @@
 // it also tries to detect and skip two-column texts
 // it also tries to merge some simple word wraps
 
-@Grab(group='org.languagetool', module='language-uk', version='3.9')
+@Grab(group='org.languagetool', module='language-uk', version='4.0')
 
 
 import groovy.transform.Field
+import groovy.transform.CompileStatic
 import org.languagetool.tagging.uk.*
 import org.languagetool.*
 
 
-@Field static final MIN_UKR_WORD_COUNT = 250
+@Field static final MIN_UKR_WORD_COUNT = 100
 
 
 @Field def latToCyrMap = [
@@ -72,7 +73,7 @@ if( ! outDirFile.isDirectory() ) {
     return 1
 }
 
-
+@Field
 def tagger = new UkrainianTagger()
 
 
@@ -112,13 +113,13 @@ new File(dir).eachFile { file->
     }
 
     if( text.contains("\uFFFD") ) {
-        println "WARNING: File contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD), skipping"
+        println "WARNING: File contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD)"
 //        return
     }
 
 
     // fix weird apostrophes
-    text = text.replaceAll(/([бпвмфгґкхжчшр])[\u0022‘`]([єїюя])/, /$1'$2/)
+    text = text.replaceAll(/([бпвмфгґкхжчшр])[\"\u201D\u201F\u0022\u2018´‘`”]([єїюя])/, /$1'$2/) // "
 
     if( text.contains("\u00AD") ) {
         println "\tremoving soft hyphens: "
@@ -126,12 +127,12 @@ new File(dir).eachFile { file->
     }
 
 
-    if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/ ) {
+    if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
         println "\tlatin/cyrillic mix in $file.name"
         
         text = removeMix(text)
         
-        if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/ ) {
+        if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
             println "\tstill latin/cyrillic mix in $file.name"
         }
     }
@@ -144,6 +145,10 @@ new File(dir).eachFile { file->
     if( ! args.contains("-nc") && text =~ /[а-яїієґ]-  +[а-яіїєґ].{4}/ ) {
         println "\tERROR: two columns detected, skipping..."
         return
+    }
+
+    if( text.contains('\u2028') ) {
+        text = text.replace('\u2028', '\n')
     }
 
     if( text.contains("¬\n") ) {
@@ -184,31 +189,31 @@ new File(dir).eachFile { file->
 
 
     if( text.split(/[ \t\n,;.]/).findAll{ it ==~ /[А-ЯІЇЄҐа-яіїєґ'’ʼ-]+/ }.size() < MIN_UKR_WORD_COUNT ) {
-        println "\tLess than $MIN_UKR_WORD_COUNT words"
+        println "\tERROR: Less than $MIN_UKR_WORD_COUNT words: " + text[0..<Math.min(text.size(), 80)] + "..."
         return
     }
 
-    if( text.count("і") < 10 || text.count("ї") < 10 ) {
-        println "\tNot enough Ukrainian letters"
+    def minICount = MIN_UKR_WORD_COUNT / 20
+    if( text.toLowerCase().count("і") < minICount /*|| text.count("ї") < minICount*/ ) {
+        println "\tERROR: Not enough Ukrainian letters" + text[0..<Math.min(text.size(), 80)] + "..."
         return
     }
 
 
-    println "GOOD: $file.name\n"
+    println "\tGOOD: $file.name\n"
 
     new File("$outDir/$file.name").text = text
 }
 
 
-def unknownWord(word) {
-    tagger.getAnalyzedTokens(word)[0].hasNoTag()
+boolean knownWord(word) {
+    return ! tagger.getAnalyzedTokens(word)[0].hasNoTag()
 }
 
 
-
-def removeMix(text) {
-    def count1 = 0
-    def count2 = 0
+def removeMix(String text) {
+    int count1 = 0
+    int count2 = 0
 
     // latin digits
 
@@ -223,31 +228,64 @@ def removeMix(text) {
 
     // 1st tier
 
+    // exclusively cyrillic letter followed by latin looking like cyrillic
+
     text = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
         count1 += 1
         cyr + latToCyrMap[lat]
     })
+
+    // exclusively cyrillic letter preceeded by latin looking like cyrillic
+
     text = text.replaceAll(/(?i)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
         count1 += 1
         latToCyrMap[lat] + cyr
     })
 
+
     text = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
         count2 += 2
         lat + cyrToLatMap[cyr]
     })
+
     text = text.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
         count2 += 2
         cyrToLatMap[cyr] + lat
     })
 
 
-    // 2nd tier
+    // 2nd tier - try all cyrillic
+    // if we convert all latin to cyrillic and find it in the dicitonary use conversion
 
-    text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ]['’ʼ]?)([aceiopxyABCEHIKMHOPTXY])(['’ʼ]?[а-яіїєґА-ЯІЇЄҐ])/, { all, cyr, lat, cyr2 ->
+    text = text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-ZáÁéÉíÍḯḮóÓúýÝ-]+/, { it ->
+
+        if( it =~ /[а-яіїєґА-ЯІЇЄҐ]['’ʼ]?[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/
+                || it =~ /[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]['’ʼ]?[а-яіїєґА-ЯІЇЄҐ]/ ) {
+//            println "Found mix in: $it, known to LT: " + knownWord(it)
+            if( ! knownWord(it) ) {
+                def fixed = it.replaceAll(/[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/, { lat -> latToCyrMap[lat] })
+                def fixedCleaned = fixed.replace('\u0301', '')
+//                println "\tfixed $fixed known to LT: " + knownWord(fixedCleaned)
+                if( knownWord(fixedCleaned) ) {
+                    count1 += 1
+                    return fixed
+                }
+            }
+        }
+        return it
+    })
+
+
+    // 3nd tier - least reliable
+
+    // latin letter that looks like cyrillic between 2 cyrillics
+
+    text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ]['’ʼ]?)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[а-яіїєґА-ЯІЇЄҐ])/, { all, cyr, lat, cyr2 ->
         count1 += 1
         cyr + latToCyrMap[lat] + cyr2
     })
+
+    // cyrillic letter that looks like latin between 2 latin
 
     text = text.replaceAll(/([a-zA-Z]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[a-zA-Z])/, { all, lat, cyr, lat2 ->
         count2 += 2
