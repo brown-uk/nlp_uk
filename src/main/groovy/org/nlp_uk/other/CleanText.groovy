@@ -66,8 +66,14 @@ import org.languagetool.*
 
 latToCyrMap.each{ k,v -> cyrToLatMap[v] = k }
 
+int wcArgIdx = (args as List).indexOf('-wc')
+if( wcArgIdx >= 0 && wcArgIdx < args.length-1 ) {
+    MIN_UKR_WORD_COUNT = args[wcArgIdx+1] as int
+}
+println "Min Word limit: $MIN_UKR_WORD_COUNT"
 
-def dir = args.length > 0 ? args[0] : "txt"
+
+def dir = args.length > 0 && ! args[0].startsWith('-') ? args[0] : "txt"
 def outDir = "$dir/good"
 
 def outDirFile = new File(outDir)
@@ -179,8 +185,8 @@ new File(dir).eachFile { file->
         return
     }
 
-    if( text.contains('\u2028\n') ) {
-        text = text.replace('\u2028\n', '\n')
+    if( text.contains('\u2028') ) {
+        text = text.replaceAll(/\u2028\n?/, '\n')
     }
 
 
