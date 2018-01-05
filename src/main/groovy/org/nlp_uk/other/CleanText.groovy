@@ -199,7 +199,7 @@ new File(dir).eachFile { file->
             if( ! knownWord(it[1] + "-" + it[3]) ) {
               if( knownWord(it[1] + it[3]) ) {
                 cnt += 1
-                print "."
+//                print "."
                 it[1] + it[3] + (it[4] ?: "") + "\n" + it[2]
 			  }
 			  else {
@@ -208,7 +208,7 @@ new File(dir).eachFile { file->
             }
 			else {
 				cntWithHyphen += 1
-                print ","
+//                print ","
 				it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
 			}
         })
@@ -234,9 +234,18 @@ new File(dir).eachFile { file->
     println "\tUkrainian word count: $ukrWordCount"
 //    if( ukrWordCount < 300 ) println "\t\t: " + ukrWords
 
-    def minICount = MIN_UKR_WORD_COUNT / 20
-    if( text.toLowerCase().count("і") < minICount /*|| text.count("ї") < minICount*/ ) {
-        println "\tERROR: Not enough Ukrainian letters: " + getSample(text)
+    def lowerText = text.toLowerCase()
+    int ukrLetterCount = lowerText.findAll { "іїєґ".contains(it) } .size()
+    int rusLetterCount = lowerText.findAll { "ыэъё".contains(it) } .size()
+
+    def minUkrainianLetters = MIN_UKR_WORD_COUNT / 20
+    if( ukrLetterCount < minUkrainianLetters ) {
+        println "\tERROR: Less than $minUkrainianLetters Ukrainian letters ($ukrLetterCount): " + getSample(text)
+        return
+    }
+
+    if( ukrLetterCount < rusLetterCount ) {
+        println "\tERROR: Less Ukrainian letters ($ukrLetterCount) than Russian ($rusLetterCount), probably russian text: " + getSample(text)
         return
     }
 
