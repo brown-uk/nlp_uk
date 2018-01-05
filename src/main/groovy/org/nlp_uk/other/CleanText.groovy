@@ -119,7 +119,7 @@ new File(dir).eachFile { file->
 
 
     // fix weird apostrophes
-    text = text.replaceAll(/([бпвмфгґкхжчшр])[\"\u201D\u201F\u0022\u2018´‘`”]([єїюя])/, /$1'$2/) // "
+    text = text.replaceAll(/([бпвмфгґкхжчшр])[\"\u201D\u201F\u0022\u2018´`]([єїюя])/, /$1'$2/) // "
 
     if( text.contains("\u00AD") ) {
         println "\tremoving soft hyphens: "
@@ -133,7 +133,7 @@ new File(dir).eachFile { file->
         text = removeMix(text)
         
         if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
-            println "\tstill latin/cyrillic mix in $file.name"
+            println "\tWARNING: still latin/cyrillic mix in $file.name"
         }
     }
     
