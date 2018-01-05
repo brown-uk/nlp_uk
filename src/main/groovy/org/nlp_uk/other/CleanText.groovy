@@ -19,7 +19,10 @@ import org.languagetool.tagging.uk.*
 import org.languagetool.*
 
 
-@Field static final MIN_UKR_WORD_COUNT = 100
+// for higher quality text esp. short newspaper articles you need to keep it low ~100
+// for larger text with possible scanned sources you may want to go higher > 200
+// note: we count words with 2 letters and more
+@Field static final MIN_UKR_WORD_COUNT = 80
 
 
 @Field def latToCyrMap = [
@@ -73,6 +76,16 @@ if( ! outDirFile.isDirectory() ) {
     return 1
 }
 
+if( outDirFile.listFiles(new FilenameFilter() {
+        public boolean accept(File idir, String name) {
+            return name.toLowerCase().endsWith(".txt");
+        }
+    }).size() > 0 ) {
+
+    System.err.println "Output dir $outDir has (old) .txt files"
+    return 1
+}
+
 @Field
 def tagger = new UkrainianTagger()
 
@@ -85,19 +98,38 @@ new File(dir).eachFile { file->
 
     def text = file.text
 
+    if( text.contains("\u008D\u00C3") ) { // completly broken encoding for «ій»
+       println "\tWARNING: nonfixable broken encoding found, garbage will be left in!"
+    }
+
     if( text.contains("éîãî") ) {
         println "\tWARNING: broken encoding"
+        
+        // some text (esp. converted from pdf) have broken encoding in some lines and good one in others
 
-        text = new String(text.getBytes("cp1252"), "cp1251")
+        int convertedLines = 0
+        int goodLines = 0
+        text = text.split(/\n/).collect { String line->
+            if( line.trim() && ! (line =~ /(?iu)[а-яіїєґ]/) ) {
+                line = new String(line.getBytes("cp1252"), "cp1251")
+                convertedLines += 1
+            }
+            else {
+                goodLines += 1
+            }
+            line
+        }
+        .join('\n')
+
         
         if( text.contains("éîãî") ) {
            println "\tERROR: still broken: encoding mixed with good one"
            return
         }
-        
-        text = text.replaceAll(/([бвгґдзклмнпрстфхцшщ])\?([єїюя])/, '$1\'$2')
 
-        println "\tEncoding fixed: " + text[0..80]
+//        text = text.replaceAll(/([бвгґдзклмнпрстфхцшщ])\?([єїюя])/, '$1\'$2')
+
+        println "\tEncoding fixed (good lines: $goodLines, convertedLines: $convertedLines, text: " + getSample(text)
     }
     else if( file.getText("cp1251").contains("ок") ) {
         println "\tWARNING: cp1251 encoding"
@@ -109,11 +141,11 @@ new File(dir).eachFile { file->
             return
         }
         
-        println "\tEncoding converted: " + text[0..80]
+        println "\tEncoding converted: " + getSample(text)
     }
 
     if( text.contains("\uFFFD") ) {
-        println "WARNING: File contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD)"
+        println "\tWARNING: File contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD)"
 //        return
     }
 
@@ -147,55 +179,58 @@ new File(dir).eachFile { file->
         return
     }
 
-    if( text.contains('\u2028') ) {
-        text = text.replace('\u2028', '\n')
-    }
-
-    if( text.contains("¬\n") ) {
-        text = text.replaceAll(/¬\n */, '')
+    if( text.contains('\u2028\n') ) {
+        text = text.replace('\u2028\n', '\n')
     }
 
 
     if( text.contains("-\n") ) {
-        println "\tsuspect word wraps:"
+        println "\tsuspect word wraps"
         def cnt = 0
+        int cntWithHyphen = 0
         text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { it ->
 
-            if( tagger.getAnalyzedTokens(it[1] + "-" + it[3])[0].hasNoTag() ) {
-              if( ! tagger.getAnalyzedTokens(it[1] + it[3])[0].hasNoTag() ) {
+            if( ! knownWord(it[1] + "-" + it[3]) ) {
+              if( knownWord(it[1] + it[3]) ) {
+                cnt += 1
                 print "."
                 it[1] + it[3] + (it[4] ?: "") + "\n" + it[2]
-                cnt += 1
 			  }
 			  else {
 				  it[0]
 			  }
             }
 			else {
+				cntWithHyphen += 1
+                print ","
 				it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
 			}
         })
-        if( cnt > 0 ) {
+        if( cnt > 0 || cntWithHyphen > 0 ) {
             println ""
         }
-        println "\t\t$cnt word wraps removed"
+        println "\t\t$cnt word wraps removed, $cntWithHyphen newlines after hyphen removed"
     }
 
     if( text =~ /¬ *\n/ ) {
         println "\tsuspect word wraps with ¬:"
-        text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)¬ *\n([ \t]*)([а-яіїєґ'ʼ’-]+)/, '$1$2')
+        text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)¬ *\n([ \t]*)([а-яіїєґ'ʼ’-]+)/, '$1$3\n$2')
         println "\t\t¬ word wraps removed"
     }
 
-
-    if( text.split(/[ \t\n,;.]/).findAll{ it ==~ /[А-ЯІЇЄҐа-яіїєґ'’ʼ-]+/ }.size() < MIN_UKR_WORD_COUNT ) {
-        println "\tERROR: Less than $MIN_UKR_WORD_COUNT words: " + text[0..<Math.min(text.size(), 80)] + "..."
+    // NOTE: only counting words with 2 or more letters to filter out noised texts
+    def ukrWords = text.split(/[^А-ЯІЇЄҐёа-яіїєґё'’ʼ-]+/).findAll{ it ==~ /[А-ЩЬЮЯІЇЄҐа-щьюяіїєґ][А-ЩЬЮЯІЇЄҐа-щьюяіїєґ'’ʼ-]+/ }
+    int ukrWordCount = ukrWords.size()
+    if( ukrWordCount < MIN_UKR_WORD_COUNT ) {
+        println "\tERROR: Less than $MIN_UKR_WORD_COUNT Ukrainian words ($ukrWordCount): " + getSample(text) // + "\n\t" + ukrWords
         return
     }
+    println "\tUkrainian word count: $ukrWordCount"
+//    if( ukrWordCount < 300 ) println "\t\t: " + ukrWords
 
     def minICount = MIN_UKR_WORD_COUNT / 20
     if( text.toLowerCase().count("і") < minICount /*|| text.count("ї") < minICount*/ ) {
-        println "\tERROR: Not enough Ukrainian letters" + text[0..<Math.min(text.size(), 80)] + "..."
+        println "\tERROR: Not enough Ukrainian letters: " + getSample(text)
         return
     }
 
@@ -295,4 +330,8 @@ def removeMix(String text) {
     println "\tconverted $count1 lat->cyr, $count2 cyr->lat"
 
     return text
+}
+
+String getSample(String text) {
+    text[0..<Math.min(text.size(), 80)].replace('\n', '\\n')
 }
