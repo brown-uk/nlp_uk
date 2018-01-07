@@ -234,9 +234,12 @@ new File(dir).eachFile { file->
     println "\tUkrainian word count: $ukrWordCount"
 //    if( ukrWordCount < 300 ) println "\t\t: " + ukrWords
 
-    def lowerText = text.toLowerCase()
-    int ukrLetterCount = lowerText.findAll { "іїєґ".contains(it) } .size()
-    int rusLetterCount = lowerText.findAll { "ыэъё".contains(it) } .size()
+    // for really big text counting chars takes long time
+    // we'll just evaluate first 1000k
+
+    def lowerTextSample = text.toLowerCase().take(1024*1024)
+    int ukrLetterCount = lowerTextSample.findAll { "іїєґ".contains(it) } .size()
+    int rusLetterCount = lowerTextSample.findAll { "ыэъё".contains(it) } .size()
 
     def minUkrainianLetters = MIN_UKR_WORD_COUNT / 20
     if( ukrLetterCount < minUkrainianLetters ) {
