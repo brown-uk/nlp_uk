@@ -24,6 +24,11 @@ import org.languagetool.*
 // note: we count words with 2 letters and more
 @Field static final MIN_UKR_WORD_COUNT = 80
 
+def KNOWN_MIXES = 
+[
+    "ТаблоID": "Табло@@ID",
+    "Фirtka": "Ф@@irtka"
+]
 
 @Field def latToCyrMap = [
     'a' : 'а',
@@ -166,12 +171,22 @@ new File(dir).eachFile { file->
 
 
     if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
-        println "\tlatin/cyrillic mix in $file.name"
-        
-        text = removeMix(text)
-        
+        KNOWN_MIXES.each { k,v ->
+            text = text.replace(k, v)
+        }
+    
         if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
-            println "\tWARNING: still latin/cyrillic mix in $file.name"
+            println "\tlatin/cyrillic mix in $file.name"
+        
+            text = removeMix(text)
+        
+            if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
+                println "\tWARNING: still latin/cyrillic mix in $file.name"
+            }
+        }
+
+        KNOWN_MIXES.each { k,v ->
+            text = text.replace(v, k)
         }
     }
     
@@ -190,7 +205,7 @@ new File(dir).eachFile { file->
     }
 
 
-    if( text.contains("-\n") ) {
+    if( text.contains("-\n") && text =~ /[а-яіїєґА-ЯІЇЄҐ]-\n/ ) {
         println "\tsuspect word wraps"
         def cnt = 0
         int cntWithHyphen = 0
