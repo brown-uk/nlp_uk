@@ -2,7 +2,7 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='4.0-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='4.0')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
 
 import org.languagetool.*
@@ -63,7 +63,7 @@ class TagText {
 				sb.append(writer.toString()).append("\n");
 				writer.getBuffer().setLength(0)
 			}
-			else {
+			else if ( ! options.noTag ) {
 				def sentenceLine = analyzedSentence.toString()
 				sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
 				sb.append(sentenceLine).append("\n");
@@ -255,6 +255,7 @@ class TagText {
 		cli.u(longOpt: 'unknownStats', 'Collect unknown words statistics')
 		cli.w(longOpt: 'frequencyStats', 'Collect word frequency')
 		cli.z(longOpt: 'lemmaStats', 'Collect lemma frequency')
+		cli.k(longOpt: 'noTag', 'Do not write tagged text (only perform stats)')
 		cli.q(longOpt: 'quiet', 'Less output')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 
