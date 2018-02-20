@@ -158,7 +158,7 @@ class TagText {
 			printStream.println "\n\n"
 		}
 		else {
-			def outputFile = new File(options.output.replaceFirst(/\.txt$/, '') + '.homonym.txt')
+			def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.homonym.txt')
 			printStream = new PrintStream(outputFile)
 		}
 
@@ -190,7 +190,7 @@ class TagText {
 			printStream.println "\n\n"
 		}
 		else {
-			def outputFile = new File(options.output.replaceFirst(/\.txt$/, '') + '.unknown.txt')
+			def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.unknown.txt')
 			printStream = new PrintStream(outputFile)
 		}
 
@@ -210,7 +210,7 @@ class TagText {
 			printStream.println "\n\n"
 		}
 		else {
-			def outputFile = new File(options.output.replaceFirst(/\.txt$/, '') + '.freq.txt')
+			def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.freq.txt')
 			printStream = new PrintStream(outputFile)
 		}
 
@@ -230,7 +230,7 @@ class TagText {
 			printStream.println "\n\n"
 		}
 		else {
-			def outputFile = new File(options.output.replaceFirst(/\.txt$/, '') + '.lemma.freq.txt')
+			def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.lemma.freq.txt')
 			printStream = new PrintStream(outputFile)
 		}
 
@@ -247,7 +247,7 @@ class TagText {
 		def cli = new CliBuilder()
 
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
-		cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .tagged.txt)')
+		cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .tagged.txt/.xml)')
 		cli.l(longOpt: 'tokenPerLine', '1 token per line')
 		cli.x(longOpt: 'xmlOutput', 'output in xml format')
 		cli.d(longOpt: 'disableDisamgigRules', args:1, 'Comma-separated list of ids of disambigation rules to disable')
@@ -275,7 +275,8 @@ class TagText {
         if( ! options.output ) {
             def argv2 = new ArrayList(Arrays.asList(argv))
 
-            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tagged.txt"
+            def fileExt = options.xmlOutput ? ".xml" : ".txt"
+            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tagged" + fileExt
             argv2 << "-o" << outfile
 
             options = cli.parse(argv2)
@@ -337,11 +338,15 @@ class TagText {
 			System.err.println ("reading from stdin...")
 		}
 
-		if( ! options.quiet && options.xmlOutput ) {
-			System.err.println ("writing into xml format")
-		}
+//		if( ! options.quiet && options.xmlOutput ) {
+//			System.err.println ("writing into xml format")
+//		}
 		
 		def inputFile = options.input == "-" ? System.in : new File(options.input)
+
+		if( ! options.quiet && options.output != "-" ) {
+			System.err.println ("writing into ${options.output}")
+		}
 
 		if( options.xmlOutput ) {
 			outputFile.println('<?xml version="1.0" encoding="UTF-8"?>')
