@@ -2,6 +2,7 @@
 
 package org.nlp_uk.tools
 
+//@Grab(group='org.languagetool', module='language-uk', version='4.1-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-uk', version='4.0')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
 
@@ -43,18 +44,37 @@ class TagText {
 		def sb = new StringBuilder()
 		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
 			if( options.xmlOutput ) {
+				def tokens = analyzedSentence.getTokensWithoutWhitespace()
 				xml.'sentence'() {
-					analyzedSentence.getTokensWithoutWhitespace()[1..<-1].each { AnalyzedTokenReadings tokenReadings ->
+
+				tokens[1..-1].each { AnalyzedTokenReadings tokenReadings ->
+
+                        if( tokenReadings.isLinebreak() ) {
+                            def nonEndTagToken = tokenReadings.find {
+                                ! (it.getPOSTag() in [JLanguageTool.PARAGRAPH_END_TAGNAME, JLanguageTool.SENTENCE_END_TAGNAME])
+                            }
+
+                        if( nonEndTagToken == null )
+                            return
+                        }
+
 						'tokenReading'() {
 							tokenReadings.getReadings().each { AnalyzedToken tkn ->
-								if( tkn.getPOSTag() in [JLanguageTool.SENTENCE_END_TAGNAME, JLanguageTool.SENTENCE_START_TAGNAME] )
-									return
-									
-								if( tkn.getToken() ==~ /\p{Punct}/ ) {
-									'token'('value': tkn.getToken())
+							// we start with readings[1] so we don't need this check
+//								if( tkn.getPOSTag() == JLanguageTool.SENTENCE_START_TAGNAME )
+//									return
+
+								if( tkn.getToken() ==~ /[\p{Punct}«»„“…—–]+/ ) {
+								    'token'('value': tkn.getToken())
 								}
 								else {
-									'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': tkn.getPOSTag())
+								    String posTag = tkn.getPOSTag()
+								    if( posTag == JLanguageTool.SENTENCE_END_TAGNAME ) {
+								        if( tokenReadings.getReadings().size() > 1 )
+								            return
+								        posTag = ''
+								    }
+								    'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag)
 								}
 							}
 						}
