@@ -10,6 +10,7 @@
 // it also tries to detect and skip two-column texts
 // it also tries to merge some simple word wraps
 
+//@Grab(group='org.languagetool', module='language-uk', version='4.1-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-uk', version='4.0')
 
 
@@ -160,9 +161,12 @@ new File(dir).eachFile { file->
 //        return
     }
 
+    // SINGLE LOW-9 QUOTATION MARK sometimes used as a comma
+    text = text.replace('\u201A', ',')
+
 
     // fix weird apostrophes
-    text = text.replaceAll(/([бпвмфгґкхжчшр])[\"\u201D\u201F\u0022\u2018´`]([єїюя])/, /$1'$2/) // "
+    text = text.replaceAll(/([бпвмфгґкхжчшр])[\"\u201D\u201F\u0022\u2018´`*]([єїюя])/, /$1'$2/) // "
 
     if( text.contains("\u00AD") ) {
         println "\tremoving soft hyphens: "
