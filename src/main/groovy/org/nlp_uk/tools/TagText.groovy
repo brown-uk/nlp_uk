@@ -109,10 +109,21 @@ class TagText {
 
 	def collectUnknown(List<AnalyzedSentence> analyzedSentences) {
    		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-		    analyzedSentence.getTokensWithoutWhitespace()[1..<-1].each { AnalyzedTokenReadings tokenReadings ->
-		        if( tokenReadings.getAnalyzedToken(0).getPOSTag() == null 
-		                && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/ 
-		                && ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
+   		    // if any words contain Russian sequence filter out the whole sentence - this removes tons of Russian words from our unknown list
+   		    // we could also test each word against Russian dictionary but that would filter out some valid Ukrainian words too
+   		    if( options.filterUnknown ) {
+   		        def unknownBad = analyzedSentence.getTokensWithoutWhitespace()[1..-1].find { AnalyzedTokenReadings tokenReadings ->
+   		            tokenReadings.getToken() =~ /[ыэъё]|ие/
+   		        }
+   		        if( unknownBad )
+   		            continue
+   		    }
+   		
+		    analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
+		        if( (tokenReadings.getAnalyzedToken(0).getPOSTag() == null 
+		                || JLanguageTool.SENTENCE_END_TAGNAME.equals(tokenReadings.getAnalyzedToken(0).getPOSTag()) )
+		                && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
+		                && ! (tokenReadings.getToken() =~ /[ыэъё]|ие|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
 		            unknownMap[tokenReadings.getToken()] += 1
 		        }
 		    }
@@ -145,7 +156,7 @@ class TagText {
 
 	def collectFrequency(List<AnalyzedSentence> analyzedSentences) {
    		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-		    analyzedSentence.getTokensWithoutWhitespace()[1..<-1].each { AnalyzedTokenReadings tokenReadings ->
+		    analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
 		        if( tokenReadings.getAnalyzedToken(0).getPOSTag() != null
 		                && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
 		                && ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
@@ -157,7 +168,7 @@ class TagText {
 
 	def collectLemmaFrequency(List<AnalyzedSentence> analyzedSentences) {
 	   for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-		    analyzedSentence.getTokensWithoutWhitespace()[1..<-1].each { AnalyzedTokenReadings tokenReadings ->
+		    analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
 			    tokenReadings.getReadings()
 					.findAll { it.getLemma() \
 						&& tokenReadings.getToken() ==~ /[а-яіїєґА-ЯІЇЄҐ'-]+/
@@ -179,7 +190,7 @@ class TagText {
 		}
 		else {
 			def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.homonym.txt')
-			printStream = new PrintStream(outputFile)
+			printStream = new PrintStream(outputFile, "UTF-8")
 		}
 
 		printStream.println("Час-та\tОм.\tЛем\tСлово\tОмоніми")
@@ -211,7 +222,7 @@ class TagText {
 		}
 		else {
 			def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.unknown.txt')
-			printStream = new PrintStream(outputFile)
+			printStream = new PrintStream(outputFile, "UTF-8")
 		}
 
 		unknownMap
@@ -231,7 +242,7 @@ class TagText {
 		}
 		else {
 			def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.freq.txt')
-			printStream = new PrintStream(outputFile)
+			printStream = new PrintStream(outputFile, "UTF-8")
 		}
 
 		frequencyMap
@@ -251,7 +262,7 @@ class TagText {
 		}
 		else {
 			def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.lemma.freq.txt')
-			printStream = new PrintStream(outputFile)
+			printStream = new PrintStream(outputFile, "UTF-8")
 		}
 
 		lemmaFrequencyMap
@@ -273,6 +284,7 @@ class TagText {
 		cli.d(longOpt: 'disableDisamgigRules', args:1, 'Comma-separated list of ids of disambigation rules to disable')
 		cli.s(longOpt: 'homonymStats', 'Collect homohym statistics')
 		cli.u(longOpt: 'unknownStats', 'Collect unknown words statistics')
+		cli.b(longOpt: 'filterUnknown', 'Filter out unknown words with non-Ukrainian character combinations')
 		cli.w(longOpt: 'frequencyStats', 'Collect word frequency')
 		cli.z(longOpt: 'lemmaStats', 'Collect lemma frequency')
 		cli.k(longOpt: 'noTag', 'Do not write tagged text (only perform stats)')
@@ -351,7 +363,7 @@ class TagText {
 		else {
 			outputFile = new File(options.output)
 			outputFile.setText('')	// to clear out output file
-			outputFile = new PrintStream(outputFile)
+			outputFile = new PrintStream(outputFile, "UTF-8")
 		}
 		
 		if( ! options.quiet && options.input == "-" ) {
