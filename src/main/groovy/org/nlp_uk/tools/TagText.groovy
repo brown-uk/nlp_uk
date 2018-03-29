@@ -59,13 +59,14 @@ class TagText {
                         }
 
 						'tokenReading'() {
+						    
 							tokenReadings.getReadings().each { AnalyzedToken tkn ->
 							// we start with readings[1] so we don't need this check
 //								if( tkn.getPOSTag() == JLanguageTool.SENTENCE_START_TAGNAME )
 //									return
 
 								if( tkn.getToken() ==~ /[\p{Punct}«»„“…—–]+/ ) {
-								    'token'('value': tkn.getToken())
+								    'token'('value': tkn.getToken(), 'whitespaceBefore': tkn.isWhitespaceBefore() )
 								}
 								else {
 								    String posTag = tkn.getPOSTag()
