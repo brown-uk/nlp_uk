@@ -85,8 +85,29 @@ class TagText {
 				writer.getBuffer().setLength(0)
 			}
 			else if ( ! options.noTag ) {
-				def sentenceLine = analyzedSentence.toString()
-				sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
+				String sentenceLine
+				if( options.firstLemmaOnly ) {
+				    sentenceLine = analyzedSentence.tokens.collect { 
+						AnalyzedTokenReadings it -> 
+						it.isSentenceStart()
+							? ''
+							: it.isWhitespace()
+								? ( "\n".equals(it.getToken()) ? '' : it.getToken() )
+								: it.getToken() + "[" + it.getReadings().get(0).toString() + "]" 
+					}
+					.join('') //(' --- ')
+				}
+				else {
+				    sentenceLine = analyzedSentence.toString()
+				    if( options.tokenPerLine ) {
+				        sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
+				    }
+				    else {
+				        sentenceLine = sentenceLine.replaceAll(/ *(<S>|\[<\/S>\]) */, '')
+				    }
+				}
+				
+				
 				sb.append(sentenceLine).append("\n");
 			}
 		}
@@ -281,6 +302,7 @@ class TagText {
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .tagged.txt/.xml)')
 		cli.l(longOpt: 'tokenPerLine', '1 token per line')
+		cli.f(longOpt: 'firstLemmaOnly', 'print only first lemma')
 		cli.x(longOpt: 'xmlOutput', 'output in xml format')
 		cli.d(longOpt: 'disableDisamgigRules', args:1, 'Comma-separated list of ids of disambigation rules to disable')
 		cli.s(longOpt: 'homonymStats', 'Collect homohym statistics')
