@@ -47,7 +47,7 @@ class LemmatizeText {
 
 		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
 		cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .lemmatized.txt)')
-		cli.f(longOpt: 'firstLemma', 'Pick first lemma for homonyms')
+		cli.f(longOpt: 'firstLemmaOnly', 'Pick first lemma for homonyms')
 		cli.q(longOpt: 'quiet', 'Less output')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 
