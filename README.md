@@ -26,6 +26,11 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 
 [докладніше про утиліти аналізу](src/main/groovy/org/nlp_uk/tools/README.md)
 
+
+## Допоміжні утиліти:
+[докладніше про утиліти чищення](src/main/groovy/org/nlp_uk/other/README.md)
+
+
 Для тегування лексем використовується версія словника української мови з проекту [ВЕСУМ](https://github.com/brown-uk/dict_uk)
 
 
