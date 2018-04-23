@@ -35,7 +35,7 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 
 Для аналізу текстів використовується український модуль [LanguageTool](https://languagetool.org)
 
-Для тегування лексем використовується версія словника української мови з проекту [ВЕСУМ](https://github.com/brown-uk/dict_uk)
+Для тегування лексем використовується словник української мови з проекту [ВЕСУМ](https://github.com/brown-uk/dict_uk)
 
 
 ## Ліцензія
