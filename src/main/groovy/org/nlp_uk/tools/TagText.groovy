@@ -2,8 +2,8 @@
 
 package org.nlp_uk.tools
 
-//@Grab(group='org.languagetool', module='language-uk', version='4.2-SNAPSHOT')
-@Grab(group='org.languagetool', module='language-uk', version='4.1')
+//@Grab(group='org.languagetool', module='language-uk', version='4.3-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='4.2')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
 
 import org.languagetool.*
