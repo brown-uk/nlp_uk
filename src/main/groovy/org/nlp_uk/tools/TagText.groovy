@@ -2,8 +2,8 @@
 
 package org.nlp_uk.tools
 
-//@Grab(group='org.languagetool', module='language-uk', version='4.3-SNAPSHOT')
-@Grab(group='org.languagetool', module='language-uk', version='4.2')
+//@Grab(group='org.languagetool', module='language-uk', version='4.4-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='4.3')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
 
 import org.languagetool.*
@@ -164,6 +164,9 @@ class TagText {
 					if( readings.getReadings()[-1].getPOSTag().equals(JLanguageTool.SENTENCE_END_TAGNAME) ) {
 						if( readings.size() == 2 )
 							continue
+						readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
+					}
+					if( readings.getReadings()[-1].getPOSTag() == null && readings.getToken().contains('\u0301') ) {
 						readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
 					}
 	
