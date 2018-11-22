@@ -10,6 +10,8 @@
 // it also tries to detect and skip two-column texts
 // it also tries to merge some simple word wraps
 
+package org.nlp_uk.other
+
 //@Grab(group='org.languagetool', module='language-uk', version='4.4-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-uk', version='4.3')
 
@@ -25,13 +27,13 @@ import org.languagetool.*
 // note: we count words with 2 letters and more
 @Field static final MIN_UKR_WORD_COUNT = 80
 
-def KNOWN_MIXES = 
+@Field Map<String, String> KNOWN_MIXES = 
 [
     "ТаблоID": "Табло@@ID",
     "Фirtka": "Ф@@irtka"
 ]
 
-@Field def latToCyrMap = [
+@Field Map<String, String> latToCyrMap = [
     'a' : 'а',
     'c' : 'с',
     'e' : 'е',
@@ -68,9 +70,9 @@ def KNOWN_MIXES =
     "Ý" : "У́"
 ]
 
-@Field def cyrToLatMap = [:]
+@Field Map<String,String> cyrToLatMap = [:]
 
-latToCyrMap.each{ k,v -> cyrToLatMap[v] = k }
+latToCyrMap.each{ String k, String v -> cyrToLatMap[v] = k }
 
 int wcArgIdx = (args as List).indexOf('-wc')
 if( wcArgIdx >= 0 && wcArgIdx < args.length-1 ) {
@@ -101,175 +103,22 @@ if( outDirFile.listFiles(new FilenameFilter() {
 @Field
 def tagger = new UkrainianTagger()
 
+def files = new File(dir).listFiles().findAll {  file-> file.name.endsWith(".txt")  }
 
-new File(dir).eachFile { file->
-    if( ! file.name.endsWith(".txt") )
-        return
+//files.parallelStream().each{ file ->
 
+files.each { file ->
     println "Looking at ${file.name}"
 
-    def text = file.text
+    String text = file.text
 
-    if( text.contains("\u008D\u00C3") ) { // completly broken encoding for «ій»
-       println "\tWARNING: nonfixable broken encoding found, garbage will be left in!"
-    }
-
-    if( text.contains("éîãî") ) {
-        println "\tWARNING: broken encoding"
-        
-        // some text (esp. converted from pdf) have broken encoding in some lines and good one in others
-
-        int convertedLines = 0
-        int goodLines = 0
-        text = text.split(/\n/).collect { String line->
-            if( line.trim() && ! (line =~ /(?iu)[а-яіїєґ]/) ) {
-                line = new String(line.getBytes("cp1252"), "cp1251")
-                convertedLines += 1
-            }
-            else {
-                goodLines += 1
-            }
-            line
-        }
-        .join('\n')
-
-        
-        if( text.contains("éîãî") ) {
-           println "\tERROR: still broken: encoding mixed with good one"
-           return
-        }
-
-//        text = text.replaceAll(/([бвгґдзклмнпрстфхцшщ])\?([єїюя])/, '$1\'$2')
-
-        println "\tEncoding fixed (good lines: $goodLines, convertedLines: $convertedLines, text: " + getSample(text)
-    }
-    else if( file.getText("cp1251").contains("ок") ) {
-        println "\tWARNING: cp1251 encoding"
-
-        text = file.getText("cp1251")
-        
-        if( text.size() < 200 ) {
-            println "\tFile size < 200 chars, probaby cp1251 conversion didn't work, skipping"
-            return
-        }
-        
-        println "\tEncoding converted: " + getSample(text)
-    }
-
-    if( text.contains("\uFFFD") ) {
-        println "\tWARNING: File contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD)"
-//        return
-    }
-
-    // SINGLE LOW-9 QUOTATION MARK sometimes used as a comma
-    text = text.replace('\u201A', ',')
-
-
-    // fix weird apostrophes
-    text = text.replaceAll(/([бпвмфгґкхжчшр])[\"\u201D\u201F\u0022\u2018´`*]([єїюя])/, /$1'$2/) // "
-
-    if( text.contains("\u00AD") ) {
-        println "\tremoving soft hyphens: "
-        text = text.replaceAll(/\u00AD(\n?[ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, '$2$3$1')
-    }
-
-
-    if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
-        KNOWN_MIXES.each { k,v ->
-            text = text.replace(k, v)
-        }
-    
-        if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
-            println "\tlatin/cyrillic mix in $file.name"
-        
-            text = removeMix(text)
-        
-            if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
-                println "\tWARNING: still latin/cyrillic mix in $file.name"
-            }
-        }
-
-        KNOWN_MIXES.each { k,v ->
-            text = text.replace(v, k)
-        }
-    }
-    
-    // latin a and i
-    text = text.replaceAll(/([а-яіїєґ]), a ([А-ЯІЇЄҐа-яіїєґ])/, '$1, а $2')
-    text = text.replaceAll(/([а-яіїєґ]) i ([А-ЯІЇЄҐа-яіїєґ])/, '$1 і $2')
-
-
-    if( ! args.contains("-nc") && text =~ /[а-яїієґ]-  +[а-яіїєґ].{4}/ ) {
-        println "\tERROR: two columns detected, skipping..."
-        return
-    }
-
-    if( text.contains('\u2028') ) {
-        text = text.replaceAll(/\u2028\n?/, '\n')
-    }
-
-
-    if( text.contains("-\n") && text =~ /[а-яіїєґА-ЯІЇЄҐ]-\n/ ) {
-        println "\tsuspect word wraps"
-        def cnt = 0
-        int cntWithHyphen = 0
-        text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { it ->
-
-            if( ! knownWord(it[1] + "-" + it[3]) ) {
-              if( knownWord(it[1] + it[3]) ) {
-                cnt += 1
-//                print "."
-                it[1] + it[3] + (it[4] ?: "") + "\n" + it[2]
-			  }
-			  else {
-				  it[0]
-			  }
-            }
-			else {
-				cntWithHyphen += 1
-//                print ","
-				it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
-			}
-        })
-        if( cnt > 0 || cntWithHyphen > 0 ) {
-            println ""
-        }
-        println "\t\t$cnt word wraps removed, $cntWithHyphen newlines after hyphen removed"
-    }
-
-    if( text =~ /¬ *\n/ ) {
-        println "\tsuspect word wraps with ¬:"
-        text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)¬ *\n([ \t]*)([а-яіїєґ'ʼ’-]+)/, '$1$3\n$2')
-        println "\t\t¬ word wraps removed"
-    }
+	text = cleanUp(text, file, args)
+	if( ! text )
+		return
 
     // NOTE: only counting words with 2 or more letters to filter out noised texts
-    def ukrWords = text.split(/[^А-ЯІЇЄҐёа-яіїєґё'’ʼ-]+/).findAll{ it ==~ /[А-ЩЬЮЯІЇЄҐа-щьюяіїєґ][А-ЩЬЮЯІЇЄҐа-щьюяіїєґ'’ʼ-]+/ }
-    int ukrWordCount = ukrWords.size()
-    if( ukrWordCount < MIN_UKR_WORD_COUNT ) {
-        println "\tERROR: Less than $MIN_UKR_WORD_COUNT Ukrainian words ($ukrWordCount): " + getSample(text) // + "\n\t" + ukrWords
-        return
-    }
-    println "\tUkrainian word count: $ukrWordCount"
-//    if( ukrWordCount < 300 ) println "\t\t: " + ukrWords
-
-    // for really big text counting chars takes long time
-    // we'll just evaluate first 1000k
-
-    def lowerTextSample = text.toLowerCase().take(1024*1024)
-    int ukrLetterCount = lowerTextSample.findAll { "іїєґ".contains(it) } .size()
-    int rusLetterCount = lowerTextSample.findAll { "ыэъё".contains(it) } .size()
-
-    def minUkrainianLetters = MIN_UKR_WORD_COUNT / 20
-    if( ukrLetterCount < minUkrainianLetters ) {
-        println "\tERROR: Less than $minUkrainianLetters Ukrainian letters ($ukrLetterCount): " + getSample(text)
-        return
-    }
-
-    if( ukrLetterCount < rusLetterCount ) {
-        println "\tERROR: Less Ukrainian letters ($ukrLetterCount) than Russian ($rusLetterCount), probably russian text: " + getSample(text)
-        return
-    }
+    if( ! verifyWordCounts(text, MIN_UKR_WORD_COUNT) )
+		return
 
 
     println "\tGOOD: $file.name\n"
@@ -277,13 +126,51 @@ new File(dir).eachFile { file->
     new File("$outDir/$file.name").text = text
 }
 
+@CompileStatic
+String cleanUp(String text, File file, String[] args) {
+	
+	text = fixEncoding(text, file)
+	if( ! text )
+		return null
 
-boolean knownWord(word) {
+		
+	// SINGLE LOW-9 QUOTATION MARK sometimes used as a comma
+	text = text.replace('\u201A', ',')
+
+	// fix weird apostrophes
+	text = text.replaceAll(/([бпвмфгґкхжчшр])[\"\u201D\u201F\u0022\u2018´`*]([єїюя])/, /$1'$2/) // "
+
+	if( text.contains("\u00AD") ) {
+		println "\tremoving soft hyphens: "
+		text = text.replaceAll(/\u00AD(\n?[ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, '$2$3$1')
+	}
+	
+	if( text.contains('\u2028') ) {
+		text = text.replaceAll(/\u2028\n?/, '\n')
+	}
+
+
+	text = fixCyrLatMix(text, file)
+	if( ! text )
+		return null
+
+
+	if( ! args.contains("-nc") && text =~ /[а-яїієґ]-  +[а-яіїєґ].{4}/ ) {
+		println "\tERROR: two columns detected, skipping..."
+		return null
+	}
+
+	text = fixDanglingHyphens(text, file)
+}
+
+
+
+boolean knownWord(String word) {
     return ! tagger.getAnalyzedTokens(word)[0].hasNoTag()
 }
 
 
-def removeMix(String text) {
+String removeMix(String text) {
     int count1 = 0
     int count2 = 0
 
@@ -369,6 +256,167 @@ def removeMix(String text) {
     return text
 }
 
-String getSample(String text) {
+@CompileStatic
+static String getSample(String text) {
     text[0..<Math.min(text.size(), 80)].replace('\n', '\\n')
+}
+
+
+@CompileStatic
+String fixEncoding(String text, File file) {
+	if( text.contains("\u008D\u00C3") ) { // completly broken encoding for «ій»
+		println "\tWARNING: nonfixable broken encoding found, garbage will be left in!"
+	 }
+ 
+	 if( text.contains("éîãî") ) {
+		 println "\tWARNING: broken encoding"
+		 
+		 // some text (esp. converted from pdf) have broken encoding in some lines and good one in others
+ 
+		 int convertedLines = 0
+		 int goodLines = 0
+		 text = text.split(/\n/).collect { String line->
+			 if( line.trim() && ! (line =~ /(?iu)[а-яіїєґ]/) ) {
+				 line = new String(line.getBytes("cp1252"), "cp1251")
+				 convertedLines += 1
+			 }
+			 else {
+				 goodLines += 1
+			 }
+			 line
+		 }
+		 .join('\n')
+ 
+		 
+		 if( text.contains("éîãî") ) {
+			println "\tERROR: still broken: encoding mixed with good one"
+			return null
+		 }
+ 
+ //        text = text.replaceAll(/([бвгґдзклмнпрстфхцшщ])\?([єїюя])/, '$1\'$2')
+ 
+		 println "\tEncoding fixed (good lines: $goodLines, convertedLines: $convertedLines, text: " + getSample(text)
+	 }
+	 else if( file.getText("cp1251").contains("ок") ) {
+		 println "\tWARNING: cp1251 encoding"
+ 
+		 text = file.getText("cp1251")
+		 
+		 if( text.size() < 200 ) {
+			 println "\tFile size < 200 chars, probaby cp1251 conversion didn't work, skipping"
+			 return null
+		 }
+		 
+		 println "\tEncoding converted: " + getSample(text)
+	 }
+ 
+	 if( text.contains("\uFFFD") ) {
+		 println "\tWARNING: File contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD)"
+ //        return
+	 }
+ 	
+	 return text
+}
+
+@CompileStatic
+String fixCyrLatMix(String text, File file) {
+
+    if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
+        KNOWN_MIXES.each { String k, String v ->
+            text = text.replace(k, v)
+        }
+    
+        if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
+            println "\tlatin/cyrillic mix in $file.name"
+        
+            text = removeMix(text)
+        
+            if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
+                println "\tWARNING: still latin/cyrillic mix in $file.name"
+            }
+        }
+
+        KNOWN_MIXES.each { String k, String v ->
+            text = text.replace(v, k)
+        }
+    }
+    
+	// latin a and i
+	text = text.replaceAll(/([а-яіїєґ]), a ([А-ЯІЇЄҐа-яіїєґ])/, '$1, а $2')
+	text = text.replaceAll(/([а-яіїєґ]) i ([А-ЯІЇЄҐа-яіїєґ])/, '$1 і $2')
+
+    return text
+}
+
+@CompileStatic
+String fixDanglingHyphens(String text, File file) {
+	if( text.contains("-\n") && text =~ /[а-яіїєґА-ЯІЇЄҐ]-\n/ ) {
+		println "\tsuspect word wraps"
+		def cnt = 0
+		int cntWithHyphen = 0
+		text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { List<String> it ->
+
+//			println "== " + (it[1] + "-" + it[3]) + ", known: " + knownWord(it[1] + "-" + it[3]) 
+			if( ! knownWord(it[1] + "-" + it[3]) ) {
+//				println "== " + (it[1] + it[3]) + ", known: " + knownWord(it[1] + it[3])
+				if( knownWord(it[1] + it[3]) ) {
+					cnt += 1
+					//                print "."
+					it[1] + it[3] + (it[4] ?: "") + "\n" + it[2]
+				}
+				else {
+					it[0]
+				}
+			}
+			else {
+				cntWithHyphen += 1
+//                print ","
+				it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
+			}
+		})
+		if( cnt > 0 || cntWithHyphen > 0 ) {
+			println ""
+		}
+		println "\t\t$cnt word wraps removed, $cntWithHyphen newlines after hyphen removed"
+	}
+
+	if( text =~ /¬ *\n/ ) {
+		println "\tsuspect word wraps with ¬:"
+		text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)¬ *\n([ \t]*)([а-яіїєґ'ʼ’-]+)/, '$1$3\n$2')
+		println "\t\t¬ word wraps removed"
+	}
+
+	return text
+}
+
+@CompileStatic
+private boolean verifyWordCounts(String text, int MIN_UKR_WORD_COUNT) {
+	def ukrWords = text.split(/[^А-ЯІЇЄҐёа-яіїєґё'’ʼ-]+/).findAll{ it ==~ /[А-ЩЬЮЯІЇЄҐа-щьюяіїєґ][А-ЩЬЮЯІЇЄҐа-щьюяіїєґ'’ʼ-]+/ }
+	int ukrWordCount = ukrWords.size()
+	if( ukrWordCount < MIN_UKR_WORD_COUNT ) {
+		println "\tERROR: Less than $MIN_UKR_WORD_COUNT Ukrainian words ($ukrWordCount): " + getSample(text) // + "\n\t" + ukrWords
+		return false
+	}
+	println "\tUkrainian word count: $ukrWordCount"
+	//    if( ukrWordCount < 300 ) println "\t\t: " + ukrWords
+
+	// for really big text counting chars takes long time
+	// we'll just evaluate first 1000k
+
+	def lowerTextSample = text.toLowerCase().take(1024*1024)
+	int ukrLetterCount = lowerTextSample.findAll { String it -> "іїєґ".contains(it) } .size()
+	int rusLetterCount = lowerTextSample.findAll { String it -> "ыэъё".contains(it) } .size()
+
+	def minUkrainianLetters = MIN_UKR_WORD_COUNT / 20
+	if( ukrLetterCount < minUkrainianLetters ) {
+		println "\tERROR: Less than $minUkrainianLetters Ukrainian letters ($ukrLetterCount): " + getSample(text)
+		return false
+	}
+
+	if( ukrLetterCount < rusLetterCount ) {
+		println "\tERROR: Less Ukrainian letters ($ukrLetterCount) than Russian ($rusLetterCount), probably russian text: " + getSample(text)
+		return false
+	}
+
+	return true
 }
