@@ -2,6 +2,8 @@
 
 // this script tries to extract text from multiple document formats
 
+//package org.nlp_uk.other
+
 
 def srcDir = args.length > 0 ? args[0] : "pdf"
 def targetDir = args.length > 1 ? args[1] : "txt"
