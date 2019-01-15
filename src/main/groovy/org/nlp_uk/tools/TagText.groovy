@@ -430,7 +430,9 @@ class TagText {
 			outputFile.print(analyzed)
 		}
 
-		outputFile.println('\n</text>\n')
+		if( options.xmlOutput ) {
+            outputFile.println('\n</text>\n')
+        }
 		
 		return outputFile
 	}
