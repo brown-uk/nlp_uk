@@ -12,6 +12,7 @@ import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
 import groovy.lang.Closure
+import groovy.transform.CompileStatic
 import groovy.xml.MarkupBuilder
 
 
@@ -46,23 +47,53 @@ class TagText {
                 def tokens = analyzedSentence.getTokensWithoutWhitespace()
                 xml.'sentence'() {
 
-                tokens[1..-1].each { AnalyzedTokenReadings tokenReadings ->
+                tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
 
                         if( tokenReadings.isLinebreak() ) {
                             def nonEndTagToken = tokenReadings.find {
                                 ! (it.getPOSTag() in [JLanguageTool.PARAGRAPH_END_TAGNAME, JLanguageTool.SENTENCE_END_TAGNAME])
                             }
 
-                        if( nonEndTagToken == null )
-                            return
+                            if( nonEndTagToken == null )
+                                return
                         }
+
+                        AnalyzedToken origAnalyzedToken = tokenReadings.getReadings().get(0)
+
+                        if( isZheleh(options) ) {
+                            boolean syaIsNext = idx < tokens.size()-2 && tokens[idx+2].getToken() == 'ся'
+
+                            if( ( tokenReadings.isPosTagUnknown() || syaIsNext ) 
+                                    && origAnalyzedToken.token =~ /[а-яіїєґА-ЯІЇЄҐ]/ ) {
+
+                                String adjustedToken = adjustZheleh(origAnalyzedToken.token)
+
+                                if( syaIsNext ) {
+                                    tokenReadings = langTool.getLanguage().getTagger().tag([adjustedToken + 'ся']).get(0)
+//                                    println "trying verb:rev $adjustedToken " + tokenReadings.getReadings()
+                                }
+
+                                if( tokenReadings.isPosTagUnknown() ) {
+                                    tokenReadings = langTool.getLanguage().getTagger().tag([adjustedToken]).get(0)
+                                }
+
+                                // put back original word
+                                for(int i=0; i<tokenReadings.getReadings().size(); i++) {
+                                    AnalyzedToken token = tokenReadings.getReadings().get(i);
+
+                                    def posTag = token.posTag
+
+                                    tokenReadings.getReadings().set(i, new AnalyzedToken(origAnalyzedToken.token, posTag, token.lemma))
+                                }
+                            }
+                        }
+
 
                         'tokenReading'() {
 
-                            tokenReadings.getReadings().each { AnalyzedToken tkn ->
-                            // we start with readings[1] so we don't need this check
-//                                if( tkn.getPOSTag() == JLanguageTool.SENTENCE_START_TAGNAME )
-//                                    return
+                            List<AnalyzedToken> tokenReadings2 = tokenReadings.getReadings()
+
+                            tokenReadings2.each { AnalyzedToken tkn ->
 
                                 if( tkn.getToken() ==~ /[\p{Punct}«»„“…—–]+/ ) {
                                     'token'('value': tkn.getToken(), 'whitespaceBefore': tkn.isWhitespaceBefore() )
@@ -126,6 +157,15 @@ class TagText {
         }
 
         return sb.toString()
+    }
+
+    @CompileStatic
+    private static String adjustZheleh(String text) {
+        text = text.replaceAll(/([бвгґджзклмнпрстфхцчшщ])ї/, '$1і')
+        text = text.replaceAll(/([бвпмфр])([юяє])/, '$1\'$2')
+        text = text.replaceAll(/([сцз])ь([бвпмф])([ія])/, '$1$2$3')
+        text = text.replaceAll(/ь([сц])(к)/, '$1ь$2')
+        text = text.replaceAll(/-(же|ж|би|б)/, ' $1')
     }
 
     def collectUnknown(List<AnalyzedSentence> analyzedSentences) {
@@ -297,6 +337,10 @@ class TagText {
         }
     }
 
+    private static boolean isZheleh(options) {
+        return options.modules && 'zheleh' in options.modules
+    }
+
     static void main(String[] argv) {
 
         def cli = new CliBuilder()
@@ -313,6 +357,7 @@ class TagText {
         cli.w(longOpt: 'frequencyStats', 'Collect word frequency')
         cli.z(longOpt: 'lemmaStats', 'Collect lemma frequency')
         cli.k(longOpt: 'noTag', 'Do not write tagged text (only perform stats)')
+        cli.m(longOpt: 'modules', args:1, required: false, 'Comma-separated list of modules, supported modules: [zheleh]')
         cli.q(longOpt: 'quiet', 'Less output')
         cli.h(longOpt: 'help', 'Help - Usage Information')
 
@@ -401,8 +446,14 @@ class TagText {
 
         def inputFile = options.input == "-" ? System.in : new File(options.input)
 
-        if( ! options.quiet && options.output != "-" ) {
-            System.err.println ("writing into ${options.output}")
+        if( ! options.quiet ) {
+            if( options.output != "-" ) {
+                System.err.println ("writing into ${options.output}")
+            }
+            if( isZheleh(options) ) {
+                System.err.println ("Using adjustments for Zhelekhivka")
+                System.err.println ("NOTE: Zhelekhivka adjustments currently do not apply to statistics!")
+            }
         }
 
         if( options.xmlOutput ) {
