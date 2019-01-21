@@ -106,6 +106,8 @@ class CleanText {
 		cli.w(longOpt: 'wordCount', args:1, required: false, 'Minimum Ukrainian word count')
 		cli.n(longOpt: 'allowTwoColumn', 'do not discard two-column text')
 		cli.p(longOpt: 'parallel', 'Process files in parallel')
+		cli.i(longOpt: 'input', args:1, required: false, 'Input file')
+		cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: input file with .out added before extention')
 		cli.h(longOpt: 'help', 'Help - Usage Information')
 		cli._(longOpt: 'dir', args:1, 'Directory to process *.txt in (default: txt/)')
 
@@ -132,13 +134,13 @@ class CleanText {
 	
 	int process() {
 
-		def dir = options.dir ? options.dir : "txt"
-
 		def files
-		def outDir
 
-		if( new File(dir).isDirectory() ) {
+        if( ! options.input ) {
 
+		    def dir = options.dir ? options.dir : "txt"
+
+		    def outDir
 			outDir = "$dir/good"
 
 			def outDirFile = new File(outDir)
@@ -165,25 +167,28 @@ class CleanText {
 
 			files = new File(dir).listFiles().findAll { file-> file.name.endsWith(".txt") }
 
+		    processFiles(files, outDir, null)
 		}
 		else {
-			outDir = "./good"
+            def inputFilename = options.input
+            def outputFilename = options.output ?: inputFilename.replaceFirst(/\..*?$/, '.good$0')
 
-			def outFile = new File(outDir, file)
-			if( outFile.exists() ) {
-				println "Removing file.good.txt $outDir"
+			def outFile = new File(outputFilename)
+			if( inputFilename != outputFilename && outFile.exists() ) {
+				println "Removing $outFile"
 				outFile.delete()
 			}
 
-			files = [ file ]
+			files = [ new File(inputFilename) ]
+
+		    processFiles(files, null, outputFilename)
 		}
 
-		processFiles(files, outDir)
 		
 		return 0
 	}
-	
-	void processFiles(files, outDir) {
+
+	void processFiles(files, outDir, outFilename) {
 		
 		def stream = options.parallel ? files.parallelStream() : files.stream()
 
@@ -217,7 +222,10 @@ class CleanText {
 
 			println "\tGOOD: $file.name\n"
 
-			new File("$outDir/$file.name").text = text
+            if( outDir ) {
+                outFilename = "$outDir/$file.name"
+            }
+			new File(outFilename).text = text
 			
 			if( options.parallel ) {
 				out.get().flush()
