@@ -5,6 +5,7 @@
 # groovy (http://www.groovy-lang.org) needs to be installed and in the path
 # Usage: tag_text.py <inputfile>
 
+import os
 import sys
 import subprocess
 import threading
@@ -33,9 +34,13 @@ def print_output(p):
     print("output: ", p.stdout.read().decode(ENCODING))
 
 
+# technically only needed on Windows
+my_env = os.environ.copy()
+my_env["JAVA_TOOL_OPTIONS"] = "-Dfile.encoding=UTF-8"
+
 
 cmd = ['groovy', 'TagText.groovy', '-i', '-', '-o', '-', '-q']
-p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
 
 threading.Thread(target=print_output, args=(p,)).start()
 
