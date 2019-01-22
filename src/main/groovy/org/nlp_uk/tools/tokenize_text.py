@@ -3,7 +3,9 @@
 # This script allows to tokenize Ukrinian text by sentences or words
 # by invoking TokenizeText.groovy that uses LanguageTool API
 # groovy (http://www.groovy-lang.org) needs to be installed and in the path
+# Usage: tokenize_text.py <inputfile>
 
+import os
 import sys
 import subprocess
 import threading
@@ -15,6 +17,7 @@ if len(sys.argv) > 1:
     with open(sys.argv[1], encoding=ENCODING) as a_file:
         in_txt = a_file.read()
 else:
+    print("Usage: " + sys.argv[0] + " <inputfile>", file=sys.stderr)
     print("Using sample text...", file=sys.stderr)
     in_txt = 'Ми ходили туди-сюди.'
 
@@ -31,9 +34,14 @@ def print_output(p):
     print("output: ", p.stdout.read().decode(ENCODING))
 
 
+# technically only needed on Windows
+my_env = os.environ.copy()
+my_env["JAVA_TOOL_OPTIONS"] = "-Dfile.encoding=UTF-8"
 
-cmd = ['groovy', 'TokenizeText.groovy', '-i', '-', '-o', '-', '-w', '-u', '-q']
-p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+
+groovy_cmd = 'groovy.bat' if sys.platform == "win32" else 'groovy'
+cmd = [groovy_cmd, 'TokenizeText.groovy', '-i', '-', '-o', '-', '-w', '-u', '-q']
+p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
 
 threading.Thread(target=print_output, args=(p,)).start()
 
