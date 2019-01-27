@@ -32,7 +32,7 @@ class LemmatizeText {
 			        sb.append(readings.token)
 			    }
 			    else {
-			        def lemmas = options.firstLemma ? readings.readings[0].getLemma() : readings*.lemma.unique().join("|")
+			        def lemmas = options.firstLemmaOnly ? readings.readings[0].getLemma() : readings*.lemma.unique().join("|")
 			        sb.append(lemmas)
 			    }
 			}
