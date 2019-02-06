@@ -2,8 +2,8 @@
 
 package org.nlp_uk.tools
 
-//@Grab(group='org.languagetool', module='language-uk', version='4.4')
-@Grab(group='org.languagetool', module='language-uk', version='4.5-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='4.4')
+//@Grab(group='org.languagetool', module='language-uk', version='4.5-SNAPSHOT')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
 
 import org.languagetool.*
@@ -343,7 +343,6 @@ class TagText {
     }
 
     static void main(String[] argv) {
-        winWarning()
 
         def cli = new CliBuilder()
 
@@ -432,6 +431,8 @@ class TagText {
         def outputFile
         if( options.output == "-" ) {
             outputFile = System.out
+
+            warnWindows()
         }
         else {
             outputFile = new File(options.output)
