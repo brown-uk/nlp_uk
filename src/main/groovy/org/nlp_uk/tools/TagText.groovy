@@ -3,6 +3,7 @@
 package org.nlp_uk.tools
 
 @Grab(group='org.languagetool', module='language-uk', version='4.4')
+//@Grab(group='org.languagetool', module='language-uk', version='4.5-SNAPSHOT')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
 
 import org.languagetool.*
@@ -342,13 +343,15 @@ class TagText {
     }
 
     static void main(String[] argv) {
+        winWarning()
 
         def cli = new CliBuilder()
 
         cli.i(longOpt: 'input', args:1, required: true, 'Input file')
         cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .tagged.txt/.xml)')
         cli.l(longOpt: 'tokenPerLine', '1 token per line')
-        cli.f(longOpt: 'firstLemmaOnly', 'print only first lemma')
+        cli.f(longOpt: 'firstLemmaOnly', 'print only first lemma with first set of tags'
+            + ' (note: this mode is not recommended as first lemma/tag is almost random, this may be improved later with statistical analysis)')
         cli.x(longOpt: 'xmlOutput', 'output in xml format')
         cli.d(longOpt: 'disableDisamgigRules', args:1, 'Comma-separated list of ids of disambigation rules to disable')
         cli.s(longOpt: 'homonymStats', 'Collect homohym statistics')
@@ -486,6 +489,23 @@ class TagText {
         }
 
         return outputFile
+    }
+
+    static void winWarning() {
+        // windows have non-unicode encoding set by default
+        String osName = System.getProperty("os.name").toLowerCase();
+        if ( osName.contains("windows")) {
+            if( ! "UTF-8".equals(System.getProperty("file.encoding")) ) {
+                println "On Windows to get unicode handled correctly you need to set environment variable before running expand:"
+                println "\tbash:"
+                println "\t\texport JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
+                println "\tcmd:"
+                println "\t\t(change Font to 'Lucida Console' in cmd window properties)"
+                println "\t\tchcp 65001"
+                println "\t\tset JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
+                println "\n\tNOTE: bash shell (e.g. git bash) is recommended: only in bash the output will handle all cyrillics and expandInteractive only supported in bash"
+            }
+        }
     }
 
 }
