@@ -2,8 +2,8 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='4.4')
-//@Grab(group='org.languagetool', module='language-uk', version='4.5-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='4.4')
+@Grab(group='org.languagetool', module='language-uk', version='4.5-SNAPSHOT')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
 
 import org.languagetool.*
@@ -497,13 +497,12 @@ class TagText {
         if ( osName.contains("windows")) {
             if( ! "UTF-8".equals(System.getProperty("file.encoding")) ) {
                 println "On Windows to get unicode handled correctly you need to set environment variable before running expand:"
-                println "\tbash:"
+                println "\tbash (recommended):"
                 println "\t\texport JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
                 println "\tcmd:"
                 println "\t\t(change Font to 'Lucida Console' in cmd window properties)"
                 println "\t\tchcp 65001"
                 println "\t\tset JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
-                println "\n\tNOTE: bash shell (e.g. git bash) is recommended: only in bash the output will handle all cyrillics and expandInteractive only supported in bash"
             }
         }
     }
