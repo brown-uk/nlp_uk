@@ -429,11 +429,14 @@ class TagText {
 
     static int MAX_PARAGRAPH_SIZE =  200*1024;
     static def processByParagraph(options, Closure closure) {
+		
+		if( options.output == "-" || options.input == "-" ) {
+			warnOnWindows();
+		}
+		
         def outputFile
         if( options.output == "-" ) {
             outputFile = System.out
-
-            warnWindows()
         }
         else {
             outputFile = new File(options.output)
@@ -450,7 +453,7 @@ class TagText {
 //        }
 
         def inputFile = options.input == "-" ? System.in : new File(options.input)
-
+		
         if( ! options.quiet ) {
             if( options.output != "-" ) {
                 System.err.println ("writing into ${options.output}")
@@ -493,7 +496,7 @@ class TagText {
         return outputFile
     }
 
-    static void winWarning() {
+    static void warnOnWindows() {
         // windows have non-unicode encoding set by default
         String osName = System.getProperty("os.name").toLowerCase();
         if ( osName.contains("windows")) {
