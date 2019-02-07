@@ -386,16 +386,16 @@ class TagText {
     def postProcess() {
 
         if( options.homonymStats ) {
-            nlpUk.printHomonymStats()
+            printHomonymStats()
         }
         if( options.unknownStats ) {
-            nlpUk.printUnknownStats()
+            printUnknownStats()
         }
         if( options.frequencyStats ) {
-            nlpUk.printFrequencyStats()
+            printFrequencyStats()
         }
         if( options.lemmaStats ) {
-            nlpUk.printLemmaFrequencyStats()
+            printLemmaFrequencyStats()
         }
     }
 
