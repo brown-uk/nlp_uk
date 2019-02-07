@@ -273,8 +273,6 @@ class TagText {
             }
 
             def str = String.format("%6d\t%d\t%d\t%s\t\t%s", v, homonimCount, posHomonimCount, homonymTokenMap[k].join(","), k)
-			printStream.println("==" + homonymTokenMap[k].join(",") + " " + k)
-			
             printStream.println(str)
         }
     }
