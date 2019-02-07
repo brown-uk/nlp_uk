@@ -14,54 +14,54 @@ import groovy.lang.Closure
 
 
 class LemmatizeText {
-	JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
+    JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
 
-	def options
-	
-	LemmatizeText(options) {
-		this.options = options
-	}
+    def options
 
-	def analyzeText(String text) {
-		List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
+    LemmatizeText(options) {
+        this.options = options
+    }
 
-		def sb = new StringBuilder()
-		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-			analyzedSentence.getTokens().each { AnalyzedTokenReadings readings->
-			    if( readings.isWhitespace() || readings.getAnalyzedToken(0).lemma == null ) {
-			        sb.append(readings.token)
-			    }
-			    else {
-			        def lemmas = options.firstLemmaOnly ? readings.readings[0].getLemma() : readings*.lemma.unique().join("|")
-			        sb.append(lemmas)
-			    }
-			}
-		}
-		return sb.toString()
-	}
+    def analyzeText(String text) {
+        List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
 
-
-	static void main(String[] argv) {
-
-		def cli = new CliBuilder()
-
-		cli.i(longOpt: 'input', args:1, required: true, 'Input file')
-		cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .lemmatized.txt)')
-		cli.f(longOpt: 'firstLemmaOnly', 'Pick first lemma for homonyms')
-		cli.q(longOpt: 'quiet', 'Less output')
-		cli.h(longOpt: 'help', 'Help - Usage Information')
+        def sb = new StringBuilder()
+        for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+            analyzedSentence.getTokens().each { AnalyzedTokenReadings readings->
+                if( readings.isWhitespace() || readings.getAnalyzedToken(0).lemma == null ) {
+                    sb.append(readings.token)
+                }
+                else {
+                    def lemmas = options.firstLemmaOnly ? readings.readings[0].getLemma() : readings*.lemma.unique().join("|")
+                    sb.append(lemmas)
+                }
+            }
+        }
+        return sb.toString()
+    }
 
 
-		def options = cli.parse(argv)
+    static void main(String[] argv) {
 
-		if (!options) {
-			System.exit(0)
-		}
+        def cli = new CliBuilder()
 
-		if ( options.h ) {
-			cli.usage()
-			System.exit(0)
-		}
+        cli.i(longOpt: 'input', args:1, required: true, 'Input file')
+        cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .lemmatized.txt)')
+        cli.f(longOpt: 'firstLemmaOnly', 'Pick first lemma for homonyms')
+        cli.q(longOpt: 'quiet', 'Less output')
+        cli.h(longOpt: 'help', 'Help - Usage Information')
+
+
+        def options = cli.parse(argv)
+
+        if (!options) {
+            System.exit(0)
+        }
+
+        if ( options.h ) {
+            cli.usage()
+            System.exit(0)
+        }
 
         // ugly way to define default value for output
         if( ! options.output ) {
@@ -74,57 +74,57 @@ class LemmatizeText {
         }
 
 
-		def nlpUk = new LemmatizeText(options)
+        def nlpUk = new LemmatizeText(options)
 
-		processByParagraph(options, { buffer->
-			return nlpUk.getAnalyzed(buffer)
-		})
-	}
+        processByParagraph(options, { buffer->
+            return nlpUk.getAnalyzed(buffer)
+        })
+    }
 
-	private getAnalyzed(String textToAnalyze) {
-	    return analyzeText(textToAnalyze)
-	}
-
-	
-	static int MAX_PARAGRAPH_SIZE =  200*1024
-	static void processByParagraph(options, Closure closure) {
-		def outputFile
-		if( options.output == "-" ) {
-			outputFile = System.out
-		}
-		else {
-			outputFile = new File(options.output)
-			outputFile.setText('')	// to clear out output file
-			outputFile = new PrintStream(outputFile)
-		}
-		
-		if( ! options.quiet && options.input == "-" ) {
-			System.err.println ("reading from stdin...")
-		}
-
-		def inputFile = options.input == "-" ? System.in : new File(options.input)
+    private getAnalyzed(String textToAnalyze) {
+        return analyzeText(textToAnalyze)
+    }
 
 
-		def buffer = new StringBuilder()
-		inputFile.eachLine('UTF-8', 0, { line ->
-			buffer.append(line).append("\n")
+    static int MAX_PARAGRAPH_SIZE =  200*1024
+    static void processByParagraph(options, Closure closure) {
+        def outputFile
+        if( options.output == "-" ) {
+            outputFile = System.out
+        }
+        else {
+            outputFile = new File(options.output)
+            outputFile.setText('')    // to clear out output file
+            outputFile = new PrintStream(outputFile)
+        }
 
-			def str = buffer.toString()
-			if( str.endsWith("\n\n") && str.trim().length() > 0
-			        || buffer.length() > MAX_PARAGRAPH_SIZE ) {
+        if( ! options.quiet && options.input == "-" ) {
+            System.err.println ("reading from stdin...")
+        }
 
-				def analyzed = closure(str)
-				outputFile.print(analyzed)
+        def inputFile = options.input == "-" ? System.in : new File(options.input)
 
-				buffer = new StringBuilder()
-			}
-		})
-		
-		if( buffer ) {
-			def analyzed = closure(buffer.toString())
-			outputFile.print(analyzed)
-		}
 
-	}
+        def buffer = new StringBuilder()
+        inputFile.eachLine('UTF-8', 0, { line ->
+            buffer.append(line).append("\n")
+
+            def str = buffer.toString()
+            if( str.endsWith("\n\n") && str.trim().length() > 0
+                    || buffer.length() > MAX_PARAGRAPH_SIZE ) {
+
+                def analyzed = closure(str)
+                outputFile.print(analyzed)
+
+                buffer = new StringBuilder()
+            }
+        })
+
+        if( buffer ) {
+            def analyzed = closure(buffer.toString())
+            outputFile.print(analyzed)
+        }
+
+    }
 
 }
