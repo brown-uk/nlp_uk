@@ -12,16 +12,23 @@ import groovy.util.ScriptException;
  *
  * compile: javac -cp ".:$GROOVY_PATH/lib/*" TagTextWrapper.java
  * run: java -cp ".:$GROOVY_PATH/lib/*" TagTextWrapper -i <filename>
+ *
+ * Note: both TagText.groovy and TextUtils.groovy must be in current directory
  */
 public class TagTextWrapper {
+    // only "." is supported for now
+    private static final String SCRIPT_DIR = ".";
 
     public static void main(String[] args) throws Exception {
 
         Binding binding = new Binding();
-        GroovyScriptEngine engine = new GroovyScriptEngine(".");
+        GroovyScriptEngine engine = new GroovyScriptEngine(SCRIPT_DIR);
 
         Class<?> clazz = engine.loadScriptByName("TagText.groovy");
 
-        clazz.getDeclaredMethod("main", String[].class).invoke(null, (Object)args);
+        for(int i=0; i<100; i++) {
+            clazz.getDeclaredMethod("main", String[].class).invoke(null, (Object)args);
+            System.out.println("Done: " + i);
+        }
     }
 }

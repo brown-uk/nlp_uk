@@ -4,6 +4,7 @@ package org.nlp_uk.tools
 
 @Grab(group='org.languagetool', module='language-uk', version='4.4')
 //@Grab(group='org.languagetool', module='language-uk', version='4.5-SNAPSHOT')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
 
 import org.languagetool.*
@@ -12,7 +13,9 @@ import org.languagetool.tagging.uk.IPOSTag
 import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
+
 import groovy.lang.Closure
+import groovy.lang.Lazy
 import groovy.transform.CompileStatic
 import groovy.xml.MarkupBuilder
 import groovy.util.Eval
@@ -21,13 +24,16 @@ import groovy.util.Eval
 class TagText {
     @groovy.transform.SourceURI
     static SOURCE_URI
-    static SCRIPT_DIR=new File(SOURCE_URI).parent
+    // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
+    static SCRIPT_DIR = SOURCE_URI.scheme == "file" ? new File(SOURCE_URI).parent : new File(".")
 
     // easy way to include a class without forcing classpath to be set
     static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text)
 
 
-    JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
+    @Lazy
+    static JLanguageTool langTool = { new MultiThreadedJLanguageTool(new Ukrainian()) }()
+
     def options
     def homonymFreqMap = [:].withDefault { 0 }
     def homonymTokenMap = [:].withDefault{ new HashSet<>() }

@@ -3,8 +3,8 @@
 package org.nlp_uk.tools
 
 @Grab(group='org.languagetool', module='language-uk', version='4.4')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
-//@Grab(group='org.codehaus.gpars', module='gpars', version='1.2.1')
 
 
 import org.languagetool.*
