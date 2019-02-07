@@ -9,10 +9,18 @@ import org.languagetool.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
 import org.languagetool.synthesis.uk.*
-
+import groovy.util.Eval
 
 
 class Inflect {
+    @groovy.transform.SourceURI
+    static SOURCE_URI
+    static SCRIPT_DIR=new File(SOURCE_URI).parent
+
+    // easy way to include a class without forcing classpath to be set
+    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text)
+
+
     UkrainianSynthesizer synth = new UkrainianSynthesizer();
 
 
@@ -22,6 +30,8 @@ class Inflect {
     }
 
     static void main(String[] argv) {
+        textUtils.warnOnWindows()
+
 
         if( argv.length != 2 ) {
             System.err.println("Використання: Inflect.groovy <lemma> <tag_regexp>")
