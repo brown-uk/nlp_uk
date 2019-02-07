@@ -272,8 +272,9 @@ class TagText {
                 homonymTokenMap[k] = homonymTokenMap[k].collect { it.toLowerCase() }.unique()
             }
 
-            def str = String.sprintf("%6d\t%d\t%d\t%s\t\t%s", v, homonimCount, posHomonimCount, homonymTokenMap[k].join(","), k)
-
+            def str = String.format("%6d\t%d\t%d\t%s\t\t%s", v, homonimCount, posHomonimCount, homonymTokenMap[k].join(","), k)
+			printStream.println("==" + homonymTokenMap[k].join(",") + " " + k)
+			
             printStream.println(str)
         }
     }
@@ -293,7 +294,7 @@ class TagText {
         unknownMap
         .sort { it.key }
         .each{ k, v ->
-            def str = String.sprintf("%6d\t%s", v, k)
+            def str = String.format("%6d\t%s", v, k)
             printStream.println(str)
         }
     }
@@ -313,7 +314,7 @@ class TagText {
         frequencyMap
         .sort { it.key }
         .each{ k, v ->
-            def str = String.sprintf("%6d\t%s", v, k)
+            def str = String.format("%6d\t%s", v, k)
             printStream.println(str)
         }
     }
@@ -333,7 +334,7 @@ class TagText {
         lemmaFrequencyMap
         .sort { it.key }
         .each{ k, v ->
-            def str = String.sprintf("%6d\t%s", v, k)
+            def str = String.format("%6d\t%s", v, k)
             printStream.println(str)
         }
     }
