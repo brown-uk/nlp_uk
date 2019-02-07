@@ -11,9 +11,18 @@ import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
 import groovy.lang.Closure
+import groovy.util.Eval
 
 
 class LemmatizeText {
+    @groovy.transform.SourceURI
+    static SOURCE_URI
+    static SCRIPT_DIR=new File(SOURCE_URI).parent
+
+    // easy way to include a class without forcing classpath to be set
+    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text)
+
+
     JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
 
     def options
@@ -40,6 +49,12 @@ class LemmatizeText {
         return sb.toString()
     }
 
+    def process() {
+        textUtils.processByParagraph(options, { buffer->
+            return analyzeText(buffer)
+        })
+    }
+
 
     static void main(String[] argv) {
 
@@ -47,7 +62,8 @@ class LemmatizeText {
 
         cli.i(longOpt: 'input', args:1, required: true, 'Input file')
         cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .lemmatized.txt)')
-        cli.f(longOpt: 'firstLemmaOnly', 'Pick first lemma for homonyms')
+        cli.f(longOpt: 'firstLemmaOnly', 'print only first lemma with first set of tags'
+            + ' (note: this mode is not recommended as first lemma/tag is almost random, this may be improved later with statistical analysis)')
         cli.q(longOpt: 'quiet', 'Less output')
         cli.h(longOpt: 'help', 'Help - Usage Information')
 
@@ -76,54 +92,7 @@ class LemmatizeText {
 
         def nlpUk = new LemmatizeText(options)
 
-        processByParagraph(options, { buffer->
-            return nlpUk.getAnalyzed(buffer)
-        })
-    }
-
-    private getAnalyzed(String textToAnalyze) {
-        return analyzeText(textToAnalyze)
-    }
-
-
-    static int MAX_PARAGRAPH_SIZE =  200*1024
-    static void processByParagraph(options, Closure closure) {
-        def outputFile
-        if( options.output == "-" ) {
-            outputFile = System.out
-        }
-        else {
-            outputFile = new File(options.output)
-            outputFile.setText('')    // to clear out output file
-            outputFile = new PrintStream(outputFile)
-        }
-
-        if( ! options.quiet && options.input == "-" ) {
-            System.err.println ("reading from stdin...")
-        }
-
-        def inputFile = options.input == "-" ? System.in : new File(options.input)
-
-
-        def buffer = new StringBuilder()
-        inputFile.eachLine('UTF-8', 0, { line ->
-            buffer.append(line).append("\n")
-
-            def str = buffer.toString()
-            if( str.endsWith("\n\n") && str.trim().length() > 0
-                    || buffer.length() > MAX_PARAGRAPH_SIZE ) {
-
-                def analyzed = closure(str)
-                outputFile.print(analyzed)
-
-                buffer = new StringBuilder()
-            }
-        })
-
-        if( buffer ) {
-            def analyzed = closure(buffer.toString())
-            outputFile.print(analyzed)
-        }
+        nlpUk.process()
 
     }
 

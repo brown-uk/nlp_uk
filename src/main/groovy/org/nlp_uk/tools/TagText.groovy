@@ -24,7 +24,7 @@ class TagText {
     static SCRIPT_DIR=new File(SOURCE_URI).parent
 
     // easy way to include a class without forcing classpath to be set
-    static nlpUtils = Eval.me(new File("$SCRIPT_DIR/NlpUtils.groovy").text)
+    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text)
 
 
     JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
@@ -372,7 +372,7 @@ class TagText {
     }
 
     def process() {
-        def outputFile = nlpUtils.processByParagraph(options, { buffer ->
+        def outputFile = textUtils.processByParagraph(options, { buffer ->
             return tagText(buffer)
         });
     }
