@@ -71,7 +71,9 @@ class TextUtils {
         // windows have non-unicode encoding set by default
         String osName = System.getProperty("os.name").toLowerCase()
         if ( osName.contains("windows")) {
-            if( ! "UTF-8".equals(System.getProperty("file.encoding")) ) {
+            if( ! "UTF-8".equals(System.getProperty("file.encoding"))
+                    || "UTF-8".equals(java.nio.charset.Charset.defaultCharset()) ) {
+                println "Input/output charset: " + java.nio.charset.Charset.defaultCharset()
                 println "On Windows to get unicode handled correctly you need to set environment variable before running expand:"
                 println "\tbash (recommended):"
                 println "\t\texport JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
