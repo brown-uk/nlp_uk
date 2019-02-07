@@ -2,7 +2,8 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='4.3')
+@Grab(group='org.languagetool', module='language-uk', version='4.4')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
 import org.languagetool.*
 import org.languagetool.language.*
@@ -15,12 +16,12 @@ class Inflect {
     UkrainianSynthesizer synth = new UkrainianSynthesizer();
 
 
-	def inflectWord(String word, String tag, boolean regexp) {
+    def inflectWord(String word, String tag, boolean regexp) {
         def token = new AnalyzedToken("", "", word);
         return synth.synthesize(token, tag, regexp);
-	}
+    }
 
-	static void main(String[] argv) {
+    static void main(String[] argv) {
 
         if( argv.length != 2 ) {
             System.err.println("Використання: Inflect.groovy <lemma> <tag_regexp>")
@@ -31,9 +32,9 @@ class Inflect {
             System.exit(1)
         }
 
-		def nlpUk = new Inflect()
+        def nlpUk = new Inflect()
 
         println nlpUk.inflectWord(argv[0], argv[1], true)
-	}
+    }
 
 }
