@@ -31,8 +31,7 @@ class TagText {
     static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text)
 
 
-    @Lazy
-    static JLanguageTool langTool = { new MultiThreadedJLanguageTool(new Ukrainian()) }()
+    JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian())
 
     def options
     def homonymFreqMap = [:].withDefault { 0 }
