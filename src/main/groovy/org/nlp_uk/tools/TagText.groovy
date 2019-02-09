@@ -43,7 +43,8 @@ class TagText {
     StringWriter writer
     MarkupBuilder xml
 
-    TagText(options) {
+
+    void setOptions(options) {
         this.options = options
 
         if( options.xmlOutput ) {
@@ -399,8 +400,7 @@ class TagText {
     }
 
 
-    static void main(String[] argv) {
-
+    static parseOptions(String[] argv) {
         def cli = new CliBuilder()
 
         cli.i(longOpt: 'input', args:1, required: true, 'Input file')
@@ -453,8 +453,17 @@ class TagText {
             }
         }
 
+        return options
+    }
 
-        def nlpUk = new TagText(options)
+
+    static void main(String[] args) {
+
+        def nlpUk = new TagText()
+
+        def options = parseOptions(args)
+
+        nlpUk.setOptions(options)
 
         nlpUk.adjustRules()
 
