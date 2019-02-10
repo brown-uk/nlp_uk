@@ -52,7 +52,7 @@ class TokenizeText {
 
     def getAnalyzed(String textToAnalyze) {
         if( options.w ) {
-            return splitWords(textToAnalyze, options.only_words)
+            return splitWords(textToAnalyze, options.onlyWords)
         }
         else {
             return splitSentences(textToAnalyze)
@@ -76,7 +76,6 @@ class TokenizeText {
             def sb = new StringBuilder()
 
             if( onlyWords ) {
-//                System.err.println( words.findAll { it.trim() && ! WORD_PATTERN.matcher(it) }.join('\n') )
                 words = words.findAll { WORD_PATTERN.matcher(it) }
 
                 sb.append(words.join(" "))
@@ -97,7 +96,7 @@ class TokenizeText {
         cli.i(longOpt: 'input', args:1, required: true, 'Input file')
         cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .tokenized.txt)')
         cli.w(longOpt: 'words', 'Tokenize into words')
-        cli.u(longOpt: 'only_words', 'Remove non-words')
+        cli.u(longOpt: 'onlyWords', 'Remove non-words (assumes "-w")')
         cli.s(longOpt: 'sentences', 'Tokenize into sentences (default)')
         cli.q(longOpt: 'quiet', 'Less output')
         cli.h(longOpt: 'help', 'Help - Usage Information')
@@ -120,6 +119,14 @@ class TokenizeText {
 
             def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tokenized.txt"
             argv2 << "-o" << outfile
+
+            options = cli.parse(argv2)
+        }
+
+        if( options.onlyWords && ! options.words ) {
+            def argv2 = new ArrayList(Arrays.asList(argv))
+
+            argv2 << "-w"
 
             options = cli.parse(argv2)
         }
