@@ -177,11 +177,11 @@ class TagText {
 
     @CompileStatic
     private static String adjustZheleh(String text) {
-        text = text.replaceAll(/([бвгґджзклмнпрстфхцчшщ])ї/, '$1і')
-        text = text.replaceAll(/([бвпмфр])([юяє])/, '$1\'$2')
-        text = text.replaceAll(/([сцз])ь([бвпмф])([ія])/, '$1$2$3')
-        text = text.replaceAll(/ь([сц])(к)/, '$1ь$2')
-        text = text.replaceAll(/-(же|ж|би|б)/, ' $1')
+        text = text.replaceAll(/(?ui)([бвгґджзклмнпрстфхцчшщ])ї/, '$1і')
+        text = text.replaceAll(/(?ui)([бвпмфр])([юяє])/, '$1\'$2')
+        text = text.replaceAll(/(?ui)([сцз])ь([бвпмф])([ія])/, '$1$2$3')
+        text = text.replaceAll(/(?ui)ь([сц])(к)/, '$1ь$2')
+        text = text.replaceAll(/(?ui)-(же|ж|би|б)/, ' $1')
     }
 
     def collectUnknown(List<AnalyzedSentence> analyzedSentences) {
