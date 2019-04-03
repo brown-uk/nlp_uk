@@ -3,7 +3,7 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='4.3')
+@Grab(group='org.languagetool', module='language-uk', version='4.5')
 
 import org.codehaus.groovy.util.StringUtil;
 import org.languagetool.*
