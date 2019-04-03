@@ -4,7 +4,7 @@ apply plugin: 'eclipse'
 
 compileJava.options.encoding = 'UTF-8'
 
-String ltVersion="4.3"
+String ltVersion="4.5"
 
 
 buildscript {
