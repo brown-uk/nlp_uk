@@ -190,7 +190,7 @@ class TagText {
                // we could also test each word against Russian dictionary but that would filter out some valid Ukrainian words too
                if( options.filterUnknown ) {
                    def unknownBad = analyzedSentence.getTokensWithoutWhitespace()[1..-1].find { AnalyzedTokenReadings tokenReadings ->
-                       tokenReadings.getToken() =~ /[ыэъё]|ие/
+                       tokenReadings.getToken() =~ /[ыэъё]|и[еи]/
                    }
                    if( unknownBad )
                        continue
