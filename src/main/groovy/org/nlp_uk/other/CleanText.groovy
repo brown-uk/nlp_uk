@@ -14,6 +14,7 @@
 
 @Grab(group='org.languagetool', module='language-uk', version='4.5')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
 
 import java.util.regex.Pattern

@@ -4,6 +4,7 @@
 package org.nlp_uk.tools
 
 @Grab(group='org.languagetool', module='language-uk', version='4.5')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
 import org.codehaus.groovy.util.StringUtil;
 import org.languagetool.*
