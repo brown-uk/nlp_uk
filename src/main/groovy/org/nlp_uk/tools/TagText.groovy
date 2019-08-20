@@ -3,9 +3,10 @@
 package org.nlp_uk.tools
 
 @Grab(group='org.languagetool', module='language-uk', version='4.6')
-//@Grab(group='org.languagetool', module='language-uk', version='4.7-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='commons-cli', module='commons-cli', version='1.3')
+
+import java.util.regex.Pattern
 
 import org.languagetool.*
 import org.languagetool.rules.*
@@ -29,7 +30,8 @@ class TagText {
 
     // easy way to include a class without forcing classpath to be set
     static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text)
-
+	
+	static PUNCT_PATTERN = Pattern.compile(/[\p{Punct}«»„“…—–]+/) 
 
     JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian())
 
@@ -60,10 +62,11 @@ class TagText {
         def sb = new StringBuilder()
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
             if( options.xmlOutput ) {
-                def tokens = analyzedSentence.getTokensWithoutWhitespace()
-                xml.'sentence'() {
+                AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
+                
+				xml.'sentence'() {
 
-                tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
+					tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
 
                         if( tokenReadings.isLinebreak() ) {
                             def nonEndTagToken = tokenReadings.find {
@@ -73,46 +76,21 @@ class TagText {
                             if( nonEndTagToken == null )
                                 return
                         }
+						
+						if( tokenReadings.isPosTagUnknown() ) {
+							if( isZheleh(options) ) {
+								tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
+							}
+						}
 
-                        AnalyzedToken origAnalyzedToken = tokenReadings.getReadings().get(0)
-
-                        if( isZheleh(options) ) {
-                            boolean syaIsNext = idx < tokens.size()-2 && tokens[idx+2].getToken() == 'ся'
-
-                            if( ( tokenReadings.isPosTagUnknown() || syaIsNext ) 
-                                    && origAnalyzedToken.token =~ /[а-яіїєґА-ЯІЇЄҐ]/ ) {
-
-                                String adjustedToken = adjustZheleh(origAnalyzedToken.token)
-
-                                if( syaIsNext ) {
-                                    tokenReadings = langTool.getLanguage().getTagger().tag([adjustedToken + 'ся']).get(0)
-//                                    println "trying verb:rev $adjustedToken " + tokenReadings.getReadings()
-                                }
-
-                                if( tokenReadings.isPosTagUnknown() ) {
-                                    tokenReadings = langTool.getLanguage().getTagger().tag([adjustedToken]).get(0)
-                                }
-
-                                // put back original word
-                                for(int i=0; i<tokenReadings.getReadings().size(); i++) {
-                                    AnalyzedToken token = tokenReadings.getReadings().get(i);
-
-                                    def posTag = token.posTag
-
-                                    tokenReadings.getReadings().set(i, new AnalyzedToken(origAnalyzedToken.token, posTag, token.lemma))
-                                }
-                            }
-                        }
-
-
-                        'tokenReading'() {
+						'tokenReading'() {
 
                             List<AnalyzedToken> tokenReadings2 = tokenReadings.getReadings()
 
                             tokenReadings2.each { AnalyzedToken tkn ->
 
-                                if( tkn.getToken() ==~ /[\p{Punct}«»„“…—–]+/ ) {
-                                    'token'('value': tkn.getToken(), 'whitespaceBefore': tkn.isWhitespaceBefore() )
+                                if( PUNCT_PATTERN.matcher(tkn.getToken()).matches() ) {
+                                    'token'('value': tkn.getToken(), 'tags': 'punct', 'whitespaceBefore': tkn.isWhitespaceBefore() )
                                 }
                                 else {
                                     String posTag = tkn.getPOSTag()
@@ -184,6 +162,40 @@ class TagText {
         text = text.replaceAll(/(?ui)-(же|ж|би|б)/, ' $1')
     }
 
+    @CompileStatic
+	AnalyzedTokenReadings adjustTokensWithZheleh(AnalyzedTokenReadings tokenReadings, AnalyzedTokenReadings[] tokens, int idx) {
+		AnalyzedToken origAnalyzedToken = tokenReadings.getReadings().get(0)
+		boolean syaIsNext = idx < tokens.size()-2 && tokens[idx+2].getToken() == 'ся'
+
+		if( ( tokenReadings.isPosTagUnknown() || syaIsNext )
+			&& origAnalyzedToken.token =~ /[а-яіїєґА-ЯІЇЄҐ]/ ) {
+
+			String adjustedToken = adjustZheleh(origAnalyzedToken.token)
+
+			if( syaIsNext ) {
+				tokenReadings = langTool.getLanguage().getTagger().tag([adjustedToken + 'ся']).get(0)
+				//                                    println "trying verb:rev $adjustedToken " + tokenReadings.getReadings()
+			}
+
+			if( tokenReadings.isPosTagUnknown() ) {
+				tokenReadings = langTool.getLanguage().getTagger().tag([adjustedToken]).get(0)
+			}
+
+			// put back original word
+			for(int i=0; i<tokenReadings.getReadings().size(); i++) {
+				AnalyzedToken token = tokenReadings.getReadings().get(i);
+
+				String posTag = token.getPOSTag()
+
+				tokenReadings.getReadings().set(i, new AnalyzedToken(origAnalyzedToken.token, posTag, token.lemma))
+			}
+		}
+
+		return tokenReadings
+	}
+	
+	
+	
     def collectUnknown(List<AnalyzedSentence> analyzedSentences) {
            for (AnalyzedSentence analyzedSentence : analyzedSentences) {
                // if any words contain Russian sequence filter out the whole sentence - this removes tons of Russian words from our unknown list
