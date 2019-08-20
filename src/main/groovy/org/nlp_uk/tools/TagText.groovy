@@ -57,13 +57,18 @@ class TagText {
 
 
     def tagText(String text) {
+        // TEMPORARY WORKAROUND FOR BUG IN LT 4.6
+        if( text.contains("-\u2013") {
+            text = text.replace("-\u2013", "--")
+        }
+
         List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
 
         def sb = new StringBuilder()
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
             if( options.xmlOutput ) {
                 AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
-                
+
 				xml.'sentence'() {
 
 					tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
