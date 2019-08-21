@@ -30,8 +30,9 @@ class TagText {
 
     // easy way to include a class without forcing classpath to be set
     static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text)
-	
-	static PUNCT_PATTERN = Pattern.compile(/[\p{Punct}«»„“…—–]+/) 
+
+    static PUNCT_PATTERN = Pattern.compile(/[\p{Punct}«»„“…—–]+/)
+    static LATIN_WORD_PATTERN = Pattern.compile(/\p{IsLatin}+/)
 
     JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian())
 
@@ -58,7 +59,7 @@ class TagText {
 
     def tagText(String text) {
         // TEMPORARY WORKAROUND FOR BUG IN LT 4.6
-        if( text.contains("-\u2013") {
+        if( text.contains("-\u2013") ) {
             text = text.replace("-\u2013", "--")
         }
 
@@ -81,14 +82,14 @@ class TagText {
                             if( nonEndTagToken == null )
                                 return
                         }
-						
+
 						if( tokenReadings.isPosTagUnknown() ) {
 							if( isZheleh(options) ) {
 								tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
 							}
 						}
 
-						'tokenReading'() {
+                        'tokenReading'() {
 
                             List<AnalyzedToken> tokenReadings2 = tokenReadings.getReadings()
 
@@ -96,6 +97,9 @@ class TagText {
 
                                 if( PUNCT_PATTERN.matcher(tkn.getToken()).matches() ) {
                                     'token'('value': tkn.getToken(), 'tags': 'punct', 'whitespaceBefore': tkn.isWhitespaceBefore() )
+                                }
+                                else if( tokenReadings.isPosTagUnknown() && LATIN_WORD_PATTERN.matcher(tkn.getToken()).matches() ) {
+                                    'token'('value': tkn.getToken(), 'tags': 'noninfl:foreign' )
                                 }
                                 else {
                                     String posTag = tkn.getPOSTag()
