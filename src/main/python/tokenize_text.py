@@ -18,11 +18,7 @@ if len(sys.argv) > 1:
         in_txt = a_file.read()
 else:
     print("Usage: " + sys.argv[0] + " <inputfile>", file=sys.stderr)
-    print("Using sample text...", file=sys.stderr)
-    in_txt = 'Ми ходили туди-сюди.'
-
-
-
+    sys.exit(1)
 
 
 def print_output(p):

@@ -11,17 +11,16 @@ import subprocess
 import threading
 
 ENCODING='utf-8'
+SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
+
 
 
 if len(sys.argv) > 1:
     with open(sys.argv[1], encoding=ENCODING) as a_file:
         in_txt = a_file.read()
 else:
-    print("Usage: " + sys.argv[0] + " <inputfile>", file=sys.stderr)
-    print("Using sample text...", file=sys.stderr)
-    in_txt = 'Ми ходили туди-сюди.'
-
-
+    print("Usage: " + sys.argv[0] + " <inputfile> [-f]", file=sys.stderr)
+    sys.exit(1)
 
 
 
@@ -39,7 +38,10 @@ my_env["JAVA_TOOL_OPTIONS"] = "-Dfile.encoding=UTF-8"
 
 
 groovy_cmd = 'groovy.bat' if sys.platform == "win32" else 'groovy'
-cmd = [groovy_cmd, 'TagText.groovy', '-i', '-', '-o', '-', '-q']
+cmd = [groovy_cmd, SCRIPT_PATH + '/TagText.groovy', '-i', '-', '-o', '-', '-q']
+if '-f' in sys.argv:
+    cmd.append('-f')
+
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
 
 threading.Thread(target=print_output, args=(p,)).start()
