@@ -11,6 +11,7 @@ import subprocess
 import threading
 
 ENCODING='utf-8'
+SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
 
 
 if len(sys.argv) > 1:
@@ -36,7 +37,7 @@ my_env["JAVA_TOOL_OPTIONS"] = "-Dfile.encoding=UTF-8"
 
 
 groovy_cmd = 'groovy.bat' if sys.platform == "win32" else 'groovy'
-cmd = [groovy_cmd, 'TokenizeText.groovy', '-i', '-', '-o', '-', '-w', '-u', '-q']
+cmd = [groovy_cmd, SCRIPT_PATH + '/TokenizeText.groovy', '-i', '-', '-o', '-', '-w', '-u', '-q']
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
 
 threading.Thread(target=print_output, args=(p,)).start()
