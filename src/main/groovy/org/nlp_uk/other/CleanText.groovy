@@ -12,7 +12,7 @@
 
 //package org.nlp_uk.other
 
-@Grab(group='org.languagetool', module='language-uk', version='4.5')
+@Grab(group='org.languagetool', module='language-uk', version='4.7')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
