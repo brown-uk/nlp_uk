@@ -14,14 +14,17 @@ ENCODING='utf-8'
 SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
 
 
+in_txt = None
 
-if len(sys.argv) > 1:
-    with open(sys.argv[1], encoding=ENCODING) as a_file:
-        in_txt = a_file.read()
-else:
-    print("Usage: " + sys.argv[0] + " <inputfile> [-f]", file=sys.stderr)
+for arg in sys.argv[1:]:
+    if not arg.startswith('-'):
+        with open(arg, encoding=ENCODING) as a_file:
+            in_txt = a_file.read()
+        break
+
+if not in_txt:
+    print("Usage: " + sys.argv[0] + " [-f] <inputfile>", file=sys.stderr)
     sys.exit(1)
-
 
 
 def print_output(p):
