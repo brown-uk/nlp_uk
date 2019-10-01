@@ -10,6 +10,7 @@ import sys
 import subprocess
 import threading
 
+SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
 ENCODING='utf-8'
 SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
 

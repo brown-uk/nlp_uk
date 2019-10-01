@@ -42,6 +42,7 @@ my_env["JAVA_TOOL_OPTIONS"] = "-Dfile.encoding=UTF-8"
 
 groovy_cmd = 'groovy.bat' if sys.platform == "win32" else 'groovy'
 cmd = [groovy_cmd, SCRIPT_PATH + '/TagText.groovy', '-i', '-', '-o', '-', '-q']
+
 if '-f' in sys.argv:
     cmd.append('-f')
 
