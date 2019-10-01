@@ -2,9 +2,9 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='4.6')
+@Grab(group='org.languagetool', module='language-uk', version='4.7')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
-@Grab(group='commons-cli', module='commons-cli', version='1.3')
+@Grab(group='commons-cli', module='commons-cli', version='1.4')
 
 import java.util.regex.Pattern
 
@@ -58,11 +58,6 @@ class TagText {
 
 
     def tagText(String text) {
-        // TEMPORARY WORKAROUND FOR BUG IN LT 4.6
-        if( text.contains("-\u2013") ) {
-            text = text.replace("-\u2013", "--")
-        }
-
         List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
 
         def sb = new StringBuilder()
