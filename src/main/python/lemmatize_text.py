@@ -28,12 +28,13 @@ if not in_txt:
 
 
 def print_output(p):
-
-#    error_txt = p.stderr.read().decode(ENCODING)
-#    if error_txt:
-#        print("stderr: ", error_txt, "\n", file=sys.stderr)
-
     print("output: ", p.stdout.read().decode(ENCODING))
+
+def print_error(p):
+    error_txt = p.stderr.read().decode(ENCODING)
+    if error_txt:
+        print("stderr: ", error_txt, "\n", file=sys.stderr)
+
 
 # technically only needed on Windows
 my_env = os.environ.copy()
@@ -49,7 +50,7 @@ if '-f' in sys.argv:
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
 
 threading.Thread(target=print_output, args=(p,)).start()
-
+threading.Thread(target=print_error, args=(p,)).start()
 
 
 p.stdin.write(in_txt.encode(ENCODING))
