@@ -9,6 +9,8 @@ import os
 import sys
 import subprocess
 import threading
+import argparse
+
 
 ENCODING='utf-8'
 SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
@@ -16,15 +18,19 @@ SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
 
 in_txt = None
 
-for arg in sys.argv[1:]:
-    if not arg.startswith('-'):
-        with open(arg, encoding=ENCODING) as a_file:
-            in_txt = a_file.read()
-        break
+in_txt = None
 
-if not in_txt:
-    print("Usage: " + sys.argv[0] + " [-f] <inputfile>", file=sys.stderr)
-    sys.exit(1)
+parser = argparse.ArgumentParser()
+parser.add_argument("-v", help="Verbose",  action="store_true")
+parser.add_argument("-f", help="Pick first lemma",  action="store_true")
+parser.add_argument("input_file", default=None, type=str, help="Input file")
+parser.add_argument("-o", "--output_file", default=None, type=str, help="Output file")
+
+args = parser.parse_args()
+
+
+with open(args.input_file, encoding=ENCODING) as a_file:
+    in_txt = a_file.read()
 
 
 def print_output(p):
@@ -42,10 +48,23 @@ my_env["JAVA_TOOL_OPTIONS"] = "-Dfile.encoding=UTF-8"
 
 
 groovy_cmd = 'groovy.bat' if sys.platform == "win32" else 'groovy'
-cmd = [groovy_cmd, SCRIPT_PATH + '/LemmatizeText.groovy', '-i', '-', '-o', '-', '-q']
+cmd = [groovy_cmd, SCRIPT_PATH + '/LemmatizeText.groovy', '-i', '-']
 
-if '-f' in sys.argv:
+if args.f:
     cmd.append('-f')
+
+if args.output_file:
+    cmd.append('-o')
+    cmd.append(args.output_file)
+else:
+    cmd.append('-o')
+    cmd.append('-')
+
+if args.v:
+    print('Running: ' + str(cmd))
+else:
+    cmd.append('-q')
+
 
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
 

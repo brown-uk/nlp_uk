@@ -9,18 +9,26 @@ import os
 import sys
 import subprocess
 import threading
+import argparse
+
 
 SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
 ENCODING='utf-8'
 SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
 
 
-if len(sys.argv) > 1:
-    with open(sys.argv[1], encoding=ENCODING) as a_file:
-        in_txt = a_file.read()
-else:
-    print("Usage: " + sys.argv[0] + " <inputfile>", file=sys.stderr)
-    sys.exit(1)
+in_txt = None
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-v", help="Verbose",  action="store_true")
+parser.add_argument("input_file", default=None, type=str, help="Input file")
+parser.add_argument("-o", "--output_file", default=None, type=str, help="Output file")
+
+args = parser.parse_args()
+
+
+with open(args.input_file, encoding=ENCODING) as a_file:
+    in_txt = a_file.read()
 
 
 def print_output(p):
@@ -38,7 +46,22 @@ my_env["JAVA_TOOL_OPTIONS"] = "-Dfile.encoding=UTF-8"
 
 
 groovy_cmd = 'groovy.bat' if sys.platform == "win32" else 'groovy'
-cmd = [groovy_cmd, SCRIPT_PATH + '/TokenizeText.groovy', '-i', '-', '-o', '-', '-w', '-u', '-q']
+cmd = [groovy_cmd, SCRIPT_PATH + '/TokenizeText.groovy', '-i', '-', '-w', '-u']
+
+
+if args.output_file:
+    cmd.append('-o')
+    cmd.append(args.output_file)
+else:
+    cmd.append('-o')
+    cmd.append('-')
+
+if args.v:
+    print('Running: ' + str(cmd))
+else:
+    cmd.append('-q')
+
+
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
 
 threading.Thread(target=print_output, args=(p,)).start()
