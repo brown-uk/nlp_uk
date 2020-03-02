@@ -12,7 +12,7 @@
 
 //package org.nlp_uk.other
 
-@Grab(group='org.languagetool', module='language-uk', version='4.7')
+@Grab(group='org.languagetool', module='language-uk', version='4.8')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
@@ -261,7 +261,7 @@ class CleanText {
         text = text.replace('\u201A', ',')
 
         // fix weird apostrophes
-        text = text.replaceAll(/([бпвмфгґкхжчшр])[\"\u201D\u201F\u0022\u2018´`*]([єїюя])/, /$1'$2/) // "
+        text = text.replaceAll(/([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384´`?*]([єїюя])/, /$1'$2/) // "
 
         text = removeSoftHyphens(text)
 
