@@ -223,11 +223,9 @@ class CleanText {
 
             println "\tGOOD: $file.name\n"
 
-            if( outDir ) {
-                outFilename = "$outDir/$file.name"
-            }
-            new File(outFilename).text = text
-            
+            def outFilename2 = outDir ? "$outDir/$file.name" : outFilename
+            new File(outFilename2).text = text
+
             if( options.parallel ) {
                 out.get().flush()
                 System.out.println(outSw.get().toString("UTF-8"))
@@ -240,10 +238,13 @@ class CleanText {
     String removeSoftHyphens(String text) {
         if( text.contains("\u00AD") ) {
             println "\tremoving soft hyphens: "
-            text = text.replaceAll(/[ \t]*\u00AD[ \t]*([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, '$1$2')
+//            text = text.replaceAll(/[ \t]*\u00AD[ \t]*([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, '$1$2')
 //            text = text.replaceAll(/\u00AD(?!\n {10,}[А-ЯІЇЄҐ])(\n?[ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, '$2$3$1')
-            text = text.replaceAll(/([а-яіїєґa-z])\u00AD(\n[ \t]*)([а-яіїєґa-z'ʼ’-]+)([,;.!?])?/, '$1$3$4$2')
-            text = text.replaceAll(/([А-ЯІЇЄҐA-Z])\u00AD(\n[ \t]*)([А-ЯІЇЄҐA-Z'ʼ’-]+)([,;.!?])?/, '$1$3$4$2')
+            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐa-zA-Z])\u00AD+(\n[ \t]*)([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’-]+)([,;.!?])?/, '$1$3$4$2')
+            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐa-zA-Z:. ])\u00AD+([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’ -])/, '$1$2')
+//            text = text.replaceAll(/(?i)([А-ЯІЇЄҐ:. ])\u00AD+([А-ЯІЇЄҐ'ʼ’ -])/, '$1$2')
+//            text = text.replaceAll(/([А-ЯІЇЄҐA-Z])\u00AD(\n[ \t]*)([А-ЯІЇЄҐA-Z'ʼ’-]+)([,;.!?])?/, '$1$3$4$2')
+           // text = text.replace('\u00AD', '-')
         }
         return text
     }
