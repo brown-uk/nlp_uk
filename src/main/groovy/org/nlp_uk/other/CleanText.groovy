@@ -185,7 +185,6 @@ class CleanText {
             processFiles(files, null, outputFilename)
         }
 
-        
         return 0
     }
 
@@ -194,7 +193,7 @@ class CleanText {
         def stream = options.parallel ? files.parallelStream() : files.stream()
 
         if( options.parallel ) {
-            println "Cleaning files in parallel"
+            println "Cleaning files in parallel, ${files.size()} files"
 //            System.out = new PrintStream(new File('clean_text.out'))
         }
         else {
@@ -203,7 +202,7 @@ class CleanText {
 
         stream.forEach{ file ->
             if( options.parallel ) {
-                def byteStream = new ByteArrayOutputStream();
+                def byteStream = new ByteArrayOutputStream()
                 outSw.set(byteStream)
                 out.set(new PrintStream(byteStream))
             }
@@ -213,12 +212,22 @@ class CleanText {
             String text = file.text
 
             text = cleanUp(text, file, options)
-            if( ! text )
+            if( ! text ) {
+                if( options.parallel ) {
+                    out.get().flush()
+                    System.out.println(outSw.get().toString("UTF-8"))
+                }
                 return
+            }
 
             // NOTE: only counting words with 2 or more letters to filter out noised texts
-            if( ! verifyWordCounts(text, minUkrWordCount) )
+            if( ! verifyWordCounts(text, minUkrWordCount) ) {
+                if( options.parallel ) {
+                    out.get().flush()
+                    System.out.println(outSw.get().toString("UTF-8"))
+                }
                 return
+            }
 
 
             println "\tGOOD: $file.name\n"
@@ -233,8 +242,8 @@ class CleanText {
         }
 
     }
-    
-    
+
+
     String removeSoftHyphens(String text) {
         if( text.contains("\u00AD") ) {
             println "\tremoving soft hyphens: "
@@ -260,6 +269,10 @@ class CleanText {
 
         // SINGLE LOW-9 QUOTATION MARK sometimes used as a comma
         text = text.replace('\u201A', ',')
+
+        // weird ї and й via combining characters
+        text = text.replaceAll(/[іi]\u0308/, 'ї')
+        text = text.replace(/и\u0306/, 'й')
 
         // fix weird apostrophes
         text = text.replaceAll(/([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384´`?*]([єїюя])/, /$1'$2/) // "
