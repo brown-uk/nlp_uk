@@ -96,7 +96,12 @@ class CleanText {
         }
         println "Min Word limit: $minUkrWordCount"
     }
-    
+
+    void debug(str) {
+        if( options.debug ) {
+            println "\tDEBUG: $str"
+        }
+    }
 
     static int main(String[] args) {
 
@@ -109,6 +114,7 @@ class CleanText {
         cli.p(longOpt: 'parallel', 'Process files in parallel')
         cli.i(longOpt: 'input', args:1, required: false, 'Input file')
         cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: input file with .out added before extention')
+        cli.d(longOpt: 'debug', required: false, 'Debug output')
         cli.h(longOpt: 'help', 'Help - Usage Information')
         cli._(longOpt: 'dir', args:1, 'Directory to process *.txt in (default: txt/)')
 
@@ -275,7 +281,7 @@ class CleanText {
         text = text.replace(/и\u0306/, 'й')
 
         // fix weird apostrophes
-        text = text.replaceAll(/([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384´`?*]([єїюя])/, /$1'$2/) // "
+        text = text.replaceAll(/([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384\u0092´`?*]([єїюя])/, /$1'$2/) // "
 
         text = removeSoftHyphens(text)
 
@@ -346,25 +352,29 @@ class CleanText {
 
         // exclusively cyrillic letter followed by latin looking like cyrillic
 
-        text = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
+        text = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
+            debug "mix: 1.1"
             count1 += 1
             cyr + latToCyrMap[lat]
         })
 
         // exclusively cyrillic letter preceeded by latin looking like cyrillic
 
-        text = text.replaceAll(/(?i)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
+        text = text.replaceAll(/([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
+            debug "mix: 1.2"
             count1 += 1
             latToCyrMap[lat] + cyr
         })
 
 
         text = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
+            debug "mix: 1.3"
             count2 += 2
             lat + cyrToLatMap[cyr]
         })
 
         text = text.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
+            debug "mix: 1.4"
             count2 += 2
             cyrToLatMap[cyr] + lat
         })
