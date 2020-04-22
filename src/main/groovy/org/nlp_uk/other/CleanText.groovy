@@ -521,6 +521,11 @@ class CleanText {
             println "\tsuspect word wraps"
             def cnt = 0
             int cntWithHyphen = 0
+
+            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ-]+)-\n([ \t]*)([«„"][а-яіїєґ'ʼ’-]+[»“"])([,;.!?])?/, { List<String> it ->
+                it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
+            })
+
             text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { List<String> it ->
 
                 //            println "== " + (it[1] + "-" + it[3]) + ", known: " + knownWord(it[1] + "-" + it[3])
