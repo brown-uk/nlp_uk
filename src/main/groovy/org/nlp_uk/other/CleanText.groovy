@@ -114,6 +114,7 @@ class CleanText {
         cli.p(longOpt: 'parallel', 'Process files in parallel')
         cli.i(longOpt: 'input', args:1, required: false, 'Input file')
         cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: input file with .out added before extention')
+        cli.r(longOpt: 'recursive', required: false, 'Process directories recursively')
         cli.d(longOpt: 'debug', required: false, 'Debug output')
         cli.h(longOpt: 'help', 'Help - Usage Information')
         cli._(longOpt: 'dir', args:1, 'Directory to process *.txt in (default: txt/)')
@@ -137,44 +138,24 @@ class CleanText {
     void println(String txt) {
         out.get().println(txt)
     }
-    
-    
-    int process() {
 
-        def files
+
+    int process() {
 
         if( ! options.input ) {
 
-            def dir = options.dir ? options.dir : "txt"
+            def dir = options.dir ? options.dir : "."
 
-            def outDir
-            outDir = "$dir/good"
+			File baseDir = new File(dir)
+			processDir(baseDir, baseDir)
 
-            def outDirFile = new File(outDir)
-            if( ! outDirFile.isDirectory() ) {
-                System.err.println "Output dir $outDir does not exists"
-                return 1
-            }
-
-            if( outDirFile.listFiles(new FilenameFilter() {
-                public boolean accept(File idir, String name) {
-                    return name.toLowerCase().endsWith(".txt");
-                }
-            }).size() > 0 ) {
-
-                if( options.clean ) {
-                    println "Removing *.txt files from $outDir"
-                    "rm -f ${outDirFile.path}/*.txt".execute()
-                }
-                else {
-                    System.err.println "Output dir $outDir has (old) .txt files (rerun with --clean if you want to remove those files)"
-                    return 1
-                }
-            }
-
-            files = new File(dir).listFiles().findAll { file-> file.name.endsWith(".txt") }
-
-            processFiles(files, outDir, null)
+			if( options.recursive ) {
+				baseDir.traverse(type: groovy.io.FileType.DIRECTORIES) { File it ->
+					if( it.name != "good" ) {
+						processDir(baseDir, it)
+					}
+				}
+			}
         }
         else {
             def inputFilename = options.input
@@ -186,7 +167,7 @@ class CleanText {
                 outFile.delete()
             }
 
-            files = [ new File(inputFilename) ]
+            def files = [ new File(inputFilename) ]
 
             processFiles(files, null, outputFilename)
         }
@@ -194,13 +175,54 @@ class CleanText {
         return 0
     }
 
+	private processDir(File baseDir, File dir) {
+		println "Processing ${dir.path}"
+		
+		def files = dir.listFiles().findAll { file-> file.name.endsWith(".txt") }
+
+		if( files.isEmpty() ) {
+			println "No *.txt files skipping"
+			return
+		}
+		
+		def outDirName = baseDir.path + "/good" + (dir.canonicalPath - baseDir.canonicalPath)
+
+		def outDirFile = new File(outDirName)
+		outDirFile.mkdirs()
+
+		if( ! outDirFile.isDirectory() ) {
+			System.err.println "Output dir $outDirName does not exists"
+			return 1
+		}
+
+		def prevFiles = outDirFile.listFiles(new FilenameFilter() {
+			public boolean accept(File idir, String name) {
+				return name.toLowerCase().endsWith(".txt");
+			}
+		})
+		if( prevFiles.size() > 0 ) {
+			if( options.clean ) {
+				println "Removing *.txt files from $outDirName"
+				prevFiles.eachFile { f->
+					f.delete()
+				}
+			}
+			else {
+				System.err.println "Output dir $outDirName has (old) .txt files (rerun with --clean if you want to remove those files)"
+				return 1
+			}
+		}
+
+
+		processFiles(files, outDirName, null)
+	}
+
     void processFiles(files, outDir, outFilename) {
         
         def stream = options.parallel ? files.parallelStream() : files.stream()
 
         if( options.parallel ) {
             println "Cleaning files in parallel, ${files.size()} files"
-//            System.out = new PrintStream(new File('clean_text.out'))
         }
         else {
             out.set(System.out)

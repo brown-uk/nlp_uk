@@ -22,5 +22,9 @@ class CleanTextTest extends GroovyTestCase {
 
         assertEquals "on throughпортал в", clean("on throughпортал в")
 
+        assertEquals "урахування\n", clean("ураху-\nвання")
+
+        assertEquals "екс-«депутат»\n", clean("екс-\n«депутат»")
+
     }
 }
