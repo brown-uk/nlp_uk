@@ -12,6 +12,7 @@
 
 //package org.nlp_uk.other
 
+@Grab(group='org.languagetool', module='language-uk', version='5.0-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-uk', version='4.9')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
@@ -19,6 +20,7 @@
 
 import java.util.regex.Pattern
 import groovy.transform.Field
+import groovy.io.FileVisitResult
 import groovy.transform.CompileStatic
 import org.apache.commons.cli.Options
 import org.languagetool.tagging.uk.*
@@ -147,15 +149,28 @@ class CleanText {
             def dir = options.dir ? options.dir : "."
 
 			File baseDir = new File(dir)
-			processDir(baseDir, baseDir)
+//			processDir(baseDir, baseDir)
+			def files = []
+			
+			int maxDepth_ = options.recursive ? -1 : 0;
+				
+			baseDir.traverse(type: groovy.io.FileType.FILES, 
+				maxDepth: maxDepth_,
+				preDir       : { if (it.name == 'good') return FileVisitResult.SKIP_SUBTREE },
+				) { File it ->
+//				if( it.isDirectory() && it.name == "good" )
+//					return FileVisitResult.SKIP_SUBTREE
 
-			if( options.recursive ) {
-				baseDir.traverse(type: groovy.io.FileType.DIRECTORIES) { File it ->
-					if( it.name != "good" ) {
-						processDir(baseDir, it)
-					}
+				if( it.name.endsWith(".txt") ) {
+					files << it
 				}
 			}
+			
+			println "Found ${files.size} txt files"
+			
+			def outDirName = prepareDir(baseDir)
+			
+			processFiles(files, baseDir, null)
         }
         else {
             def inputFilename = options.input
@@ -171,22 +186,16 @@ class CleanText {
 
             processFiles(files, null, outputFilename)
         }
+        
+        println "Done!"
 
         return 0
     }
 
-	private processDir(File baseDir, File dir) {
-		println "Processing ${dir.path}"
-		
-		def files = dir.listFiles().findAll { file-> file.name.endsWith(".txt") }
+	private prepareDir(File baseDir) {
+//		def outDirName = baseDir.path + "/good" + (dir.canonicalPath - baseDir.canonicalPath)
 
-		if( files.isEmpty() ) {
-			println "No *.txt files skipping"
-			return
-		}
-		
-		def outDirName = baseDir.path + "/good" + (dir.canonicalPath - baseDir.canonicalPath)
-
+		def outDirName = baseDir.path + "/good"
 		def outDirFile = new File(outDirName)
 		outDirFile.mkdirs()
 
@@ -195,37 +204,34 @@ class CleanText {
 			return 1
 		}
 
-		def prevFiles = outDirFile.listFiles(new FilenameFilter() {
-			public boolean accept(File idir, String name) {
-				return name.toLowerCase().endsWith(".txt");
-			}
-		})
+		def prevFiles = outDirFile.list()
+
 		if( prevFiles.size() > 0 ) {
 			if( options.clean ) {
-				println "Removing *.txt files from $outDirName"
-				prevFiles.eachFile { f->
-					f.delete()
+				println "Removing files from $outDirName"
+				prevFiles.each { String f->
+					new File(f).delete()
 				}
 			}
 			else {
-				System.err.println "Output dir $outDirName has (old) .txt files (rerun with --clean if you want to remove those files)"
+				System.err.println "Output dir $outDirName is not empty (rerun with --clean if you want to remove those files)"
 				return 1
 			}
 		}
 
-
-		processFiles(files, outDirName, null)
+		return outDirName
 	}
 
-    void processFiles(files, outDir, outFilename) {
+    void processFiles(files, baseDir, outFilename) {
         
         def stream = options.parallel ? files.parallelStream() : files.stream()
 
         if( options.parallel ) {
-            println "Cleaning files in parallel, ${files.size()} files"
+            println "Cleaning ${files.size()} files in parallel"
         }
         else {
             out.set(System.out)
+            println "Cleaning ${files.size()} files"
         }
 
         stream.forEach{ file ->
@@ -258,10 +264,19 @@ class CleanText {
             }
 
 
-            println "\tGOOD: $file.name\n"
+//            println "\tGOOD: $file.name\n"
 
-            def outFilename2 = outDir ? "$outDir/$file.name" : outFilename
-            new File(outFilename2).text = text
+
+			if( outFilename == null ) {
+				def outDirName = baseDir.canonicalPath + "/good/"
+				new File(outDirName).mkdirs()
+				def outFilename2 = (file.canonicalPath.replaceFirst(baseDir.canonicalPath, outDirName))
+				new File(new File(outFilename2).getParent()).mkdirs()
+			    new File(outFilename2).text = text
+			}
+            else {
+			    new File(outFilename).text = text
+			}
 
             if( options.parallel ) {
                 out.get().flush()
@@ -289,6 +304,10 @@ class CleanText {
     
     //@CompileStatic
     String cleanUp(String text, File file, def options) {
+        if( file.bytes[0..3] == [0x50, 0x4B, 0x03, 0x04] ) {
+            println "\tERROR: found zip file, possibly Word?"
+            return null
+        }
 
         text = fixEncoding(text, file)
         if( ! text )
@@ -317,9 +336,22 @@ class CleanText {
             return null
 
 
-        if( ! options.allowTwoColumns && text =~ /[а-яїієґ]-  +[а-яіїєґ].{4}/ ) {
-            println "\tERROR: two columns detected, skipping..."
-            return null
+        if( ! options.allowTwoColumns ) {
+//			if( "    " in text ) {
+//				def lines = text.split("\n")
+//				def twoColumnLines = lines.findAll()
+//				def matcher = text =~ /(?iu)(.*?[а-яїієґ] {4,})[а-яіїєґ].{4}/
+//				matcher.find()
+//				def matchSize = matcher.size()
+//				if( matchSize >= 5
+//				&& matchSize > text.count("\n") * 3 / 4
+//				&& matcher[0][1].length() == matcher[2][1].length()
+//				&& matcher[0][1].length() == matcher[4][1].length() ) {
+//					println "\tERROR: two columns detected, skipping...:"
+//					println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
+//					return null
+//				}
+//			}
         }
 
         if( options.modules ) {
