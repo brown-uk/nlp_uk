@@ -23,6 +23,7 @@ import groovy.transform.Field
 import groovy.io.FileVisitResult
 import groovy.transform.CompileStatic
 import org.apache.commons.cli.Options
+import org.apache.commons.lang3.ArrayUtils
 import org.languagetool.tagging.uk.*
 import org.languagetool.*
 //import org.nlp_uk.other.CleanTextNanu
@@ -304,15 +305,23 @@ class CleanText {
     
     //@CompileStatic
     String cleanUp(String text, File file, def options) {
-        if( file.bytes[0..3] == [0x50, 0x4B, 0x03, 0x04] ) {
+        if( file.length() > 100 && file.bytes[0..3] == [0x50, 0x4B, 0x03, 0x04] ) {
             println "\tERROR: found zip file, possibly Word?"
             return null
         }
 
+		if( text.contains("\r") ) {
+			println "\tRemoving \r from text"
+			text = text.replace("\r", "")
+		}
+		
         text = fixEncoding(text, file)
         if( ! text )
             return null
 
+		if( ! checkEmptyLines(text) )
+			return null 			
+			
 
         // SINGLE LOW-9 QUOTATION MARK sometimes used as a comma
         text = text.replace('\u201A', ',')
@@ -337,21 +346,19 @@ class CleanText {
 
 
         if( ! options.allowTwoColumns ) {
-//			if( "    " in text ) {
-//				def lines = text.split("\n")
-//				def twoColumnLines = lines.findAll()
-//				def matcher = text =~ /(?iu)(.*?[а-яїієґ] {4,})[а-яіїєґ].{4}/
-//				matcher.find()
-//				def matchSize = matcher.size()
-//				if( matchSize >= 5
-//				&& matchSize > text.count("\n") * 3 / 4
-//				&& matcher[0][1].length() == matcher[2][1].length()
-//				&& matcher[0][1].length() == matcher[4][1].length() ) {
-//					println "\tERROR: two columns detected, skipping...:"
-//					println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
-//					return null
-//				}
-//			}
+			if( text.count("    ") >= 5 ) {
+				def matcher = text =~ /(?ium)(.*?[а-яїієґ] {4,})[а-яіїєґ].{4}/
+				matcher.find()
+				def matchSize = matcher.size()
+				if( matchSize >= 5
+				&& matchSize > text.count("\n") * 3 / 4
+				&& matcher[0][1].length() == matcher[2][1].length()
+				&& matcher[0][1].length() == matcher[4][1].length() ) {
+					println "\tERROR: two columns detected, skipping...:"
+					println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
+					return null
+				}
+			}
         }
 
         if( options.modules ) {
@@ -363,6 +370,25 @@ class CleanText {
         text = fixDanglingHyphens(text, file)
     }
 
+	boolean checkEmptyLines(text) {
+		if( text.count("\n\n") > 5 ) {
+			def matcher = text =~ /(?ius)[а-яїієґ0-9.—–-]\n\n[а-яіїєґ0-9]/
+			matcher.find()
+			def nonEmptyLines = text.split("\n").findAll { it =~ /[^\s]/ }
+			if( nonEmptyLines.count { it.length() > 120 } > 5 ) {
+				println "\tVery long lines found, probably unwrapped paragraphs..."
+				return true
+			}
+			def nonEmptyLineCnt = nonEmptyLines.size()
+//			println "${matcher.size()}::$nonEmptyLineCnt"
+			if( matcher.size() > nonEmptyLineCnt / 5 ) {
+				println "\tWARNING: Too many empty lines: ${matcher.size()}, total non-empty: $nonEmptyLineCnt"
+				return false
+			}  
+		}
+		return true
+	}
+	
 
     String removeMeta(String text, File file, def options) {
 
@@ -518,17 +544,21 @@ class CleanText {
 
             println "\tEncoding fixed (good lines: $goodLines, convertedLines: $convertedLines, text: " + getSample(text)
         }
-        else if( file.getText("cp1251").contains("ок") ) {
-            println "\tWARNING: cp1251 encoding"
+        else if( Collections.indexOfSubList(file.bytes.toList(), [(byte)0x20, (byte)0xB3, (byte)0x20]) != -1 ) {
+			def cp1251Text = file.getText("cp1251")
+			
+			if( cp1251Text.contains(" і ") ) {
+				println "\tWARNING: cp1251 encoding"
 
-            text = file.getText("cp1251")
+				text = cp1251Text
 
-            if( text.size() < 200 ) {
-                println "\tFile size < 200 chars, probaby cp1251 conversion didn't work, skipping"
-                return null
-            }
+				if( text.size() < 200 ) {
+					println "\tFile size < 200 chars, probaby cp1251 conversion didn't work, skipping"
+					return null
+				}
 
-            println "\tEncoding converted: " + getSample(text)
+				println "\tEncoding converted: " + getSample(text)
+			}
         }
 
         if( text.contains("\uFFFD") ) {
@@ -634,7 +664,7 @@ class CleanText {
         int ukrLetterCount = lowerTextSample.findAll { String it -> "іїєґ".contains(it) } .size()
         int rusLetterCount = lowerTextSample.findAll { String it -> "ыэъё".contains(it) } .size()
 
-        def minUkrainianLetters = minUkrWordCount / 20
+        def minUkrainianLetters = minUkrWordCount >= 20 ? minUkrWordCount / 20 : 0
         if( ukrLetterCount < minUkrainianLetters ) {
             println "\tERROR: Less than $minUkrainianLetters Ukrainian letters ($ukrLetterCount): " + getSample(text)
             return false
