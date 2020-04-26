@@ -12,7 +12,7 @@
 
 //package org.nlp_uk.other
 
-@Grab(group='org.languagetool', module='language-uk', version='5.0-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='5.0-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-uk', version='4.9')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
@@ -344,22 +344,9 @@ class CleanText {
         if( ! text )
             return null
 
+	    if( ! checkTwoColumns(text) )
+	        return null
 
-        if( ! options.allowTwoColumns ) {
-			if( text.count("    ") >= 5 ) {
-				def matcher = text =~ /(?ium)(.*?[а-яїієґ] {4,})[а-яіїєґ].{4}/
-				matcher.find()
-				def matchSize = matcher.size()
-				if( matchSize >= 5
-				&& matchSize > text.count("\n") * 3 / 4
-				&& matcher[0][1].length() == matcher[2][1].length()
-				&& matcher[0][1].length() == matcher[4][1].length() ) {
-					println "\tERROR: two columns detected, skipping...:"
-					println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
-					return null
-				}
-			}
-        }
 
         if( options.modules ) {
             text = removeMeta(text, file, options)
@@ -370,25 +357,53 @@ class CleanText {
         text = fixDanglingHyphens(text, file)
     }
 
-	boolean checkEmptyLines(text) {
+
+    boolean checkTwoColumns(text) {
+        if( ! options.allowTwoColumns ) {
+
+            if ( text.length() > 100*1024 ) {
+                text = text.take(100*1024)
+            }
+
+			if( text.count("    ") >= 5 ) {
+				def matcher = text =~ /(?ium)(.*?[а-яїієґ] {4,})[а-яіїєґ].{4}/
+				matcher.find()
+				def matchSize = matcher.size()
+				if( matchSize >= 5
+				&& matchSize > text.count("\n") * 3 / 4
+				&& matcher[0][1].length() == matcher[2][1].length()
+				&& matcher[0][1].length() == matcher[4][1].length() ) {
+					println "\tERROR: two columns detected, skipping...:"
+					println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
+					return false
+				}
+			}
+        }
+        return true
+    }
+
+    boolean checkEmptyLines(text) {
 		if( text.count("\n\n") > 5 ) {
-			def matcher = text =~ /(?ius)[а-яїієґ0-9.—–-]\n\n[а-яіїєґ0-9]/
-			matcher.find()
 			def nonEmptyLines = text.split("\n").findAll { it =~ /[^\s]/ }
 			if( nonEmptyLines.count { it.length() > 120 } > 5 ) {
 				println "\tVery long lines found, probably unwrapped paragraphs..."
 				return true
 			}
+
+            if ( text.length() > 100*1024 ) {
+                text = text.take(100*1024)
+            }
+
+			def matcher = text =~ /(?ius)[а-яїієґ0-9.—–-]\n\n[а-яіїєґ0-9]/
 			def nonEmptyLineCnt = nonEmptyLines.size()
-//			println "${matcher.size()}::$nonEmptyLineCnt"
 			if( matcher.size() > nonEmptyLineCnt / 5 ) {
 				println "\tWARNING: Too many empty lines: ${matcher.size()}, total non-empty: $nonEmptyLineCnt"
-				return false
-			}  
+				return true
+			}
 		}
 		return true
-	}
-	
+    }
+
 
     String removeMeta(String text, File file, def options) {
 
