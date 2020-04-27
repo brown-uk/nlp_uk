@@ -12,8 +12,8 @@
 
 //package org.nlp_uk.other
 
-//@Grab(group='org.languagetool', module='language-uk', version='5.0-SNAPSHOT')
-@Grab(group='org.languagetool', module='language-uk', version='4.9')
+@Grab(group='org.languagetool', module='language-uk', version='5.0-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='4.9')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
@@ -321,7 +321,10 @@ class CleanText {
 
 		if( ! checkEmptyLines(text) )
 			return null 			
-			
+		
+		if( text.contains("''") ) {
+			text = text.replaceAll(/(?<!')''(?!')/, '"')
+		}
 
         // SINGLE LOW-9 QUOTATION MARK sometimes used as a comma
         text = text.replace('\u201A', ',')
