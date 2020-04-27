@@ -28,5 +28,8 @@ class CleanTextTest extends GroovyTestCase {
 
         assertEquals "\"депутат\" H'''", clean("''депутат'' H'''")
 
+        assertEquals "- Агов", clean("-Агов")
+        assertEquals "-УВАТ(ИЙ)", clean("-УВАТ(ИЙ)")
+
     }
 }

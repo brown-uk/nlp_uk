@@ -355,6 +355,8 @@ class CleanText {
             text = removeMeta(text, file, options)
         }
 
+        text = separateLeadingHyphens(text)
+
         text = removeSoftHyphens(text)
 
         text = fixDanglingHyphens(text, file)
@@ -664,6 +666,20 @@ class CleanText {
         return text
     }
 
+	String separateLeadingHyphens(String text) {
+		def matcher = text =~ /(?m)^-([А-ЯІЇЄҐ][а-яіїєґ'-]+)/
+		if( matcher.find() ) {
+			println "\tConverting leading hyphens"
+			matcher.each { def match ->
+				println ":: $match"
+				if( knownWord(match[1]) ) {
+					text = matcher.replaceFirst('- $1')
+				}
+			}
+		}
+		text
+	}
+	
 //    @CompileStatic
     private boolean verifyWordCounts(String text, int minUkrWordCount) {
         def ukrWords = text.split(/[^А-ЯІЇЄҐёа-яіїєґё'’ʼ-]+/).findAll{ it ==~ /[А-ЩЬЮЯІЇЄҐа-щьюяіїєґ][А-ЩЬЮЯІЇЄҐа-щьюяіїєґ'’ʼ-]+/ }
