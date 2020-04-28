@@ -33,7 +33,7 @@ class CleanText {
     // for higher quality text esp. short newspaper articles you need to keep it low ~100
     // for larger text with possible scanned sources you may want to go higher > 200
     // note: we count words with 2 letters and more
-    int minUkrWordCount = 80
+    int minUkrWordCount = 20
 
     Map<String, String> KNOWN_MIXES =
     [
@@ -149,29 +149,29 @@ class CleanText {
 
             def dir = options.dir ? options.dir : "."
 
-			File baseDir = new File(dir)
-//			processDir(baseDir, baseDir)
-			def files = []
-			
-			int maxDepth_ = options.recursive ? -1 : 0;
-				
-			baseDir.traverse(type: groovy.io.FileType.FILES, 
-				maxDepth: maxDepth_,
-				preDir       : { if (it.name == 'good') return FileVisitResult.SKIP_SUBTREE },
-				) { File it ->
-//				if( it.isDirectory() && it.name == "good" )
-//					return FileVisitResult.SKIP_SUBTREE
+            File baseDir = new File(dir)
+//            processDir(baseDir, baseDir)
+            def files = []
+            
+            int maxDepth_ = options.recursive ? -1 : 0;
+                
+            baseDir.traverse(type: groovy.io.FileType.FILES, 
+                maxDepth: maxDepth_,
+                preDir       : { if (it.name == 'good') return FileVisitResult.SKIP_SUBTREE },
+                ) { File it ->
+//                if( it.isDirectory() && it.name == "good" )
+//                    return FileVisitResult.SKIP_SUBTREE
 
-				if( it.name.endsWith(".txt") ) {
-					files << it
-				}
-			}
-			
-			println "Found ${files.size} txt files"
-			
-			def outDirName = prepareDir(baseDir)
-			
-			processFiles(files, baseDir, null)
+                if( it.name.endsWith(".txt") ) {
+                    files << it
+                }
+            }
+            
+            println "Found ${files.size} txt files"
+            
+            def outDirName = prepareDir(baseDir)
+            
+            processFiles(files, baseDir, null)
         }
         else {
             def inputFilename = options.input
@@ -193,35 +193,35 @@ class CleanText {
         return 0
     }
 
-	private prepareDir(File baseDir) {
-//		def outDirName = baseDir.path + "/good" + (dir.canonicalPath - baseDir.canonicalPath)
+    private prepareDir(File baseDir) {
+//        def outDirName = baseDir.path + "/good" + (dir.canonicalPath - baseDir.canonicalPath)
 
-		def outDirName = baseDir.path + "/good"
-		def outDirFile = new File(outDirName)
-		outDirFile.mkdirs()
+        def outDirName = baseDir.path + "/good"
+        def outDirFile = new File(outDirName)
+        outDirFile.mkdirs()
 
-		if( ! outDirFile.isDirectory() ) {
-			System.err.println "Output dir $outDirName does not exists"
-			return 1
-		}
+        if( ! outDirFile.isDirectory() ) {
+            System.err.println "Output dir $outDirName does not exists"
+            return 1
+        }
 
-		def prevFiles = outDirFile.list()
+        def prevFiles = outDirFile.list()
 
-		if( prevFiles.size() > 0 ) {
-			if( options.clean ) {
-				println "Removing files from $outDirName"
-				prevFiles.each { String f->
-					new File(f).delete()
-				}
-			}
-			else {
-				System.err.println "Output dir $outDirName is not empty (rerun with --clean if you want to remove those files)"
-				return 1
-			}
-		}
+        if( prevFiles.size() > 0 ) {
+            if( options.clean ) {
+                println "Removing files from $outDirName"
+                prevFiles.each { String f->
+                    new File(f).delete()
+                }
+            }
+            else {
+                System.err.println "Output dir $outDirName is not empty (rerun with --clean if you want to remove those files)"
+                return 1
+            }
+        }
 
-		return outDirName
-	}
+        return outDirName
+    }
 
     void processFiles(files, baseDir, outFilename) {
         
@@ -268,16 +268,16 @@ class CleanText {
 //            println "\tGOOD: $file.name\n"
 
 
-			if( outFilename == null ) {
-				def outDirName = baseDir.canonicalPath + "/good/"
-				new File(outDirName).mkdirs()
-				def outFilename2 = (file.canonicalPath.replaceFirst(baseDir.canonicalPath, outDirName))
-				new File(new File(outFilename2).getParent()).mkdirs()
-			    new File(outFilename2).text = text
-			}
+            if( outFilename == null ) {
+                def outDirName = baseDir.canonicalPath + "/good/"
+                new File(outDirName).mkdirs()
+                def outFilename2 = (file.canonicalPath.replaceFirst(baseDir.canonicalPath, outDirName))
+                new File(new File(outFilename2).getParent()).mkdirs()
+                new File(outFilename2).text = text
+            }
             else {
-			    new File(outFilename).text = text
-			}
+                new File(outFilename).text = text
+            }
 
             if( options.parallel ) {
                 out.get().flush()
@@ -310,21 +310,21 @@ class CleanText {
             return null
         }
 
-		if( text.contains("\r") ) {
-			println "\tRemoving \r from text"
-			text = text.replace("\r", "")
-		}
-		
+        if( text.contains("\r") ) {
+            println "\tRemoving \r from text"
+            text = text.replace("\r", "")
+        }
+        
         text = fixEncoding(text, file)
         if( ! text )
             return null
 
-		if( ! checkEmptyLines(text) )
-			return null 			
-		
-		if( text.contains("''") ) {
-			text = text.replaceAll(/(?<!')''(?!')/, '"')
-		}
+        if( ! checkEmptyLines(text) )
+            return null             
+        
+        if( text.contains("''") ) {
+            text = text.replaceAll(/(?<!')''(?!')/, '"')
+        }
 
         // SINGLE LOW-9 QUOTATION MARK sometimes used as a comma
         text = text.replace('\u201A', ',')
@@ -347,8 +347,8 @@ class CleanText {
         if( ! text )
             return null
 
-	    if( ! checkTwoColumns(text) )
-	        return null
+        if( ! checkTwoColumns(text) )
+            return null
 
 
         if( options.modules ) {
@@ -370,43 +370,57 @@ class CleanText {
                 text = text.take(100*1024)
             }
 
-			if( text.count("    ") >= 5 ) {
-				def matcher = text =~ /(?ium)(.*?[а-яїієґ] {4,})[а-яіїєґ].{4}/
-				matcher.find()
-				def matchSize = matcher.size()
-				if( matchSize >= 5
-				&& matchSize > text.count("\n") * 3 / 4
-				&& matcher[0][1].length() == matcher[2][1].length()
-				&& matcher[0][1].length() == matcher[4][1].length() ) {
-					println "\tERROR: two columns detected, skipping...:"
-					println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
-					return false
-				}
-			}
+            if( text.count("    ") >= 5 ) {
+                def matcher = text =~ /(?ium)(.*?[а-яїієґ] {4,})[а-яіїєґ].{4}/
+                matcher.find()
+                def matchSize = matcher.size()
+                if( matchSize >= 5
+                && matchSize > text.count("\n") * 3 / 4
+                && matcher[0][1].length() == matcher[2][1].length()
+                && matcher[0][1].length() == matcher[4][1].length() ) {
+                    println "\tERROR: two columns detected, skipping...:"
+                    println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
+                    return false
+                }
+            }
         }
         return true
     }
 
     boolean checkEmptyLines(text) {
-		if( text.count("\n\n") > 5 ) {
-			def nonEmptyLines = text.split("\n").findAll { it =~ /[^\s]/ }
-			if( nonEmptyLines.count { it.length() > 120 } > 5 ) {
-				println "\tVery long lines found, probably unwrapped paragraphs..."
-				return true
-			}
-
+        if( text.count("\n\n") > 5 ) {
             if ( text.length() > 100*1024 ) {
                 text = text.take(100*1024)
             }
 
-			def matcher = text =~ /(?ius)[а-яїієґ0-9.—–-]\n\n[а-яіїєґ0-9]/
-			def nonEmptyLineCnt = nonEmptyLines.size()
-			if( matcher.size() > nonEmptyLineCnt / 5 ) {
-				println "\tWARNING: Too many empty lines: ${matcher.size()}, total non-empty: $nonEmptyLineCnt"
+//            def nonEmptyLines = text.getLines().findAll { it =~ /[^\s]/ }
+//            if( nonEmptyLines.count { it.length() > 120 } > 5 ) {
+//                println "\tVery long lines found, probably unwrapped paragraphs..."
+//                return true
+//            }
+
+			// headers often have titles without period
+			
+			def lines = text.readLines()
+			if( lines.size() > 2 ) {
+				lines = lines[2..<lines.size()]
+			}
+			
+			text = lines.join("\n")
+//            def matcher = text =~ /(?ius)[а-яїієґ0-9,—–-]\s*\n\n[а-яіїєґ0-9]/
+            def matcher = text =~ /(?us)[а-яїієґА-ЯІЇЄҐ,:—–-]\s*\n\n[а-яіїєґ]/
+			if( matcher ) {
+				println "\tWARNING: Suspect empty lines inside the sentence"
 				return true
 			}
-		}
-		return true
+
+//            def nonEmptyLineCnt = nonEmptyLines.size()
+//            if( matcher.size() > nonEmptyLineCnt / 7 ) {
+//                println "\tWARNING: Suspect empty lines between sentences: ${matcher.size()}, total non-empty: $nonEmptyLineCnt"
+//                return true
+//            }
+        }
+        return true
     }
 
 
@@ -565,20 +579,20 @@ class CleanText {
             println "\tEncoding fixed (good lines: $goodLines, convertedLines: $convertedLines, text: " + getSample(text)
         }
         else if( Collections.indexOfSubList(file.bytes.toList(), [(byte)0x20, (byte)0xB3, (byte)0x20]) != -1 ) {
-			def cp1251Text = file.getText("cp1251")
-			
-			if( cp1251Text.contains(" і ") ) {
-				println "\tWARNING: cp1251 encoding"
+            def cp1251Text = file.getText("cp1251")
+            
+            if( cp1251Text.contains(" і ") ) {
+                println "\tWARNING: cp1251 encoding"
 
-				text = cp1251Text
+                text = cp1251Text
 
-				if( text.size() < 200 ) {
-					println "\tFile size < 200 chars, probaby cp1251 conversion didn't work, skipping"
-					return null
-				}
+                if( text.size() < 200 ) {
+                    println "\tFile size < 200 chars, probaby cp1251 conversion didn't work, skipping"
+                    return null
+                }
 
-				println "\tEncoding converted: " + getSample(text)
-			}
+                println "\tEncoding converted: " + getSample(text)
+            }
         }
 
         if( text.contains("\uFFFD") ) {
@@ -651,9 +665,9 @@ class CleanText {
                     it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
                 }
             })
-            if( cnt > 0 || cntWithHyphen > 0 ) {
-                println ""
-            }
+//            if( cnt > 0 || cntWithHyphen > 0 ) {
+//                println ""
+//            }
             println "\t\t$cnt word wraps removed, $cntWithHyphen newlines after hyphen removed"
         }
 
@@ -666,20 +680,39 @@ class CleanText {
         return text
     }
 
-	String separateLeadingHyphens(String text) {
-		def matcher = text =~ /(?m)^-([А-ЯІЇЄҐ][а-яіїєґ'-]+)/
-		if( matcher.find() ) {
-			println "\tConverting leading hyphens"
-			matcher.each { def match ->
-				println ":: $match"
-				if( knownWord(match[1]) ) {
-					text = matcher.replaceFirst('- $1')
-				}
-			}
-		}
-		text
-	}
-	
+    String separateLeadingHyphens(String text) {
+
+        def regex = ~/^[-–]([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/
+
+        boolean newLineEnd = text.endsWith("\n")
+
+        def converted = 0
+        text = text.readLines()
+        .collect { line ->
+            def matcher = regex.matcher(line)
+            if( matcher ) {
+              //println ":: ${matcher[0][1]}"
+              def match = matcher[0]
+                if( knownWord(match[1]) ) {
+                    converted += 1
+                    line = matcher.replaceFirst('- $1')
+                }
+            }
+            line
+        }
+        .join("\n")
+
+        if( converted ) {
+            println "\tConverted leading hyphens: ${converted}"
+        }
+
+        if( newLineEnd ) {
+            text += "\n"
+        }
+
+        text
+    }
+
 //    @CompileStatic
     private boolean verifyWordCounts(String text, int minUkrWordCount) {
         def ukrWords = text.split(/[^А-ЯІЇЄҐёа-яіїєґё'’ʼ-]+/).findAll{ it ==~ /[А-ЩЬЮЯІЇЄҐа-щьюяіїєґ][А-ЩЬЮЯІЇЄҐа-щьюяіїєґ'’ʼ-]+/ }
