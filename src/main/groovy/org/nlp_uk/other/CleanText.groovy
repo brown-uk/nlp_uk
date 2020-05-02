@@ -12,8 +12,8 @@
 
 //package org.nlp_uk.other
 
-@Grab(group='org.languagetool', module='language-uk', version='5.0-SNAPSHOT')
-//@Grab(group='org.languagetool', module='language-uk', version='4.9')
+//@Grab(group='org.languagetool', module='language-uk', version='5.0-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='4.9')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
@@ -147,7 +147,11 @@ class CleanText {
 
         if( ! options.input ) {
 
-            def dir = options.dir ? options.dir : "."
+            def dir = options.dir 
+				? options.dir 
+				: options.arguments()
+					? options.arguments()[0]
+					: "."
 
             File baseDir = new File(dir)
 //            processDir(baseDir, baseDir)
@@ -167,11 +171,13 @@ class CleanText {
                 }
             }
             
-            println "Found ${files.size} txt files"
+            println "Found ${files.size} .txt files in $dir"
             
-            def outDirName = prepareDir(baseDir)
+			if( files ) {
+				def outDirName = prepareDir(baseDir)
             
-            processFiles(files, baseDir, null)
+				processFiles(files, baseDir, null)
+			}
         }
         else {
             def inputFilename = options.input
@@ -682,7 +688,7 @@ class CleanText {
 
     String separateLeadingHyphens(String text) {
 
-        def regex = ~/^[-–]([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/
+        def regex = ~/^[-\u2013\u2014]([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/
 
         boolean newLineEnd = text.endsWith("\n")
 
