@@ -317,7 +317,7 @@ class CleanText {
         }
 
         if( text.contains("\r") ) {
-            println "\tRemoving \r from text"
+            println "\tRemoving \\r from text"
             text = text.replace("\r", "")
         }
         
