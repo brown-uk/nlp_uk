@@ -17,9 +17,11 @@ class TextUtils {
             outputFile = System.out
         }
         else {
-            outputFile = new File(options.output)
-            outputFile.setText('')    // to clear out output file
-            outputFile = new PrintStream(outputFile, "UTF-8")
+            if( ! options.noTag ) {
+                outputFile = new File(options.output)
+                outputFile.setText('')    // to clear out output file
+                outputFile = new PrintStream(outputFile, "UTF-8")
+            }
         }
 
         if( ! options.quiet && options.input == "-" ) {
@@ -29,6 +31,10 @@ class TextUtils {
         def inputFile = options.input == "-" ? System.in : new File(options.input)
 
         if( ! options.quiet ) {
+            if( options.noTag ) {
+                System.err.println("Collecting stats only...")
+            }
+            else
             if( options.output != "-" ) {
                 System.err.println ("writing into ${options.output}")
             }

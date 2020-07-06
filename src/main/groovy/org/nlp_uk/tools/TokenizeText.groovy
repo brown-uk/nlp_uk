@@ -2,7 +2,7 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='4.9')
+@Grab(group='org.languagetool', module='language-uk', version='5.0')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 
@@ -12,10 +12,10 @@ import org.languagetool.rules.*
 import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
+import org.languagetool.tokenizers.uk.*
 
 import groovy.lang.Closure
 
-import org.languagetool.tokenizers.uk.*
 import java.util.regex.*
 import groovy.util.Eval
 

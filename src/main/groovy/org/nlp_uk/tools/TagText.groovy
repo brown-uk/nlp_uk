@@ -2,7 +2,8 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='4.9')
+@Grab(group='org.languagetool', module='language-uk', version='5.0')
+//@Grab(group='org.languagetool', module='language-uk', version='5.1-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 

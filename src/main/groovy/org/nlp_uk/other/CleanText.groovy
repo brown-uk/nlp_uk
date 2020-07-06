@@ -12,17 +12,19 @@
 
 //package org.nlp_uk.other
 
-//@Grab(group='org.languagetool', module='language-uk', version='5.0-SNAPSHOT')
-@Grab(group='org.languagetool', module='language-uk', version='4.9')
+@Grab(group='org.languagetool', module='language-uk', version='5.0')
+//@Grab(group='org.languagetool', module='language-uk', version='5.1-SNAPSHOT')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
+@Grab(group='info.picocli', module='picocli', version='4.3.2')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
 
 import java.util.regex.Pattern
 import groovy.transform.Field
 import groovy.io.FileVisitResult
+import groovy.cli.picocli.CliBuilder
 import groovy.transform.CompileStatic
-import org.apache.commons.cli.Options
+//import org.apache.commons.cli.Options
 import org.apache.commons.lang3.ArrayUtils
 import org.languagetool.tagging.uk.*
 import org.languagetool.*
@@ -97,7 +99,9 @@ class CleanText {
         if( options.wordCount ) {
             minUkrWordCount = options.wordCount as int
         }
-        println "Min Word limit: $minUkrWordCount"
+        if( minUkrWordCount > 0 ) {
+            println "Min Word limit: $minUkrWordCount"
+        }
     }
 
     void debug(str) {
@@ -166,7 +170,7 @@ class CleanText {
 //                if( it.isDirectory() && it.name == "good" )
 //                    return FileVisitResult.SKIP_SUBTREE
 
-                if( it.name.endsWith(".txt") ) {
+                if( it.name.endsWith(".txt") || it.name.endsWith(".csv") ) {
                     files << it
                 }
             }
@@ -193,8 +197,8 @@ class CleanText {
 
             processFiles(files, null, outputFilename)
         }
-        
-        println "Done!"
+
+        println "Завершено!"
 
         return 0
     }
@@ -238,7 +242,9 @@ class CleanText {
         }
         else {
             out.set(System.out)
-            println "Cleaning ${files.size()} files"
+            if( ! options.input ) {
+                println "Cleaning ${files.size()} files"
+            }
         }
 
         stream.forEach{ file ->
@@ -248,7 +254,9 @@ class CleanText {
                 out.set(new PrintStream(byteStream))
             }
 
-            println "Looking at ${file.name}"
+            if( ! options.input ) {
+                println "Looking at ${file.name}"
+            }
 
             String text = file.text
 
@@ -312,12 +320,12 @@ class CleanText {
     //@CompileStatic
     String cleanUp(String text, File file, def options) {
         if( file.length() > 100 && file.bytes[0..3] == [0x50, 0x4B, 0x03, 0x04] ) {
-            println "\tERROR: found zip file, possibly Word?"
+            println "\tERROR: знайдено файл zip, можливо, це документ Word?"
             return null
         }
 
         if( text.contains("\r") ) {
-            println "\tRemoving \\r from text"
+            println "\tВилучаємо \\r"
             text = text.replace("\r", "")
         }
         
@@ -618,12 +626,12 @@ class CleanText {
             }
 
             if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
-                println "\tlatin/cyrillic mix in $file.name"
+                println "\tlatin/cyrillic mix"
 
                 text = removeMix(text)
 
                 if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
-                    println "\tWARNING: still latin/cyrillic mix in $file.name"
+                    println "\tWARNING: still latin/cyrillic mix"
                 }
             }
 
@@ -723,11 +731,11 @@ class CleanText {
     private boolean verifyWordCounts(String text, int minUkrWordCount) {
         def ukrWords = text.split(/[^А-ЯІЇЄҐёа-яіїєґё'’ʼ-]+/).findAll{ it ==~ /[А-ЩЬЮЯІЇЄҐа-щьюяіїєґ][А-ЩЬЮЯІЇЄҐа-щьюяіїєґ'’ʼ-]+/ }
         int ukrWordCount = ukrWords.size()
-        if( ukrWordCount < minUkrWordCount ) {
+        if( minUkrWordCount > 0 && ukrWordCount < minUkrWordCount ) {
             println "\tERROR: Less than $minUkrWordCount Ukrainian words ($ukrWordCount): " + getSample(text) // + "\n\t" + ukrWords
             return false
         }
-        println "\tUkrainian word count: $ukrWordCount"
+        println "\tУкраїнських слів: $ukrWordCount"
         //    if( ukrWordCount < 300 ) println "\t\t: " + ukrWords
 
         // for really big text counting chars takes long time
