@@ -458,6 +458,11 @@ class TagText {
             argv2 << "-o" << outfile
 
             options = cli.parse(argv2)
+
+            if( ! options.output ) {
+                cli.usage()
+                System.exit(0)
+            }
         }
 
 
