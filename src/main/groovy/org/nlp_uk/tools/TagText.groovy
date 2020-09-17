@@ -43,6 +43,7 @@ class TagText {
     def unknownMap = [:].withDefault { 0 }
     def frequencyMap = [:].withDefault { 0 }
     def lemmaFrequencyMap = [:].withDefault { 0 }
+	Map<String, String> semanticTags = new HashMap<>()
 
     StringWriter writer
     MarkupBuilder xml
@@ -54,6 +55,17 @@ class TagText {
         if( options.xmlOutput ) {
             writer = new StringWriter()
             xml = new MarkupBuilder(writer)
+        }
+
+        if( options.semanticTags ) {
+			if( ! options.xmlOutput ) {
+				System.err.println ("Semantic tagging only available in xml output")
+				System.exit 1
+			}
+			
+            System.err.println ("Using semantic tagging")
+			
+			loadSemTags()
         }
     }
 
@@ -104,7 +116,21 @@ class TagText {
                                             return
                                         posTag = ''
                                     }
-                                    'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag)
+									
+									def semTags = null
+									if( options.semanticTags && tkn.getLemma() ) {
+										def key = tkn.getLemma()
+										if( posTag ) {
+											int xpIdx = posTag.indexOf(":xp")
+											if( xpIdx >= 0 ) { 
+												key += " " + posTag[xpIdx+1..xpIdx+3]
+											}
+										}
+										semTags = semanticTags.get(key)
+									}
+									semTags
+									    ? 'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag, 'semtags': semTags)
+										: 'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag)
                                 }
                             }
                         }
@@ -415,7 +441,36 @@ class TagText {
             printLemmaFrequencyStats()
         }
     }
+	
+	def loadSemTags() {
+		// def base = System.getProperty("user.home") + "/work/ukr/spelling/dict_uk/data/sem"
+		def base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
+		def semDir = new File("sem")
+		if( semDir.isDirectory() ) {
+			base = "${semDir.path}"
+			System.err.println("Loading semantic tags from ./sem")
+		}
+		else {
+			System.err.println("Loading semantic tags from $base")
+		}
 
+		["noun", "adj", "adv", "verb"].each { cat ->
+			def lines = base.startsWith("http")
+				? "$base/${cat}.csv".toURL().getText("UTF-8")
+				: new File(semDir, "${cat}.csv").getText("UTF-8")
+			lines.eachLine { line ->
+				def parts = line.split(',')
+				if( parts.length < 2 ) {
+					System.err.println("skipping invalid semantic tag for: " + line)
+					return
+				}
+				def key = parts[0]
+				semanticTags.put(key, parts[1])
+			}
+		}
+		System.err.println("Loaded ${semanticTags.size()} semantic tags")
+	}
+	
 
     static parseOptions(String[] argv) {
         def cli = new CliBuilder()
@@ -432,6 +487,7 @@ class TagText {
         cli.b(longOpt: 'filterUnknown', 'Filter out unknown words with non-Ukrainian character combinations')
         cli.w(longOpt: 'frequencyStats', 'Collect word frequency')
         cli.z(longOpt: 'lemmaStats', 'Collect lemma frequency')
+        cli.e(longOpt: 'semanticTags', 'Add semantic tags')
         cli.k(longOpt: 'noTag', 'Do not write tagged text (only perform stats)')
         cli.m(longOpt: 'modules', args:1, required: false, 'Comma-separated list of modules, supported modules: [zheleh]')
         cli.q(longOpt: 'quiet', 'Less output')
