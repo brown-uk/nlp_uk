@@ -15,16 +15,15 @@
 @Grab(group='org.languagetool', module='language-uk', version='5.0')
 //@Grab(group='org.languagetool', module='language-uk', version='5.1-SNAPSHOT')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
-@Grab(group='info.picocli', module='picocli', version='4.3.2')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
-
+import groovy.cli.commons.CliBuilder
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.regex.Pattern
 import groovy.transform.Field
 import groovy.io.FileVisitResult
-import groovy.cli.picocli.CliBuilder
 import groovy.transform.CompileStatic
-//import org.apache.commons.cli.Options
 import org.apache.commons.lang3.ArrayUtils
 import org.languagetool.tagging.uk.*
 import org.languagetool.*
@@ -112,9 +111,9 @@ class CleanText {
 
     static int main(String[] args) {
 
-        CliBuilder cli = new CliBuilder(usage: "CleanText [options] [<dir>]")
+        CliBuilder cli = new CliBuilder(usage: "CleanText.groovy [options] [<dir>]")
 
-        cli.c(longOpt: 'clean', required: false, 'Clean old files in good/')
+        cli.c(longOpt: 'clean', required: false, 'Clean old files in <dir>-good')
         cli.m(longOpt: 'modules', args:1, required: false, 'Extra cleanup: remove footnotes, page numbers etc. (supported modules: nanu)')
         cli.w(longOpt: 'wordCount', args:1, required: false, 'Minimum Ukrainian word count')
         cli.n(longOpt: 'allowTwoColumn', 'do not discard two-column text')
@@ -124,7 +123,7 @@ class CleanText {
         cli.r(longOpt: 'recursive', required: false, 'Process directories recursively')
         cli.d(longOpt: 'debug', required: false, 'Debug output')
         cli.h(longOpt: 'help', 'Help - Usage Information')
-        cli._(longOpt: 'dir', args:1, 'Directory to process *.txt in (default: txt/)')
+        cli._(longOpt: 'dir', args:1, 'Directory to process *.txt in (default is current directory)')
 
 
         def options = cli.parse(args)
@@ -165,12 +164,12 @@ class CleanText {
                 
             baseDir.traverse(type: groovy.io.FileType.FILES, 
                 maxDepth: maxDepth_,
-                preDir       : { if (it.name == 'good') return FileVisitResult.SKIP_SUBTREE },
+                preDir       : { if (it.name == 'good' || it.name.endsWith('-good') ) return FileVisitResult.SKIP_SUBTREE },
                 ) { File it ->
 //                if( it.isDirectory() && it.name == "good" )
 //                    return FileVisitResult.SKIP_SUBTREE
 
-                if( it.name.endsWith(".txt") || it.name.endsWith(".csv") ) {
+                if( it.name.toLowerCase().endsWith(".txt") || it.name.endsWith(".csv") ) {
                     files << it
                 }
             }
@@ -180,7 +179,7 @@ class CleanText {
 			if( files ) {
 				def outDirName = prepareDir(baseDir)
             
-				processFiles(files, baseDir, null)
+				processFiles(files, baseDir, null, outDirName)
 			}
         }
         else {
@@ -195,7 +194,7 @@ class CleanText {
 
             def files = [ new File(inputFilename) ]
 
-            processFiles(files, null, outputFilename)
+            processFiles(files, null, outputFilename, null)
         }
 
         println "Завершено!"
@@ -206,13 +205,14 @@ class CleanText {
     private prepareDir(File baseDir) {
 //        def outDirName = baseDir.path + "/good" + (dir.canonicalPath - baseDir.canonicalPath)
 
-        def outDirName = baseDir.path + "/good"
+        def outDirName = baseDir.path == "." ? "good" : baseDir.path + "-good"
         def outDirFile = new File(outDirName)
+		println "Output directory: ${outDirFile.name}"
         outDirFile.mkdirs()
 
         if( ! outDirFile.isDirectory() ) {
             System.err.println "Output dir $outDirName does not exists"
-            return 1
+            System.exit 1
         }
 
         def prevFiles = outDirFile.list()
@@ -226,14 +226,14 @@ class CleanText {
             }
             else {
                 System.err.println "Output dir $outDirName is not empty (rerun with --clean if you want to remove those files)"
-                return 1
+                System.exit 1
             }
         }
 
         return outDirName
     }
 
-    void processFiles(files, baseDir, outFilename) {
+    void processFiles(files, baseDir, outFilename, outDirName) {
         
         def stream = options.parallel ? files.parallelStream() : files.stream()
 
@@ -247,6 +247,8 @@ class CleanText {
             }
         }
 
+		println ""
+
         stream.forEach{ file ->
             if( options.parallel ) {
                 def byteStream = new ByteArrayOutputStream()
@@ -255,7 +257,10 @@ class CleanText {
             }
 
             if( ! options.input ) {
-                println "Looking at ${file.name}"
+				Path pathAbsolute = Paths.get(file.absolutePath)
+				Path pathBase = Paths.get(baseDir.absolutePath)
+				Path pathRelative = pathBase.relativize(pathAbsolute);
+                println "Looking at " + pathRelative
             }
 
             String text = file.text
@@ -283,7 +288,7 @@ class CleanText {
 
 
             if( outFilename == null ) {
-                def outDirName = baseDir.canonicalPath + "/good/"
+//                def outDirName = outDirName == "." ? "good" : outDirName + "-good/"
                 new File(outDirName).mkdirs()
                 def outFilename2 = (file.canonicalPath.replaceFirst(baseDir.canonicalPath, outDirName))
                 new File(new File(outFilename2).getParent()).mkdirs()
@@ -299,6 +304,7 @@ class CleanText {
             }
         }
 
+		println "\nDone"
     }
 
 
@@ -508,8 +514,8 @@ class CleanText {
         })
 
 
-        // 2nd tier - try all cyrillic
-        // if we convert all latin to cyrillic and find it in the dicitonary use conversion
+        // 2nd tier - try all Cyrillic
+        // if we convert all Latin to Cyrillic and find it in the dictionary use conversion
 
         text = text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-ZáÁéÉíÍḯḮóÓúýÝ-]+/, { it ->
 
@@ -532,14 +538,14 @@ class CleanText {
 
         // 3nd tier - least reliable
 
-        // latin letter that looks like cyrillic between 2 cyrillics
+        // latin letter that looks like Cyrillic between 2 Cyrillics
 
         text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ]['’ʼ]?)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[а-яіїєґА-ЯІЇЄҐ])/, { all, cyr, lat, cyr2 ->
             count1 += 1
             cyr + latToCyrMap[lat] + cyr2
         })
 
-        // cyrillic letter that looks like latin between 2 latin
+        // Cyrillic letter that looks like Latin between 2 Latin
 
         text = text.replaceAll(/([a-zA-Z]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[a-zA-Z])/, { all, lat, cyr, lat2 ->
             count2 += 2
@@ -559,7 +565,7 @@ class CleanText {
 
     @CompileStatic
     String fixEncoding(String text, File file) {
-        if( text.contains("\u008D\u00C3") ) { // completly broken encoding for «ій»
+        if( text.contains("\u008D\u00C3") ) { // completely broken encoding for «ій»
             println "\tWARNING: nonfixable broken encoding found, garbage will be left in!"
         }
 
@@ -631,7 +637,7 @@ class CleanText {
                 text = removeMix(text)
 
                 if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
-                    println "\tWARNING: still latin/cyrillic mix"
+                    println "\tWARNING: still Latin/Cyrillic mix"
                 }
             }
 
@@ -640,10 +646,11 @@ class CleanText {
             }
         }
 
-        // latin a and i
+        // Latin a, o and i
         text = text.replaceAll(/([а-яіїєґ]), a ([А-ЯІЇЄҐа-яіїєґ])/, '$1, а $2')
         text = text.replaceAll(/([а-яіїєґ]) i ([А-ЯІЇЄҐа-яіїєґ])/, '$1 і $2')
-
+		text = text.replaceAll(/([а-яіїєґ]) o ([А-ЯІЇЄҐа-яіїєґ])/, '$1 о $2')
+		
         return text
     }
 
