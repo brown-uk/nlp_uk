@@ -377,7 +377,7 @@ class CleanText {
 
         text = separateLeadingHyphens(text)
 
-        text = removeSoftHyphens(text)
+//        text = removeSoftHyphens(text)
 
         text = fixDanglingHyphens(text, file)
     }
@@ -703,7 +703,7 @@ class CleanText {
 
     String separateLeadingHyphens(String text) {
 
-        def regex = ~/^[-\u2013\u2014]([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/
+        def regex = ~/^([-\u2013\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/
 
         boolean newLineEnd = text.endsWith("\n")
 
@@ -714,9 +714,9 @@ class CleanText {
             if( matcher ) {
               //println ":: ${matcher[0][1]}"
               def match = matcher[0]
-                if( knownWord(match[1]) ) {
+                if( knownWord(match[2]) ) {
                     converted += 1
-                    line = matcher.replaceFirst('- $1')
+                    line = matcher.replaceFirst('$1 $2')
                 }
             }
             line
