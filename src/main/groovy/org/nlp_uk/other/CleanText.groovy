@@ -13,7 +13,9 @@
 //package org.nlp_uk.other
 
 @Grab(group='org.languagetool', module='language-uk', version='5.0')
+@Grab(group='org.languagetool', module='language-ru', version='5.0')
 //@Grab(group='org.languagetool', module='language-uk', version='5.1-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-ru', version='5.1-SNAPSHOT')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
@@ -26,6 +28,7 @@ import groovy.io.FileVisitResult
 import groovy.transform.CompileStatic
 import org.apache.commons.lang3.ArrayUtils
 import org.languagetool.tagging.uk.*
+import org.languagetool.tagging.ru.RussianTagger
 import org.languagetool.*
 //import org.nlp_uk.other.CleanTextNanu
 
@@ -83,6 +86,8 @@ class CleanText {
 
     @Lazy
     def tagger = { new UkrainianTagger() }()
+	@Lazy
+	def ruTagger = { new RussianTagger() }()
 
     def options
 
@@ -380,7 +385,47 @@ class CleanText {
 //        text = removeSoftHyphens(text)
 
         text = fixDanglingHyphens(text, file)
+
+		text = fixSplitWords(text, file)
+		
+		checkForSpacing(text, file)
+		
+		text
     }
+	
+	void checkForSpacing(text, file) {
+		
+		def m = text =~ /([а-яіїєґА-ЯІЇЄҐ] ){5,}/
+		if( m.find() ) {
+			println "\tWARNING: Possible spacing in words, e.g \"" + m[0][0] + "\""
+		}
+		
+	}
+	
+
+	String fixSplitWords(String text, File file) {
+		int cnt = 0
+		String regex = /([а-яіїєґА-ЯІЇЄҐ'ʼ’-]*)\n([ \t]*)([а-яіїєґ][а-яіїєґ'ʼ’-]*)([,;.!?])?/
+		text = text.replaceAll(regex, { List<String> it ->
+			if( it[4] != "."	// we don't want to join ММК ім. Ілліча
+				&& it[1].length() + it[3].length() >= 4
+				&& ! (it[0] =~ /[А-ЯІЇЄҐ]{2,}/)
+				&& ! knownWordTwoLang(it[1])
+				&& ! knownWordTwoLang(it[3])
+				&& knownWord(it[1] + it[3]) ) {
+				cnt += 1
+				// print "."
+				it[1] + it[3] + (it[4] ?: "") + "\n" + it[2]
+			}
+			else {
+				it[0]
+			}
+		})
+		if( cnt ) {
+			println "\t$cnt word splits removed"
+		}
+		text
+	}
 
 
     boolean checkTwoColumns(text) {
@@ -465,6 +510,17 @@ class CleanText {
             throw e
         }
     }
+
+	boolean knownWordTwoLang(String word) {
+		try {
+			return ! tagger.getAnalyzedTokens(word)[0].hasNoTag() \
+				|| ! ruTagger.getAnalyzedTokens(word)[0].hasNoTag()
+		}
+		catch (Exception e) {
+			System.err.println("Failed dual lang on word: " + word)
+			throw e
+		}
+	}
 
 
     String removeMix(String text) {
@@ -661,12 +717,16 @@ class CleanText {
             def cnt = 0
             int cntWithHyphen = 0
 
+            // e.g.: депутат-\n«мажоритарник»
             text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ-]+)-\n([ \t]*)([«„"][а-яіїєґ'ʼ’-]+[»“"])([,;.!?])?/, { List<String> it ->
+                cntWithHyphen += 1
                 it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
             })
 
+			def first = null
             text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { List<String> it ->
-
+				if( ! first )
+					first = it[0] ? it[0].replace('\n', "\\n") : it[0]
                 //            println "== " + (it[1] + "-" + it[3]) + ", known: " + knownWord(it[1] + "-" + it[3])
                 // consider words with two or more hyphens with one of them before end of line to be rare
                 if( /*it[0].count('-') > 1 ||*/ ! knownWord(it[1] + "-" + it[3]) ) {
@@ -686,10 +746,10 @@ class CleanText {
                     it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
                 }
             })
-//            if( cnt > 0 || cntWithHyphen > 0 ) {
-//                println ""
-//            }
             println "\t\t$cnt word wraps removed, $cntWithHyphen newlines after hyphen removed"
+            if( cnt == 0 && cntWithHyphen == 0 ) {
+                println "\t\tfirst match: \"$first\""
+            }
         }
 
         if( text =~ /¬ *\n/ ) {
@@ -731,6 +791,27 @@ class CleanText {
             text += "\n"
         }
 
+		
+		def regex2 = ~/ -[а-яіїєґ]{4,}/
+		if( regex2.matcher(text) ) {
+			int cnt = 0
+			def first = null
+			
+			text.readLines()
+			.each { line ->
+				def matcher = regex2.matcher(line)
+				while( matcher.find() ) {
+					// println ":: " + line
+					cnt += 1
+					if( ! first )
+						first = matcher[0]
+				}
+			}
+			if( cnt ) {
+				println "\tWARNING: found $cnt suspicious hypens after space, e.g. \"$first\""
+			}
+		}
+		
         text
     }
 
