@@ -45,18 +45,23 @@ class TextUtils {
             outputFile.println('<text>\n')
         }
 
-        def buffer = new StringBuilder()
+        StringBuilder buffer = new StringBuilder()
+        boolean notEmpty = false
+
         inputFile.eachLine('UTF-8', 0, { line ->
             buffer.append(line).append("\n")
+            notEmpty |= line.trim().length() > 0
 
-            def str = buffer.toString()
-            if( str.endsWith("\n\n") && str.trim().length() > 0
+            if( (notEmpty
+                    && buffer.lastIndexOf("\n\n") == buffer.length() - 2 )
                     || buffer.length() > MAX_PARAGRAPH_SIZE ) {
+                def str = buffer.toString()
 
                 def analyzed = closure(str)
                 outputFile.print(analyzed)
 
                 buffer = new StringBuilder()
+                notEmpty = false
             }
         })
 
