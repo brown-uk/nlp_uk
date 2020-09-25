@@ -4,7 +4,7 @@ apply plugin: 'eclipse'
 
 compileJava.options.encoding = 'UTF-8'
 
-String ltVersion="5.0"
+String ltVersion="5.1"
 
 
 buildscript {
@@ -24,7 +24,7 @@ repositories {
 
 
 dependencies {
-    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.5.11'
+    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.5.13'
 
 //    compile 'org.codehaus.gpars:gpars:1.2.1'
 //    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.5'
