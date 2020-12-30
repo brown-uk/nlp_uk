@@ -97,5 +97,3 @@ class TextUtils {
     }
 
 }
-
-new TextUtils()

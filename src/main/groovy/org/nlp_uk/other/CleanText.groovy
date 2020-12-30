@@ -1,5 +1,8 @@
 #!/bin/env groovy
 
+package org.nlp_uk.other
+
+
 // This script reads all .txt files in given directory (default is "txt/") 
 // and tries to find all with acceptable criterias for Ukrainian text (e.g. > 3k Ukrainian words)
 // output files go into <dir>/good/
@@ -13,11 +16,11 @@
 //package org.nlp_uk.other
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-ru', version='5.2')
-@Grab(group='org.languagetool', module='language-uk', version='5.2')
-@Grab(group='commons-cli', module='commons-cli', version='1.4')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.6')
+@Grab(group='org.languagetool', module='language-uk', version='5.2')
+@Grab(group='org.languagetool', module='language-ru', version='5.2')
+//@Grab(group='commons-cli', module='commons-cli', version='1.4')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
 import groovy.cli.picocli.CliBuilder
 import java.nio.file.Path
@@ -86,10 +89,10 @@ class CleanText {
     Map<String,String> cyrToLatMap = [:]
 
     @Lazy
-    def tagger = { new UkrainianTagger() }()
+    UkrainianTagger ukTagger = { new UkrainianTagger() }()
 	@Lazy
 	def ruTagger = { new RussianTagger() }()
-
+	
     def options
 
     ThreadLocal<PrintStream> out = new ThreadLocal<>()
@@ -402,7 +405,7 @@ class CleanText {
 		}
 		
 	}
-	
+
 
 	String fixSplitWords(String text, File file) {
 		int cnt = 0
@@ -504,7 +507,7 @@ class CleanText {
 
     boolean knownWord(String word) {
         try {
-            return ! tagger.getAnalyzedTokens(word)[0].hasNoTag()
+            return ! ukTagger.getAnalyzedTokens(word)[0].hasNoTag()
         }
         catch (Exception e) {
             System.err.println("Failed on word: " + word)
@@ -514,7 +517,7 @@ class CleanText {
 
 	boolean knownWordTwoLang(String word) {
 		try {
-			return ! tagger.getAnalyzedTokens(word)[0].hasNoTag() \
+			return ! ukTagger.getAnalyzedTokens(word)[0].hasNoTag() \
 				|| ! ruTagger.getAnalyzedTokens(word)[0].hasNoTag()
 		}
 		catch (Exception e) {

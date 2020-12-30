@@ -13,6 +13,7 @@ import org.languagetool.language.*
 import org.languagetool.uk.*
 import groovy.lang.Closure
 import groovy.util.Eval
+import groovy.cli.picocli.CliBuilder
 
 
 class LemmatizeText {
@@ -21,7 +22,7 @@ class LemmatizeText {
     static SCRIPT_DIR=new File(SOURCE_URI).parent
 
     // easy way to include a class without forcing classpath to be set
-    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text)
+    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
 
     JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());

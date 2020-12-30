@@ -1,4 +1,6 @@
-#!/bin/env groovy
+#!/usr/bin/env groovy
+
+package org.nlp_uk.other
 
 // this script tries to extract text from multiple document formats
 

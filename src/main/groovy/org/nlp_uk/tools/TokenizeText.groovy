@@ -2,7 +2,7 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='5.2-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='5.2')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 
@@ -15,6 +15,7 @@ import org.languagetool.uk.*
 import org.languagetool.tokenizers.uk.*
 
 import groovy.lang.Closure
+import groovy.cli.picocli.CliBuilder
 
 import java.util.regex.*
 import groovy.util.Eval
@@ -26,7 +27,7 @@ class TokenizeText {
     static SCRIPT_DIR=new File(SOURCE_URI).parent
 
     // easy way to include a class without forcing classpath to be set
-    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text)
+    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
 
     def WORD_PATTERN = ~/[а-яіїєґА-ЯІЇЄҐa-zA-Z0-9]/

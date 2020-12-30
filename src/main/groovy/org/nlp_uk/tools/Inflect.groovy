@@ -1,4 +1,4 @@
-#!/bin/env groovy
+#!/usr/bin/env groovy
 
 package org.nlp_uk.tools
 
@@ -18,7 +18,7 @@ class Inflect {
     static SCRIPT_DIR=new File(SOURCE_URI).parent
 
     // easy way to include a class without forcing classpath to be set
-    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text)
+    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
 
     UkrainianSynthesizer synth = new UkrainianSynthesizer();

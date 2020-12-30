@@ -1,11 +1,11 @@
-#!/usr/local/bin/groovy
-
+#!/usr/bin/env groovy
 
 package org.nlp_uk.tools
 
 @Grab(group='org.languagetool', module='language-uk', version='5.2')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
+import groovy.cli.picocli.CliBuilder
 import org.codehaus.groovy.util.StringUtil;
 import org.languagetool.*
 import org.languagetool.rules.*

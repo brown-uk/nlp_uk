@@ -1,105 +1,57 @@
-#!/bin/env groovy
+#!/usr/bin/env groovy
 
 package org.nlp_uk.other
 
-import static org.junit.Assert.assertEquals
-
-//evaluate(new File('CleanText.groovy'))
-
-def cleanText = new CleanText()
-def file = new File('CleanTextTest.groovy')
-
-def result = cleanText.cleanUp('просто-\nрово-часового', file, [])
-assert result == "просторово-часового\n"
-//result = cleanText.cleanUp('двох-\nсторонній', file, [])
-//assert result == "двохсторонній\n"
-
-//TODO:
-result = cleanText.cleanUp("минулого-сучасного-май-\nбутнього", file, [])
-assert result == "минулого-сучасного-майбутнього\n"
-
-//result = cleanText.cleanUp("дитино-\nцентристської", file, [])
-//assert result == "дитиноцентристської\n"
-
-//"жінки-\nвченої"
-//"скло-\nтермосному"
-//"дніпро-\nдонецької"
-//"чернігово-\nсіверським"
-//"за-\nлізо-рослинне"
-
-
-//result = cleanText.cleanUp("54                           ISSN 1562-0905 Регіональна економіка 2013, №4", file, [removeMeta: true])
-//assert result == "\n"
-
-//result = cleanText.cleanUp("ISSN 1028-9763. Математичні машини і системи, 2011, № 2", file, [removeMeta: true])
-//assert result == "\n"
+import org.junit.jupiter.api.Test
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 
 
-result = cleanText.cleanUp(
-"""AAA
+class CleanTextTest {
+    def options = [ "wordCount": 20, "debug": true ]
 
-ISSN 1028-9763. Математичні машини і системи, 2011, № 2              85
+    CleanText cleanText = new CleanText( options )
 
-BBB
+    def file() { return new File("/dev/null") }
 
-54                           ISSN 1562-0905 Регіональна економіка 2013, №4
+    String clean(String str) {
+        println "---------"
+        str = str.replace('_', '')
+        cleanText.cleanUp(str, file(), options)
+    }
 
-CCC""", file, [modules: 'nanu'])
+	
+	@Test
+	public void test() {
+		assertEquals "брат", clean("б_p_ат")
 
-def expected = "AAA\n\nBBB\n\nCCC"
+		assertEquals "труба", clean("тр_y_ба")
 
-assertEquals(expected, result)
+		assertEquals "on throughпортал в", clean("on throughпортал в")
 
-//assert result == expected
+		assertEquals "урахування\n", clean("ураху-\nвання")
 
+		assertEquals "екс-«депутат»\n", clean("екс-\n«депутат»")
 
+		assertEquals "\"депутат\" H'''", clean("''депутат'' H'''")
 
+        assertEquals "- Агов", clean("-Агов")
+        assertEquals "-УВАТ(ИЙ)", clean("-УВАТ(ИЙ)")
 
-result = cleanText.cleanUp(
-"""тивної дії. Адже те громадянське суспільство, що існувало в радянській системі, було
-                          «Наука. Релігія. Суспільство» № 2’2012                        41
-                                                                       Олександр Поліщук
+        assertEquals "- архієпископ\n- Дитина", clean("-архієпископ\n-Дитина")
+        assertEquals "-то ", clean("-то ")
+    }
 
-
-надзвичайно заангажоване і заідеологізоване. Дана штучно утворена ситуація не визна-
-...
-у відповідність із певними індивідуальними інтересами і цінностями [2, с. 109].
-44                       «Наука. Релігія. Суспільство» № 2’2012
-Колективна дія громадянського суспільства у соціальній системі
-Щось там ще
-               «Наука. Релігія. Суспільство» № 2’2012                                        45
-Щось там ще ще""", file, [modules: 'nanu'])
-
-expected = '''тивної дії. Адже те громадянське суспільство, що існувало в радянській системі, було
-                                                                       Олександр Поліщук
-
-
-надзвичайно заангажоване і заідеологізоване. Дана штучно утворена ситуація не визна-
-...
-у відповідність із певними індивідуальними інтересами і цінностями [2, с. 109].
-Колективна дія громадянського суспільства у соціальній системі
-Щось там ще
-Щось там ще ще'''
-
-
-//assert result == expected
-
-
-///"""AAA
-// 
-//10
-//                ISSN 1816-1545 Фізико-математичне моделювання та інформаційні технології
-//                                                                      2010, вип. 12, 9-37
-
-def text = """AAA
-
-                                                                                                    89
-Василь Кондрат, Ольга Грицина
-Рівняння електромагнітотермомеханіки поляризовних неферомагнітних тіл за врахування ...
-
-BBB"""
-
-result = cleanText.cleanUp(text, file, [modules: 'nanu'])
-
-assert result == "AAA\nBBB"
+	@Test
+	void test2() {
+		def result = cleanText.cleanUp('просто-\nрово-часового', file(), [])
+		assert result == "просторово-часового\n"
+		//result = cleanText.cleanUp('двох-\nсторонній', file, [])
+		//assert result == "двохсторонній\n"
+		
+		//TODO:
+		result = cleanText.cleanUp("минулого-сучасного-май-\nбутнього", file(), [])
+		assert result == "минулого-сучасного-майбутнього\n"
+		
+	}
+}

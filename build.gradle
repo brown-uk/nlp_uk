@@ -1,4 +1,3 @@
-apply plugin: 'java'
 apply plugin: 'groovy'
 apply plugin: 'eclipse'
 
@@ -12,53 +11,69 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath group: 'org.apache.maven', name: 'maven-embedder', version: '3.3.9'
-    classpath group: 'org.codehaus.plexus', name: 'plexus-interpolation', version: '1.22'
+    classpath group: 'org.apache.maven', name: 'maven-embedder', version: '3.6.+'
+    classpath group: 'org.codehaus.plexus', name: 'plexus-interpolation', version: '1.+'
     classpath group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.21'
   }
 }
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 
 dependencies {
-    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.5.13'
-
-//    compile 'org.codehaus.gpars:gpars:1.2.1'
-//    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.5'
-//    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.5'
-    compile 'commons-cli:commons-cli:1.4'
-
-  // compile with local version of LanguageTool
-  if( project.hasProperty('ltDir') ) {
-    compile files(ltDir + '/languagetool-core/target/classes')
-    compile files(ltDir + '/languagetool-language-modules/uk/target/classes')
-    compile fileTree(dir: ltDir + '/languagetool-language-modules/uk/target/dependency', include: ['*.jar'], exclude: ['languagetool*.jar'])
+    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.6'
+    compile group: 'org.codehaus.groovy', name: 'groovy-cli-picocli', version: '3.0.6'
+//    compile 'commons-cli:commons-cli:1.4'
+	compile group:'ch.qos.logback', name:'logback-classic', version:'1.2.3'
+	
+    // compile with local version of LanguageTool
+    if( project.hasProperty('ltDir') ) {
+        compile files(ltDir + '/languagetool-core/target/classes')
+        compile files(ltDir + '/languagetool-language-modules/uk/target/classes')
+        compile files(ltDir + '/languagetool-language-modules/ru/target/classes')
+        compile fileTree(dir: ltDir + '/languagetool-language-modules/uk/target/dependency', include: ['*.jar'], exclude: ['languagetool*.jar'])
 //    compile fileTree(dir: ltLibDir, include: ['*.jar'], exclude: ['languagetool*.jar'])
-  }
-  else{
-    compile 'org.languagetool:language-uk:' + ltVersion
-  }
+    }
+    else{
+        compile 'org.languagetool:language-uk:' + ltVersion
+        compile 'org.languagetool:language-ru:' + ltVersion
+    }
 
-//    testCompile 'junit:junit:4.12'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.+'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.+'
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir "src/main/groovy"
+//            include "**/*.groovy"
+            includes = ["**/tools/*.md", "*.groovy"]
+        }
+    }
+}
+
+processResources {
+    doLast() {
+        copy {
+            from("src/main/groovy/") {
+              include "org/nlp_uk/tools/TagText.groovy"
+            }
+//            into "${project.buildDir}/resources/main"
+            into "${project.buildDir}/classes/java/main"
+            includeEmptyDirs = false
+        }
+    }
 }
 
 compileGroovy {
     exclude '**/demo/**/*.groovy'
-    exclude '**/other/**/*.groovy'
+//    exclude '**/other/**/*.groovy'
 }
 
-/*
-sourceSets {
-    main {
-        groovy {
-            srcDirs = ['src']
-        }
-    }
-}
-*/
 
 eclipse {
   classpath {
@@ -66,8 +81,17 @@ eclipse {
   }
 }
 
+
+test {
+    useJUnitPlatform()
+}
+
 compileGroovy {
   groovyOptions.forkOptions.jvmArgs = [ '-Dgroovy.grape.enable=false' ]
+}
+
+test {
+  jvmArgs '-Dgroovy.grape.enable=false'
 }
 
 

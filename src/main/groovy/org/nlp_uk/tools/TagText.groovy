@@ -2,8 +2,8 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='5.2')
-//@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='5.2')
+@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 
@@ -16,6 +16,7 @@ import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
 
+import groovy.cli.picocli.CliBuilder
 import groovy.lang.Closure
 import groovy.lang.Lazy
 import groovy.transform.CompileStatic
@@ -30,10 +31,10 @@ class TagText {
     static SCRIPT_DIR = SOURCE_URI.scheme == "file" ? new File(SOURCE_URI).parent : new File(".")
 
     // easy way to include a class without forcing classpath to be set
-    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text)
+    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
-    static PUNCT_PATTERN = Pattern.compile(/[\p{Punct}«»„“…—–]+/)
-    static LATIN_WORD_PATTERN = Pattern.compile(/\p{IsLatin}+/)
+    static final Pattern PUNCT_PATTERN = Pattern.compile(/[\p{Punct}«»„“…—–]+/)
+    static final Pattern LATIN_WORD_PATTERN = Pattern.compile(/\p{IsLatin}+/)
 
     JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian())
 
@@ -78,65 +79,9 @@ class TagText {
             if( options.xmlOutput ) {
                 AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
 
-				xml.'sentence'() {
+				outputSentenceXml(tokens)
 
-					tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
-
-                        if( tokenReadings.isLinebreak() ) {
-                            def nonEndTagToken = tokenReadings.find {
-                                ! (it.getPOSTag() in [JLanguageTool.PARAGRAPH_END_TAGNAME, JLanguageTool.SENTENCE_END_TAGNAME])
-                            }
-
-                            if( nonEndTagToken == null )
-                                return
-                        }
-
-						if( tokenReadings.isPosTagUnknown() ) {
-							if( isZheleh(options) ) {
-								tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
-							}
-						}
-
-                        'tokenReading'() {
-
-                            List<AnalyzedToken> tokenReadings2 = tokenReadings.getReadings()
-
-                            tokenReadings2.each { AnalyzedToken tkn ->
-
-                                if( PUNCT_PATTERN.matcher(tkn.getToken()).matches() ) {
-                                    'token'('value': tkn.getToken(), 'tags': 'punct', 'whitespaceBefore': tkn.isWhitespaceBefore() )
-                                }
-                                else if( tokenReadings.isPosTagUnknown() && LATIN_WORD_PATTERN.matcher(tkn.getToken()).matches() ) {
-                                    'token'('value': tkn.getToken(), 'tags': 'noninfl:foreign' )
-                                }
-                                else {
-                                    String posTag = tkn.getPOSTag()
-                                    if( posTag == JLanguageTool.SENTENCE_END_TAGNAME ) {
-                                        if( tokenReadings.getReadings().size() > 1 )
-                                            return
-                                        posTag = ''
-                                    }
-									
-									def semTags = null
-									if( options.semanticTags && tkn.getLemma() ) {
-										def key = tkn.getLemma()
-										if( posTag ) {
-											int xpIdx = posTag.indexOf(":xp")
-											if( xpIdx >= 0 ) { 
-												key += " " + posTag[xpIdx+1..xpIdx+3]
-											}
-										}
-										semTags = semanticTags.get(key)
-									}
-									semTags
-									    ? 'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag, 'semtags': semTags)
-										: 'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag)
-                                }
-                            }
-                        }
-                    }
-                }
-                sb.append(writer.toString()).append("\n");
+				sb.append(writer.toString()).append("\n\n");
                 writer.getBuffer().setLength(0)
             }
             else if ( ! options.noTag ) {
@@ -183,6 +128,68 @@ class TagText {
 
         return sb.toString()
     }
+    
+	private outputSentenceXml(AnalyzedTokenReadings[] tokens) {
+		xml.'sentence'() {
+
+			tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
+				String theToken = tokenReadings.token
+
+				if( tokenReadings.isLinebreak() ) {
+					def nonEndTagToken = tokenReadings.find {
+						! (it.getPOSTag() in [JLanguageTool.PARAGRAPH_END_TAGNAME, JLanguageTool.SENTENCE_END_TAGNAME])
+					}
+
+					if( nonEndTagToken == null )
+						return
+				}
+
+				if( tokenReadings.isPosTagUnknown() ) {
+					if( isZheleh(options) ) {
+						tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
+					}
+				}
+
+				'tokenReading'() {
+
+					if( tokenReadings.isPosTagUnknown() && PUNCT_PATTERN.matcher(theToken).matches() ) {
+						'token'('value': tokenReadings.getToken(), 'tags': 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore() )
+						return
+					}
+					else if( tokenReadings.isPosTagUnknown() && LATIN_WORD_PATTERN.matcher(theToken).matches() ) {
+						'token'('value': tokenReadings.getToken(), 'tags': 'noninfl:foreign' )
+						return
+					}
+
+					List<AnalyzedToken> readings = tokenReadings.getReadings()
+
+					readings.each { AnalyzedToken tkn ->
+						String posTag = tkn.getPOSTag()
+						if( posTag == JLanguageTool.SENTENCE_END_TAGNAME ) {
+							if( tokenReadings.getReadings().size() > 1 )
+								return
+							posTag = ''
+						}
+
+						def semTags = null
+						if( options.semanticTags && tkn.getLemma() ) {
+							def key = tkn.getLemma()
+							if( posTag ) {
+								int xpIdx = posTag.indexOf(":xp")
+								if( xpIdx >= 0 ) {
+									key += " " + posTag[xpIdx+1..xpIdx+3]
+								}
+							}
+							semTags = semanticTags.get(key)
+						}
+						semTags
+								? 'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag, 'semtags': semTags)
+								: 'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag)
+					}
+				}
+			}
+		}
+	}
 
     @CompileStatic
     private static String adjustZheleh(String text) {
@@ -280,7 +287,7 @@ class TagText {
     def collectFrequency(List<AnalyzedSentence> analyzedSentences) {
            for (AnalyzedSentence analyzedSentence : analyzedSentences) {
             analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
-                if( tokenReadings.getAnalyzedToken(0).getPOSTag() != null
+                if( tokenReadings.getAnalyzedToken(0).getPOSTag()
                         && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
                         && ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
                     frequencyMap[tokenReadings.getToken()] += 1
