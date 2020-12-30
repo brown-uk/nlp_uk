@@ -1,9 +1,6 @@
-import java.io.File;
+package org.nlp_uk.tools;
 
-import groovy.lang.Binding;
 import groovy.util.GroovyScriptEngine;
-import groovy.util.ResourceException;
-import groovy.util.ScriptException;
 
 /**
  * This class shows how to call TagText.groovy
@@ -17,14 +14,14 @@ import groovy.util.ScriptException;
  * Note: you may want to comment out @Grab...logback-classic in TagText.groovy if you have your own logging framework
  */
 public class TagTextWrapper {
-    // only "." is supported for now
-    private static final String SCRIPT_DIR = ".";
+    private static final String SCRIPT_DIR = "src/main/groovy/org/nlp_uk/tools";
 
-    public static void main(String[] args) throws Exception {
+    public void tag(String filename, String outFilename) throws Exception {
 
-        Binding binding = new Binding();
+//        Binding binding = new Binding();
         GroovyScriptEngine engine = new GroovyScriptEngine(SCRIPT_DIR);
 
+        engine.loadScriptByName("TextUtils.groovy");
         Class<?> clazz = engine.loadScriptByName("TagText.groovy");
 
 
@@ -36,8 +33,8 @@ public class TagTextWrapper {
         java.lang.reflect.Constructor<?> constructor = clazz.getDeclaredConstructor();
         Object tagText = constructor.newInstance();
 
-        for(int i=0; i<10; i++) {
-            Object options = clazz.getDeclaredMethod("parseOptions", String[].class).invoke(null, (Object)new String[]{"-i", "text.txt"});
+        for(int i=0; i<4; i++) {
+            Object options = clazz.getDeclaredMethod("parseOptions", String[].class).invoke(null, (Object)new String[]{"-i", filename, "-o", outFilename});
             clazz.getDeclaredMethod("setOptions", Object.class).invoke(tagText, options);
             clazz.getDeclaredMethod("process").invoke(tagText);
             System.out.println("Done tagging: " + i);

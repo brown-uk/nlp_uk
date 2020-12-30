@@ -2,7 +2,7 @@
 
 # This script allows to tokenize Ukrinian text by sentences or words
 # by invoking TokenizeText.groovy that uses LanguageTool API
-# groovy (http://www.groovy-lang.org) needs to be installed and in the path
+# groovy >= 3.0 (http://www.groovy-lang.org) needs to be installed and in the path
 # Usage: tokenize_text.py <inputfile>
 
 import os

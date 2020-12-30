@@ -1,9 +1,10 @@
+apply plugin: 'java'
 apply plugin: 'groovy'
 apply plugin: 'eclipse'
 
 compileJava.options.encoding = 'UTF-8'
 
-String ltVersion="5.1"
+String ltVersion="5.2"
 
 
 buildscript {

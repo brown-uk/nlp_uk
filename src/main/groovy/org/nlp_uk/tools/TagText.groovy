@@ -2,10 +2,11 @@
 
 package org.nlp_uk.tools
 
+@GrabConfig(systemClassLoader=true)
 //@Grab(group='org.languagetool', module='language-uk', version='5.2')
 @Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
-@Grab(group='commons-cli', module='commons-cli', version='1.4')
+@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.7')
 
 import java.util.regex.Pattern
 
@@ -28,10 +29,12 @@ class TagText {
     @groovy.transform.SourceURI
     static SOURCE_URI
     // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
-    static SCRIPT_DIR = SOURCE_URI.scheme == "file" ? new File(SOURCE_URI).parent : new File(".")
+    static SCRIPT_DIR = SOURCE_URI.scheme == "data" 
+		? new File("src/main/groovy/org/nlp_uk/tools")
+		: new File(SOURCE_URI).parent
 
     // easy way to include a class without forcing classpath to be set
-    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
+    def textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
     static final Pattern PUNCT_PATTERN = Pattern.compile(/[\p{Punct}«»„“…—–]+/)
     static final Pattern LATIN_WORD_PATTERN = Pattern.compile(/\p{IsLatin}+/)
