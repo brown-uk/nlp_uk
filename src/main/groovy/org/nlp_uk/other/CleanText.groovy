@@ -13,8 +13,8 @@
 //package org.nlp_uk.other
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-ru', version='5.1')
-@Grab(group='org.languagetool', module='language-uk', version='5.1')
+@Grab(group='org.languagetool', module='language-ru', version='5.2')
+@Grab(group='org.languagetool', module='language-uk', version='5.2')
 @Grab(group='commons-cli', module='commons-cli', version='1.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.6')
