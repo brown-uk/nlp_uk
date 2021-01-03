@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.nlp_uk.tools.TagText.TagResult
 
 
 class TagTextTest {
@@ -24,8 +25,9 @@ class TagTextTest {
 
 	@Test
 	public void test() {
-		def tagged = tagText.tagText("Слово.")
-		assertEquals "Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].[</S><P/>]\n", tagged
+		TagResult tagged = tagText.tagText("Слово.")
+		def expected = "Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].[</S><P/>]\n"
+		assertEquals expected, tagged.tagged
 	}
 	
 
@@ -33,7 +35,7 @@ class TagTextTest {
 	public void testXml() {
 		tagText.setOptions(["xmlOutput": true])
 
-		def tagged = tagText.tagText("Слово.")
+		TagResult tagged = tagText.tagText("Слово.")
 		def expected =
 """<sentence>
   <tokenReading>
@@ -46,7 +48,7 @@ class TagTextTest {
 </sentence>
 
 """
-		assertEquals expected, tagged
+		assertEquals expected, tagged.tagged
 	}
 
 	
@@ -54,7 +56,7 @@ class TagTextTest {
 	public void testForeign() {
 		tagText.setOptions(["xmlOutput": true])
 
-		def tagged = tagText.tagText("Crow")
+		TagResult tagged = tagText.tagText("Crow")
 		def expected =
 """<sentence>
   <tokenReading>
@@ -63,7 +65,7 @@ class TagTextTest {
 </sentence>
 
 """
-		assertEquals expected, tagged
+		assertEquals expected, tagged.tagged
 	}
 
 
@@ -72,7 +74,7 @@ class TagTextTest {
 	public void testIgnoreLang() {
 		tagText.setOptions(["ignoreOtherLanguages": true, "xmlOutput": true])
 
-		def tagged = tagText.tagText("<span lang='ru'>Слво.</span>")
+		TagResult tagged = tagText.tagText("<span lang='ru'>Слво.</span>")
 		assertEquals "<foreign>Слво.</foreign>\n\n", tagged
 
 		def expected=
@@ -89,7 +91,7 @@ class TagTextTest {
 """
 		
 		tagged = tagText.tagText("Газета <span lang='ru'>Дело</span>.")
-		assertEquals expected, tagged
+		assertEquals expected, tagged.tagged
 	}
 
 	
@@ -109,8 +111,8 @@ class TagTextTest {
 """
 		
 		tagText.setOptions(["semanticTags": true, "xmlOutput": true] )
-		def tagged = tagText.tagText("Слово.")
-		assertEquals expected, tagged
+		TagResult tagged = tagText.tagText("Слово.")
+		assertEquals expected, tagged.tagged
 	}
 }
 

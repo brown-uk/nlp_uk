@@ -3,8 +3,8 @@
 package org.nlp_uk.tools
 
 @GrabConfig(systemClassLoader=true)
-//@Grab(group='org.languagetool', module='language-uk', version='5.2')
-@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='5.2')
+//@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.7')
 
@@ -20,6 +20,7 @@ import org.languagetool.uk.*
 import groovy.cli.picocli.CliBuilder
 import groovy.lang.Closure
 import groovy.lang.Lazy
+import groovy.transform.Canonical
 import groovy.transform.CompileStatic
 import groovy.xml.MarkupBuilder
 import groovy.util.Eval
@@ -42,13 +43,16 @@ class TagText {
     JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian())
 
     def options
-    def homonymFreqMap = [:].withDefault { 0 }
-    def homonymTokenMap = [:].withDefault{ new HashSet<>() }
-    def unknownMap = [:].withDefault { 0 }
-    def frequencyMap = [:].withDefault { 0 }
-    def lemmaFrequencyMap = [:].withDefault { 0 }
 	Map<String, String> semanticTags = new HashMap<>()
 
+	@Canonical
+	static class TagResult {
+		String tagged
+		Stats stats
+	}
+	
+	Stats stats = new Stats()
+	
     StringWriter writer
     MarkupBuilder xml
 
@@ -115,21 +119,22 @@ class TagText {
             }
         }
 
+		def stats = new Stats()
         if( options.homonymStats ) {
-            collectHomonyms(analyzedSentences)
+            stats.collectHomonyms(analyzedSentences)
         }
         if( options.unknownStats ) {
-            collectUnknown(analyzedSentences)
+            stats.collectUnknown(analyzedSentences)
         }
         if( options.frequencyStats ) {
-            collectFrequency(analyzedSentences)
+            stats.collectFrequency(analyzedSentences)
         }
 
         if( options.lemmaStats ) {
-            collectLemmaFrequency(analyzedSentences)
+            stats.collectLemmaFrequency(analyzedSentences)
         }
 
-        return sb.toString()
+        return new TagResult(sb.toString(), stats)
     }
     
 	private outputSentenceXml(AnalyzedTokenReadings[] tokens) {
@@ -236,174 +241,6 @@ class TagText {
 	}
 	
 	
-	
-    def collectUnknown(List<AnalyzedSentence> analyzedSentences) {
-           for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-               // if any words contain Russian sequence filter out the whole sentence - this removes tons of Russian words from our unknown list
-               // we could also test each word against Russian dictionary but that would filter out some valid Ukrainian words too
-               if( options.filterUnknown ) {
-                   def unknownBad = analyzedSentence.getTokensWithoutWhitespace()[1..-1].find { AnalyzedTokenReadings tokenReadings ->
-                       tokenReadings.getToken() =~ /[ыэъё]|и[еи]/
-                   }
-                   if( unknownBad )
-                       continue
-               }
-
-            analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
-                if( (tokenReadings.getAnalyzedToken(0).getPOSTag() == null 
-                        || JLanguageTool.SENTENCE_END_TAGNAME.equals(tokenReadings.getAnalyzedToken(0).getPOSTag()) )
-                        && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
-                        && ! (tokenReadings.getToken() =~ /[ыэъё]|ие|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
-                    unknownMap[tokenReadings.getToken()] += 1
-                }
-            }
-        }
-    }
-
-
-    def collectHomonyms(List<AnalyzedSentence> analyzedSentences) {
-
-        for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-            for(AnalyzedTokenReadings readings: analyzedSentence.getTokens()) {
-                if( readings.size() > 1 ) {
-                    if( readings.getReadings()[0].getPOSTag().equals(JLanguageTool.SENTENCE_END_TAGNAME) )
-                        continue
-
-                    if( readings.getReadings()[-1].getPOSTag().equals(JLanguageTool.SENTENCE_END_TAGNAME) ) {
-                        if( readings.size() == 2 )
-                            continue
-                        readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
-                    }
-                    if( readings.getReadings()[-1].getPOSTag() == null && readings.getToken().contains('\u0301') ) {
-                        readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
-                    }
-
-                    def key = readings.join("|")
-                    homonymFreqMap[key] += 1
-                    homonymTokenMap[key] << readings.getToken()
-                }
-            }
-        }
-    }
-
-
-    def collectFrequency(List<AnalyzedSentence> analyzedSentences) {
-           for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-            analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
-                if( tokenReadings.getAnalyzedToken(0).getPOSTag()
-                        && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
-                        && ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
-                    frequencyMap[tokenReadings.getToken()] += 1
-                }
-            }
-        }
-    }
-
-    def collectLemmaFrequency(List<AnalyzedSentence> analyzedSentences) {
-       for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-            analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
-                tokenReadings.getReadings()
-                    .findAll { it.getLemma() \
-                        && tokenReadings.getToken() ==~ /[а-яіїєґА-ЯІЇЄҐ'-]+/
-                    }
-                    .unique()
-                    .each {
-                        lemmaFrequencyMap[ it.getLemma() ] += 1
-                    }
-            }
-        }
-    }
-
-    def printHomonymStats() {
-
-        def printStream
-        if( options.output == "-" ) {
-            printStream = System.out
-            printStream.println "\n\n"
-        }
-        else {
-            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.homonym.txt')
-            printStream = new PrintStream(outputFile, "UTF-8")
-        }
-
-        printStream.println("Час-та\tОм.\tЛем\tСлово\tОмоніми")
-
-        homonymFreqMap
-        .sort { -it.value }
-        .each{ k, v ->
-            def items = k.split(/\|/)
-            def homonimCount = items.size()
-            def posHomonimCount = items.collect { it.split(":", 2)[0] }.unique().size()
-
-            def lemmasHaveCaps = items.any { Character.isUpperCase(it.charAt(0)) }
-            if( ! lemmasHaveCaps ) {
-                homonymTokenMap[k] = homonymTokenMap[k].collect { it.toLowerCase() }.unique()
-            }
-
-            def str = String.format("%6d\t%d\t%d\t%s\t\t%s", v, homonimCount, posHomonimCount, homonymTokenMap[k].join(","), k)
-            printStream.println(str)
-        }
-    }
-
-    def printUnknownStats() {
-
-        def printStream
-        if( options.output == "-" ) {
-            printStream = System.out
-            printStream.println "\n\n"
-        }
-        else {
-            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.unknown.txt')
-            printStream = new PrintStream(outputFile, "UTF-8")
-        }
-
-        unknownMap
-        .sort { it.key }
-        .each{ k, v ->
-            def str = String.format("%6d\t%s", v, k)
-            printStream.println(str)
-        }
-    }
-
-    def printFrequencyStats() {
-
-        def printStream
-        if( options.output == "-" ) {
-            printStream = System.out
-            printStream.println "\n\n"
-        }
-        else {
-            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.freq.txt')
-            printStream = new PrintStream(outputFile, "UTF-8")
-        }
-
-        frequencyMap
-        .sort { it.key }
-        .each{ k, v ->
-            def str = String.format("%6d\t%s", v, k)
-            printStream.println(str)
-        }
-    }
-
-    def printLemmaFrequencyStats() {
-
-        def printStream
-        if( options.output == "-" ) {
-            printStream = System.out
-            printStream.println "\n\n"
-        }
-        else {
-            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.lemma.freq.txt')
-            printStream = new PrintStream(outputFile, "UTF-8")
-        }
-
-        lemmaFrequencyMap
-        .sort { it.key }
-        .each{ k, v ->
-            def str = String.format("%6d\t%s", v, k)
-            printStream.println(str)
-        }
-    }
 
     private static boolean isZheleh(options) {
         return options.modules && 'zheleh' in options.modules
@@ -433,22 +270,25 @@ class TagText {
     def process() {
         def outputFile = textUtils.processByParagraph(options, { buffer ->
             return tagText(buffer)
-        });
+        },
+		{ TagResult result ->
+			stats.add(result.stats) 
+		});
     }
 
     def postProcess() {
 
         if( options.homonymStats ) {
-            printHomonymStats()
+            stats.printHomonymStats()
         }
         if( options.unknownStats ) {
-            printUnknownStats()
+            stats.printUnknownStats()
         }
         if( options.frequencyStats ) {
-            printFrequencyStats()
+            stats.printFrequencyStats()
         }
         if( options.lemmaStats ) {
-            printLemmaFrequencyStats()
+            stats.printLemmaFrequencyStats()
         }
     }
 	
@@ -500,6 +340,7 @@ class TagText {
         cli.e(longOpt: 'semanticTags', 'Add semantic tags')
         cli.k(longOpt: 'noTag', 'Do not write tagged text (only perform stats)')
         cli.m(longOpt: 'modules', args:1, required: false, 'Comma-separated list of modules, supported modules: [zheleh]')
+        cli._(longOpt: 'singleThread', 'Always use single thread (default is to use multithreading if > 2 cpus are found)')
         cli.q(longOpt: 'quiet', 'Less output')
         cli.h(longOpt: 'help', 'Help - Usage Information')
 
@@ -544,7 +385,195 @@ class TagText {
         return options
     }
 
+	
+	class Stats {
+		def homonymFreqMap = [:].withDefault { 0 }
+		def homonymTokenMap = [:].withDefault{ new HashSet<>() }
+		def unknownMap = [:].withDefault { 0 }
+		def frequencyMap = [:].withDefault { 0 }
+		def lemmaFrequencyMap = [:].withDefault { 0 }
 
+		
+		synchronized void add(Stats stats) {
+			stats.homonymFreqMap.each { k,v -> homonymFreqMap[k] += v }
+			stats.homonymTokenMap.each { k,v -> homonymTokenMap[k] += v }
+			stats.unknownMap.each { k,v -> unknownMap[k] += v }
+			stats.frequencyMap.each { k,v -> frequencyMap[k] += v }
+			stats.lemmaFrequencyMap.each { k,v -> lemmaFrequencyMap[k] += v }
+		}
+		
+		def collectUnknown(List<AnalyzedSentence> analyzedSentences) {
+			for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+				// if any words contain Russian sequence filter out the whole sentence - this removes tons of Russian words from our unknown list
+				// we could also test each word against Russian dictionary but that would filter out some valid Ukrainian words too
+				if( options.filterUnknown ) {
+					def unknownBad = analyzedSentence.getTokensWithoutWhitespace()[1..-1].find { AnalyzedTokenReadings tokenReadings ->
+						tokenReadings.getToken() =~ /[ыэъё]|и[еи]/
+					}
+					if( unknownBad )
+						continue
+				}
+
+				analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
+					if( (tokenReadings.getAnalyzedToken(0).getPOSTag() == null
+					|| JLanguageTool.SENTENCE_END_TAGNAME.equals(tokenReadings.getAnalyzedToken(0).getPOSTag()) )
+					&& tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
+					&& ! (tokenReadings.getToken() =~ /[ыэъё]|ие|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
+						unknownMap[tokenReadings.getToken()] += 1
+					}
+				}
+			}
+		}
+
+
+		def collectHomonyms(List<AnalyzedSentence> analyzedSentences) {
+
+			for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+				for(AnalyzedTokenReadings readings: analyzedSentence.getTokens()) {
+					if( readings.size() > 1 ) {
+						if( readings.getReadings()[0].getPOSTag().equals(JLanguageTool.SENTENCE_END_TAGNAME) )
+							continue
+
+						if( readings.getReadings()[-1].getPOSTag().equals(JLanguageTool.SENTENCE_END_TAGNAME) ) {
+							if( readings.size() == 2 )
+								continue
+							readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
+						}
+						if( readings.getReadings()[-1].getPOSTag() == null && readings.getToken().contains('\u0301') ) {
+							readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
+						}
+
+						def key = readings.join("|")
+						homonymFreqMap[key] += 1
+						homonymTokenMap[key] << readings.getToken()
+					}
+				}
+			}
+		}
+
+
+		def collectFrequency(List<AnalyzedSentence> analyzedSentences) {
+			for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+				analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
+					if( tokenReadings.getAnalyzedToken(0).getPOSTag()
+					&& tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
+					&& ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
+						frequencyMap[tokenReadings.getToken()] += 1
+					}
+				}
+			}
+		}
+
+		def collectLemmaFrequency(List<AnalyzedSentence> analyzedSentences) {
+			for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+				analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
+					tokenReadings.getReadings()
+							.findAll { it.getLemma() \
+						&& tokenReadings.getToken() ==~ /[а-яіїєґА-ЯІЇЄҐ'-]+/
+							}
+							.unique()
+							.each {
+								lemmaFrequencyMap[ it.getLemma() ] += 1
+							}
+				}
+			}
+		}
+	
+
+	    def printHomonymStats() {
+	
+	        def printStream
+	        if( options.output == "-" ) {
+	            printStream = System.out
+	            printStream.println "\n\n"
+	        }
+	        else {
+	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.homonym.txt')
+	            printStream = new PrintStream(outputFile, "UTF-8")
+	        }
+	
+	        printStream.println("Час-та\tОм.\tЛем\tСлово\tОмоніми")
+	
+	        homonymFreqMap
+	        .sort { -it.value }
+	        .each{ k, v ->
+	            def items = k.split(/\|/)
+	            def homonimCount = items.size()
+	            def posHomonimCount = items.collect { it.split(":", 2)[0] }.unique().size()
+	
+	            def lemmasHaveCaps = items.any { Character.isUpperCase(it.charAt(0)) }
+	            if( ! lemmasHaveCaps ) {
+	                homonymTokenMap[k] = homonymTokenMap[k].collect { it.toLowerCase() }.unique()
+	            }
+	
+	            def str = String.format("%6d\t%d\t%d\t%s\t\t%s", v, homonimCount, posHomonimCount, homonymTokenMap[k].join(","), k)
+	            printStream.println(str)
+	        }
+	    }
+	
+	    def printUnknownStats() {
+	
+	        def printStream
+	        if( options.output == "-" ) {
+	            printStream = System.out
+	            printStream.println "\n\n"
+	        }
+	        else {
+	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.unknown.txt')
+	            printStream = new PrintStream(outputFile, "UTF-8")
+	        }
+	
+	        unknownMap
+	        .sort { it.key }
+	        .each{ k, v ->
+	            def str = String.format("%6d\t%s", v, k)
+	            printStream.println(str)
+	        }
+	    }
+	
+	    def printFrequencyStats() {
+	
+	        def printStream
+	        if( options.output == "-" ) {
+	            printStream = System.out
+	            printStream.println "\n\n"
+	        }
+	        else {
+	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.freq.txt')
+	            printStream = new PrintStream(outputFile, "UTF-8")
+	        }
+	
+	        frequencyMap
+	        .sort { it.key }
+	        .each{ k, v ->
+	            def str = String.format("%6d\t%s", v, k)
+	            printStream.println(str)
+	        }
+	    }
+	
+	    def printLemmaFrequencyStats() {
+	
+	        def printStream
+	        if( options.output == "-" ) {
+	            printStream = System.out
+	            printStream.println "\n\n"
+	        }
+	        else {
+	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.lemma.freq.txt')
+	            printStream = new PrintStream(outputFile, "UTF-8")
+	        }
+	
+	        lemmaFrequencyMap
+	        .sort { it.key }
+	        .each{ k, v ->
+	            def str = String.format("%6d\t%s", v, k)
+	            printStream.println(str)
+	        }
+	    }
+	}
+
+	
+	
     static void main(String[] args) {
 
         def nlpUk = new TagText()

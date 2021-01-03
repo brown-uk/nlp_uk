@@ -1,11 +1,19 @@
 package org.nlp_uk.tools
 
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
+import groovy.transform.TypeChecked
 
 class TextUtils {
 
     static int MAX_PARAGRAPH_SIZE = 200*1024
 
-    static def processByParagraph(options, Closure closure) {
+    static def processByParagraph(options, Closure closure, Closure resultClosure) {
 
         if( options.output == "-" || options.input == "-" ) {
             warnOnWindows();
@@ -45,6 +53,29 @@ class TextUtils {
             outputFile.println('<text>\n')
         }
 
+		long tm1 = System.currentTimeMillis()
+		int cores = Runtime.getRuntime().availableProcessors()
+		if( cores > 2 && ! options.singleThread ) {
+			System.err.println ("Found ${cores} cores, using parallel threads")
+			processFileParallel(inputFile, outputFile, closure, (int)(cores/2), resultClosure)
+		}
+		else {
+			processFile(inputFile, outputFile, closure, resultClosure)
+		}
+		if( ! options.quiet ) {
+			long tm2 = System.currentTimeMillis()
+			System.err.println "Time: " + (tm2-tm1) + " ms"
+		}
+
+        if( options.xmlOutput ) {
+            outputFile.println('\n</text>')
+        }
+
+        return outputFile
+    }
+
+
+	static void processFile(def inputFile, PrintStream outputFile, Closure closure, Closure resultClosure) {
         StringBuilder buffer = new StringBuilder()
         boolean notEmpty = false
 
@@ -53,30 +84,84 @@ class TextUtils {
             notEmpty |= line.trim().length() > 0
 
             if( (notEmpty
+//					&& buffer.length() > 1000
                     && buffer.lastIndexOf("\n\n") == buffer.length() - 2 )
                     || buffer.length() > MAX_PARAGRAPH_SIZE ) {
                 def str = buffer.toString()
 
-                def analyzed = closure(str)
-                outputFile.print(analyzed)
+				try {
+					def analyzed = closure(str)
+					outputFile.print(analyzed.tagged)
+					resultClosure(analyzed)
+				}
+				catch(Throwable e) {
+					e.printStackTrace()
+				}
 
-                buffer = new StringBuilder()
+				buffer = new StringBuilder()
                 notEmpty = false
             }
         })
 
         if( buffer ) {
             def analyzed = closure(buffer.toString())
-            outputFile.print(analyzed)
+            outputFile.print(analyzed.tagged)
+			resultClosure(analyzed)
         }
-
-        if( options.xmlOutput ) {
-            outputFile.println('\n</text>\n')
-        }
-
-        return outputFile
     }
+    
+	static void processFileParallel(def inputFile, PrintStream outputFile, Closure closure, int cores, Closure resultClosure) {
+		ExecutorService executor = Executors.newFixedThreadPool(cores + 1) 	// +1 for consumer
+		BlockingQueue<Future> futures = new ArrayBlockingQueue<>(cores*2)	// we need to poll for futures in order so keep the queue busy
 
+		executor.submit {
+		  for(Future f = futures.poll(5, TimeUnit.MINUTES); ; f = futures.poll(5, TimeUnit.MINUTES)) {
+//				println "queue size: " + futures.size()
+				def result = f.get()
+				if( result == null ) break;
+				outputFile.print result.tagged
+				resultClosure(result)
+			}
+//			println "done polling"
+		} as Callable
+
+	
+		StringBuilder buffer = new StringBuilder()
+		boolean notEmpty = false
+
+		inputFile.eachLine('UTF-8', 0, { String line ->
+			buffer.append(line).append("\n")
+			notEmpty |= line.trim().length() > 0
+
+			if( (notEmpty
+//					&& buffer.length() > 1000
+					&& buffer.lastIndexOf("\n\n") == buffer.length() - 2 )
+					|| buffer.length() > MAX_PARAGRAPH_SIZE ) {
+				def str = buffer.toString()
+
+				futures << executor.submit(new Callable<Object>() {
+					public def call() {
+						return closure(str)
+					}
+				})
+
+				buffer = new StringBuilder()
+				notEmpty = false
+			}
+		})
+
+		futures << executor.submit {return null} as Callable
+		executor.shutdown()
+		executor.awaitTermination(1, TimeUnit.HOURS)
+
+		if( buffer ) {
+			def analyzed = closure(buffer.toString())
+			outputFile.print(analyzed.tagged)
+			resultClosure(analyzed)
+		}
+
+	}
+	
 
     static void warnOnWindows() {
         // windows have non-unicode encoding set by default
