@@ -30,8 +30,8 @@ class StressTextTest {
 
 	@Test
 	public void testStress() {
-		def expected = "Аби́ те про́сте́ сло́во загуло́ розмі́щеним мабобом."
-		def text = "Аби те просте слово загуло розміщеним мабобом."
+		def expected = "Аби́ те про́сте́ сло́во загуло́ розмі́щеним якнайщирі́шим мабобом."
+		def text = "Аби те просте слово загуло розміщеним якнайщирішим мабобом."
 //		def text = TagText.stripAccent(expected + ambig).trim()
 
 		result = stressText.stressText(text)
@@ -42,12 +42,12 @@ class StressTextTest {
 
 	@Test
 	public void testStressDualTags() {
-		def expected = "аналізу́є/аналізує абонува́ти ага́кало/агакало докладніше/докла́дніше"
+		def expected = "аналізу́є/аналізує абонува́ти ага́кало/агакало докла́дніше"
 		def text = "аналізує абонувати агакало докладніше"
 
 		result = stressText.stressText(text)
 		assertEquals expected.trim(), result.tagged
-		assertEquals 3, result.stats.unknownCnt
+		assertEquals 2, result.stats.unknownCnt
 		assertEquals 0, result.stats.homonymCnt
 	}
 	

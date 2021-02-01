@@ -114,25 +114,30 @@ class StressText {
 					return	
 			
 				String keyTag = getTagKey(anToken.getPOSTag())
-				println "key: $anToken.lemma $keyTag"
+				def tokenLemma = anToken.lemma
+				println "key: $tokenLemma $keyTag"
 
+				if( tokenLemma =~ /^((що)?якнай|щонай).*(ий|е)$/ ) {
+					tokenLemma = tokenLemma.replaceFirst(/^((що)?якнай|щонай)/, '')
+				}
+					
 				List<StressInfo> infos = []
 				
-				if( anToken.lemma in stresses ) {
-					 infos = stresses[anToken.lemma][keyTag] ?: infos
+				if( tokenLemma in stresses ) {
+					 infos = stresses[tokenLemma][keyTag] ?: infos
 
 					if( ! infos ) {
 						if( keyTag.startsWith("verb") ) {
 							String genericTag = keyTag.replaceFirst(/:(im)?perf/, ':imperf:perf')
-							if( genericTag in stresses[anToken.lemma] ) {
-								infos = stresses[anToken.lemma][genericTag]
+							if( genericTag in stresses[tokenLemma] ) {
+								infos = stresses[tokenLemma][genericTag]
 							}
 						}
 						else if( keyTag.startsWith("noun") && keyTag.contains(":+") ) {
 							// TODO: other genders
 							String genericTag = keyTag.replaceFirst(/:[mfn]/, ':m:+n')
-							if( genericTag in stresses[anToken.lemma] ) {
-								infos = stresses[anToken.lemma][genericTag]
+							if( genericTag in stresses[tokenLemma] ) {
+								infos = stresses[tokenLemma][genericTag]
 							}
 						}
 
@@ -142,13 +147,18 @@ class StressText {
 					if( keyTag.startsWith("noun") && keyTag.endsWith(":p") ) {
 						for(String s: [":m", ":f", ":n"]) {
 							String genderTag = keyTag.replaceFirst(/:p$/, s)
-							if( genderTag in stresses[anToken.lemma] ) {
-								infos += stresses[anToken.lemma][genderTag]
+							if( genderTag in stresses[tokenLemma] ) {
+								infos += stresses[tokenLemma][genderTag]
 							}
 						}
 					}
 				}
-				
+				else if( anToken.getPOSTag().startsWith("adv:comp") ) {
+					// if we have докладніше adj:n:comp skip unknown adv:comp
+					if( analyzedTokens.any { it.getPOSTag() && it.getPOSTag().startsWith("adj:n:v_naz:comp") } )
+						return
+				}
+
 				println "info: $infos"
 				if( infos ) {
 					// handle /1/ - simple offset
@@ -180,8 +190,8 @@ class StressText {
 					}
 				}
 				else {
-					if( getSyllCount(anToken.lemma) == 1 ) {
-						println "single syll lemma: $anToken.lemma"
+					if( getSyllCount(tokenLemma) == 1 ) {
+						println "single syll lemma: $tokenLemma"
 						applyAccents(theToken, [1] as int[])
 					}
 					else {
@@ -191,6 +201,7 @@ class StressText {
 				}
 			}
 			.flatten()
+			.findAll{ it }
 			.unique()
 
 		println "words: $words"
