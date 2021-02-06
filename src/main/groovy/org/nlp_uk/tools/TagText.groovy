@@ -3,8 +3,8 @@
 package org.nlp_uk.tools
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.2')
-//@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='5.2')
+@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.7')
 
@@ -392,14 +392,18 @@ class TagText {
 		def unknownMap = [:].withDefault { 0 }
 		def frequencyMap = [:].withDefault { 0 }
 		def lemmaFrequencyMap = [:].withDefault { 0 }
+		def knownMap = [:].withDefault { 0 }
+		def knownCnt = 0
 
 		
 		synchronized void add(Stats stats) {
 			stats.homonymFreqMap.each { k,v -> homonymFreqMap[k] += v }
 			stats.homonymTokenMap.each { k,v -> homonymTokenMap[k] += v }
 			stats.unknownMap.each { k,v -> unknownMap[k] += v }
+			stats.knownMap.each { k,v -> knownMap[k] += v }
 			stats.frequencyMap.each { k,v -> frequencyMap[k] += v }
 			stats.lemmaFrequencyMap.each { k,v -> lemmaFrequencyMap[k] += v }
+		    knownCnt += stats.knownCnt
 		}
 		
 		def collectUnknown(List<AnalyzedSentence> analyzedSentences) {
@@ -421,6 +425,14 @@ class TagText {
 					&& ! (tokenReadings.getToken() =~ /[ыэъё]|ие|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
 						unknownMap[tokenReadings.getToken()] += 1
 					}
+				}
+				analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
+				    if( ! (tokenReadings.getToken() =~ /[0-9]|^[a-zA-Z-]+$/) && tokenReadings.getReadings().any { AnalyzedToken at -> 
+				            at.getPOSTag() != null && ! (at.getPOSTag() =~ /_END/)
+				        } ) {
+				      knownCnt++
+				      knownMap[tokenReadings.getToken()] += 1
+				    }
 				}
 			}
 		}
@@ -524,11 +536,17 @@ class TagText {
 	        }
 	
 	        unknownMap
-	        .sort { it.key }
-	        .each{ k, v ->
-	            def str = String.format("%6d\t%s", v, k)
-	            printStream.println(str)
-	        }
+		        .sort { it.key }
+		        .each{ k, v ->
+		            def str = String.format("%6d\t%s", v, k)
+		            printStream.println(str)
+		        }
+
+			int unknownCnt = unknownMap ? unknownMap.values().sum() as int : 0
+			double unknownPct = knownCnt+unknownCnt ? unknownCnt*100/(knownCnt+unknownCnt) : 0
+	        println "Known: $knownCnt, unknown: $unknownCnt, " + String.format("%.1f", unknownPct) + "%"
+			double unknownFrPct = knownMap.size()+unknownMap.size() ? unknownMap.size()*100/(knownMap.size()+unknownMap.size()) : 0
+	        println "Known unique: ${knownMap.size()}, unknown unique: " + unknownMap.size() + ", " + String.format("%.1f", unknownFrPct) + "%"
 	    }
 	
 	    def printFrequencyStats() {

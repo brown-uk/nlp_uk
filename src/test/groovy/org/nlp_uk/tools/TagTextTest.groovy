@@ -114,6 +114,20 @@ class TagTextTest {
 		TagResult tagged = tagText.tagText("Слово.")
 		assertEquals expected, tagged.tagged
 	}
+
+
+	@Test
+	public void testStats() {
+		tagText.setOptions(["unknownStats": true, "output": "-"])
+
+		TagResult tagged = tagText.tagText("десь брарарат")
+
+		assertEquals 1, tagged.stats.knownCnt
+		assertEquals 1, tagged.stats.unknownMap.values().sum()
+		
+		tagged.stats.printUnknownStats()
+	}
+
 }
 
 
