@@ -52,6 +52,6 @@ class CleanTextTest {
 		//TODO:
 		result = cleanText.cleanUp("минулого-сучасного-май-\nбутнього", file(), [])
 		assert result == "минулого-сучасного-майбутнього\n"
-		
 	}
+
 }

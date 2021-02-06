@@ -18,6 +18,7 @@ package org.nlp_uk.other
 @GrabConfig(systemClassLoader=true)
 @Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.6')
 @Grab(group='org.languagetool', module='language-uk', version='5.2')
+//@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='5.2')
 //@Grab(group='commons-cli', module='commons-cli', version='1.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
@@ -41,7 +42,7 @@ class CleanText {
     // for higher quality text esp. short newspaper articles you need to keep it low ~100
     // for larger text with possible scanned sources you may want to go higher > 200
     // note: we count words with 2 letters and more
-    int minUkrWordCount = 20
+    int minUkrWordCount = 0
 
     Map<String, String> KNOWN_MIXES =
     [
@@ -126,6 +127,7 @@ class CleanText {
         cli.m(longOpt: 'modules', args:1, required: false, 'Extra cleanup: remove footnotes, page numbers etc. (supported modules: nanu)')
         cli.w(longOpt: 'wordCount', args:1, required: false, 'Minimum Ukrainian word count')
         cli.n(longOpt: 'allowTwoColumn', 'do not discard two-column text')
+        cli.k(longOpt: 'keepInvalidFiles', 'do not discard invalid files')
         cli.p(longOpt: 'parallel', 'Process files in parallel')
         cli.i(longOpt: 'input', args:1, required: false, 'Input file')
         cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: input file with .out added before extention')
@@ -183,7 +185,7 @@ class CleanText {
                 }
             }
             
-            println "Found ${files.size} .txt files in $dir"
+            println "Found ${files.size()} .txt files in $dir"
             
 			if( files ) {
 				def outDirName = prepareDir(baseDir)
@@ -208,7 +210,7 @@ class CleanText {
 
         println "Завершено!"
 
-        return 0
+		return 0
     }
 
     private prepareDir(File baseDir) {
@@ -272,7 +274,8 @@ class CleanText {
                 println "Looking at " + pathRelative
             }
 
-            String text = file.text
+			String origText = file.text
+            String text = origText
 
             text = cleanUp(text, file, options)
             if( ! text ) {
@@ -280,32 +283,44 @@ class CleanText {
                     out.get().flush()
                     System.out.println(outSw.get().toString("UTF-8"))
                 }
-                return
+				
+				if( ! options.keepInvalidFiles ) 
+					return
             }
 
             // NOTE: only counting words with 2 or more letters to filter out noised texts
-            if( ! verifyWordCounts(text, minUkrWordCount) ) {
+            if( text && ! verifyWordCounts(text, minUkrWordCount) ) {
                 if( options.parallel ) {
                     out.get().flush()
                     System.out.println(outSw.get().toString("UTF-8"))
                 }
-                return
+				if( ! options.keepInvalidFiles ) 
+					return
             }
 
 
 //            println "\tGOOD: $file.name\n"
 
 
+			File outFile
             if( outFilename == null ) {
 //                def outDirName = outDirName == "." ? "good" : outDirName + "-good/"
                 new File(outDirName).mkdirs()
                 def outFilename2 = (file.canonicalPath.replaceFirst(baseDir.canonicalPath, outDirName))
                 new File(new File(outFilename2).getParent()).mkdirs()
-                new File(outFilename2).text = text
+                outFile = new File(outFilename2)
             }
             else {
-                new File(outFilename).text = text
+                outFile = new File(outFilename)
             }
+
+			if( text != null ) {
+				outFile.text = text
+			}
+			else {
+				println "\tCopying file as is"
+				outFile.bytes = file.bytes
+			}
 
             if( options.parallel ) {
                 out.get().flush()
@@ -338,15 +353,22 @@ class CleanText {
             println "\tERROR: знайдено файл zip, можливо, це документ Word?"
             return null
         }
+        if( file.length() > 100 && file.text.startsWith("{\rtf") ) {
+            println "\tERROR: знайдено \"{\rtf\", можливо, це документ RTF?"
+            return null
+        }
 
         if( text.contains("\r") ) {
-            println "\tВилучаємо \\r"
+//            println "\tВилучаємо \\r"
             text = text.replace("\r", "")
         }
-        
-        text = fixEncoding(text, file)
-        if( ! text )
-            return null
+
+		if( ! isUTF8(file.bytes) ) {
+            println "\tWARNING: file is not in UTF-8 encoding"
+			text = fixEncoding(text, file)
+			if( text == null )
+				return null
+		}
 
         if( ! checkEmptyLines(text) )
             return null             
@@ -624,9 +646,19 @@ class CleanText {
 
 
     @CompileStatic
+    String tryCp1251(File file) {
+        def cp1251Text = file.getText("cp1251")
+        if( cp1251Text =~ /(?iu)[сц]ьк|ння|від|[іи]й|ої|ти| [ійвузао] | н[еі] | що / ) {
+			return cp1251Text
+		}
+		return null
+    }
+
+    @CompileStatic
     String fixEncoding(String text, File file) {
         if( text.contains("\u008D\u00C3") ) { // completely broken encoding for «ій»
             println "\tWARNING: nonfixable broken encoding found, garbage will be left in!"
+			return null
         }
 
         if( text.contains("éîãî") ) {
@@ -658,26 +690,25 @@ class CleanText {
 
             println "\tEncoding fixed (good lines: $goodLines, convertedLines: $convertedLines, text: " + getSample(text)
         }
-        else if( Collections.indexOfSubList(file.bytes.toList(), [(byte)0x20, (byte)0xB3, (byte)0x20]) != -1 ) {
-            def cp1251Text = file.getText("cp1251")
-            
-            if( cp1251Text.contains(" і ") ) {
-                println "\tWARNING: cp1251 encoding"
+        else {
+			String cp1251Text = tryCp1251(file)
+			if( cp1251Text ) {
+                println "\tWARNING: cp1251 encoding found"
 
                 text = cp1251Text
 
-                if( text.size() < 200 ) {
-                    println "\tFile size < 200 chars, probaby cp1251 conversion didn't work, skipping"
+                if( text.size() < 10 ) {
+                    println "\tFile size < 10 chars, probaby cp1251 conversion didn't work, skipping"
                     return null
                 }
 
                 println "\tEncoding converted: " + getSample(text)
-            }
+			}
         }
 
         if( text.contains("\uFFFD") ) {
-            println "\tWARNING: File contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD)"
-            //        return
+            println "\tERROR: File contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD)"
+            return null
         }
 
         return text
@@ -823,7 +854,12 @@ class CleanText {
     private boolean verifyWordCounts(String text, int minUkrWordCount) {
         def ukrWords = text.split(/[^А-ЯІЇЄҐёа-яіїєґё'’ʼ-]+/).findAll{ it ==~ /[А-ЩЬЮЯІЇЄҐа-щьюяіїєґ][А-ЩЬЮЯІЇЄҐа-щьюяіїєґ'’ʼ-]+/ }
         int ukrWordCount = ukrWords.size()
-        if( minUkrWordCount > 0 && ukrWordCount < minUkrWordCount ) {
+        if( minUkrWordCount == 0 ) {
+            if( ukrWordCount == 0 ) {
+				println "\tWARNING: 0 Ukrainian words: " + getSample(text) // + "\n\t" + ukrWords
+            }
+        }
+        else if( ukrWordCount < minUkrWordCount ) {
             println "\tERROR: Less than $minUkrWordCount Ukrainian words ($ukrWordCount): " + getSample(text) // + "\n\t" + ukrWords
             return false
         }
@@ -850,4 +886,39 @@ class CleanText {
 
         return true
     }
+	
+    @CompileStatic
+	private static boolean isUTF8(byte[] pText) {
+
+		int expectedLength = 0;
+
+		for (int i = 0; i < pText.length && i < 300; i++) {
+			if ((pText[i] & 0b10000000) == 0b00000000) {
+				expectedLength = 1;
+			} else if ((pText[i] & 0b11100000) == 0b11000000) {
+				expectedLength = 2;
+			} else if ((pText[i] & 0b11110000) == 0b11100000) {
+				expectedLength = 3;
+			} else if ((pText[i] & 0b11111000) == 0b11110000) {
+				expectedLength = 4;
+			} else if ((pText[i] & 0b11111100) == 0b11111000) {
+				expectedLength = 5;
+			} else if ((pText[i] & 0b11111110) == 0b11111100) {
+				expectedLength = 6;
+			} else {
+				return false;
+			}
+
+			while (--expectedLength > 0) {
+				if (++i >= pText.length) {
+					return false;
+				}
+				if ((pText[i] & 0b11000000) != 0b10000000) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
 }
