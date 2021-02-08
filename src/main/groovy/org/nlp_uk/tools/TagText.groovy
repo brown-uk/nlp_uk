@@ -3,8 +3,8 @@
 package org.nlp_uk.tools
 
 @GrabConfig(systemClassLoader=true)
-//@Grab(group='org.languagetool', module='language-uk', version='5.2')
-@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='5.2')
+//@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.7')
 
