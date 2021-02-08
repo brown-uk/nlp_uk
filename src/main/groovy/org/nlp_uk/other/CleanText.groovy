@@ -24,6 +24,8 @@ package org.nlp_uk.other
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
 import groovy.cli.picocli.CliBuilder
+
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.regex.Pattern
@@ -39,6 +41,8 @@ import org.languagetool.tagging.uk.UkrainianTagger
 
 
 class CleanText {
+	private static final String UTF8 = StandardCharsets.UTF_8.name();
+	
     // for higher quality text esp. short newspaper articles you need to keep it low ~100
     // for larger text with possible scanned sources you may want to go higher > 200
     // note: we count words with 2 letters and more
@@ -109,7 +113,7 @@ class CleanText {
             minUkrWordCount = options.wordCount as int
         }
         if( minUkrWordCount > 0 ) {
-            println "Min Word limit: $minUkrWordCount"
+            println "Minimum word limit: $minUkrWordCount"
         }
     }
 
@@ -208,7 +212,7 @@ class CleanText {
             processFiles(files, null, outputFilename, null)
         }
 
-        println "Завершено!"
+        println "Done!"
 
 		return 0
     }
@@ -260,7 +264,7 @@ class CleanText {
 
 		println ""
 
-        stream.forEach{ file ->
+        stream.forEach{ File file ->
             if( options.parallel ) {
                 def byteStream = new ByteArrayOutputStream()
                 outSw.set(byteStream)
@@ -274,14 +278,14 @@ class CleanText {
                 println "Looking at " + pathRelative
             }
 
-			String origText = file.text
+			String origText = file.getText(UTF8)
             String text = origText
 
             text = cleanUp(text, file, options)
             if( ! text ) {
                 if( options.parallel ) {
                     out.get().flush()
-                    System.out.println(outSw.get().toString("UTF-8"))
+                    System.out.println(outSw.get().toString(UTF8))
                 }
 				
 				if( ! options.keepInvalidFiles ) 
@@ -292,7 +296,7 @@ class CleanText {
             if( text && ! verifyWordCounts(text, minUkrWordCount) ) {
                 if( options.parallel ) {
                     out.get().flush()
-                    System.out.println(outSw.get().toString("UTF-8"))
+                    System.out.println(outSw.get().toString(UTF8))
                 }
 				if( ! options.keepInvalidFiles ) 
 					return
@@ -315,7 +319,7 @@ class CleanText {
             }
 
 			if( text != null ) {
-				outFile.text = text
+				outFile.setText(text, UTF8)
 			}
 			else {
 				println "\tCopying file as is"
@@ -324,7 +328,7 @@ class CleanText {
 
             if( options.parallel ) {
                 out.get().flush()
-                System.out.println(outSw.get().toString("UTF-8"))
+                System.out.println(outSw.get().toString(UTF8))
             }
         }
 
@@ -353,11 +357,15 @@ class CleanText {
             println "\tERROR: знайдено файл zip, можливо, це документ Word?"
             return null
         }
-        if( file.length() > 100 && file.text.startsWith("{\rtf") ) {
+        if( file.length() > 100 && text.startsWith("{\rtf") ) {
             println "\tERROR: знайдено \"{\rtf\", можливо, це документ RTF?"
             return null
         }
 
+		int nlIdx = text.indexOf("\n")
+		int dosNlIdx = text.indexOf("\r\n")
+		boolean dosNlPresent = dosNlIdx >= 0 && dosNlIdx+1 == nlIdx
+		
         if( text.contains("\r") ) {
 //            println "\tВилучаємо \\r"
             text = text.replace("\r", "")
@@ -415,6 +423,11 @@ class CleanText {
 		text = fixSplitWords(text, file)
 		
 		checkForSpacing(text, file)
+		
+		if( dosNlPresent ) {
+			println "\tFirst new line is DOS-style, using DOS new line for the whole text"
+			text = text.replaceAll(/(?!<\r)\n/, "\r\n")
+		}
 		
 		text
     }

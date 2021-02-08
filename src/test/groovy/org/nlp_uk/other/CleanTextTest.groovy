@@ -54,4 +54,8 @@ class CleanTextTest {
 		assert result == "минулого-сучасного-майбутнього\n"
 	}
 
+	@Test
+	public void testDosNewline() {
+		assertEquals "брат\r\n", clean("б_p_ат\r\n")
+	}
 }
