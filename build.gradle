@@ -7,17 +7,6 @@ compileJava.options.encoding = 'UTF-8'
 String ltVersion="5.2"
 
 
-buildscript {
-  repositories {
-    mavenCentral()
-  }
-  dependencies {
-    classpath group: 'org.apache.maven', name: 'maven-embedder', version: '3.6.+'
-    classpath group: 'org.codehaus.plexus', name: 'plexus-interpolation', version: '1.+'
-    classpath group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.21'
-  }
-}
-
 repositories {
     mavenCentral()
     mavenLocal()
@@ -25,23 +14,13 @@ repositories {
 
 
 dependencies {
-    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.6'
-    compile group: 'org.codehaus.groovy', name: 'groovy-cli-picocli', version: '3.0.6'
+    implementation group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.+'
+    implementation group: 'org.codehaus.groovy', name: 'groovy-cli-picocli', version: '3.0.+'
 //    compile 'commons-cli:commons-cli:1.4'
-	compile group:'ch.qos.logback', name:'logback-classic', version:'1.2.3'
+	implementation group:'ch.qos.logback', name:'logback-classic', version:'1.2.3'
 	
-    // compile with local version of LanguageTool
-    if( project.hasProperty('ltDir') ) {
-        compile files(ltDir + '/languagetool-core/target/classes')
-        compile files(ltDir + '/languagetool-language-modules/uk/target/classes')
-        compile files(ltDir + '/languagetool-language-modules/ru/target/classes')
-        compile fileTree(dir: ltDir + '/languagetool-language-modules/uk/target/dependency', include: ['*.jar'], exclude: ['languagetool*.jar'])
-//    compile fileTree(dir: ltLibDir, include: ['*.jar'], exclude: ['languagetool*.jar'])
-    }
-    else{
-        compile 'org.languagetool:language-uk:' + ltVersion
-        compile 'org.languagetool:language-ru:' + ltVersion
-    }
+    implementation 'org.languagetool:language-uk:' + ltVersion
+    implementation 'org.languagetool:language-ru:' + ltVersion
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.+'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.+'
@@ -95,101 +74,6 @@ test {
   jvmArgs '-Dgroovy.grape.enable=false'
 }
 
-
-import org.apache.maven.cli.*
-
-task installLtCore() {
-    doLast {
-        MavenCli cli = new MavenCli();
-
-        def projectRoot="$ltDir/languagetool-core"
-        System.setProperty("maven.multiModuleProjectDirectory", projectRoot)
-
-        cli.doMain(["clean", "install"].toArray(new String[0]), projectRoot, System.out, System.out);
-    }
-}
-
-task prepareLtUk() {
-    doLast {
-        MavenCli cli = new MavenCli();
-
-        def projectRoot="$ltDir/languagetool-language-modules/uk"
-        System.setProperty("maven.multiModuleProjectDirectory", projectRoot)
-
-        cli.doMain(["dependency:copy-dependencies"].toArray(new String[0]), projectRoot, System.out, System.out);
-    }
-}
-
-task buildLtUk() {
-    doLast {
-        MavenCli cli = new MavenCli();
-
-        def testToRun="org.languagetool.tagging.disambiguation.rules.uk.UkrainianDisambiguationRuleTest"
-        def projectRoot="$ltDir/languagetool-language-modules/uk"
-        System.setProperty("maven.multiModuleProjectDirectory", projectRoot)
-
-        if( ! project.hasProperty('allTests') ) {
-            System.setProperty("test", "$testToRun")
-        }
-
-        cli.doMain(["compile", "test"].toArray(new String[0]), projectRoot, System.out, System.out);
-    }
-}
-
-
-task devTagText (type: JavaExec, dependsOn: classes) {
-    systemProperties << ['groovy.grape.enable': 'false']
-    classpath = sourceSets.main.runtimeClasspath
-
-    main = "org.nlp_uk.tools.TagText"
-
-    def options = project.hasProperty('options') ? project.options : ""
-
-    args options.split()
-
-    if( project.hasProperty('disabledRules') ) {
-        logger.lifecycle("Disabled rules: " + disabledRules.join(', '))
-        args "-d", disabledRules
-    }
-
-    doFirst {
-        logger.lifecycle("Tagging with options \"$options\"...")
-    }
-}
-
-def get_diff_cmd(outputDir, file) {
-    return "diff -u ${file}.old $file > ${file}.diff || echo 'File $file differs!'"
-}
-
-
-task devTagTextDiff(type: Exec) {
-    def inFile = project.hasProperty('inputFile') ? project.inputFile : ""
-
-    def fileToDiff = new File(inFile).name.replaceFirst(/\.txt$/, '') + '.tagged.txt'
-    def cmd = get_diff_cmd('', fileToDiff)
-
-    commandLine "sh", "-c", "${cmd}"
-
-    doFirst {
-        logger.lifecycle("Diffing $fileToDiff...")
-    }
-}
-
-
-task devTokenizeText (type: JavaExec, dependsOn: classes) {
-    systemProperties << ['groovy.grape.enable': 'false']
-    classpath = sourceSets.main.runtimeClasspath
-
-    main = "org.nlp_uk.tools.TokenizeText"
-
-    def options = project.hasProperty('options') ? project.options : ""
-
-    args options.split()
-
-    doFirst {
-        logger.lifecycle("Tagging with options \"$options\"...")
-    }
-}
 
 
 // windows have non-unicode encoding set by default
