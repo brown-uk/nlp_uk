@@ -310,7 +310,9 @@ class CleanText {
             if( outFilename == null ) {
 //                def outDirName = outDirName == "." ? "good" : outDirName + "-good/"
                 new File(outDirName).mkdirs()
-                def outFilename2 = (file.canonicalPath.replaceFirst(baseDir.canonicalPath, outDirName))
+				
+				int idx = file.canonicalPath.lastIndexOf(baseDir.canonicalPath)
+                String outFilename2 = file.canonicalPath.take(idx) + outDirName + "/" + file.getName()
                 new File(new File(outFilename2).getParent()).mkdirs()
                 outFile = new File(outFilename2)
             }
