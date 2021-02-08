@@ -354,11 +354,11 @@ class CleanText {
     //@CompileStatic
     String cleanUp(String text, File file, def options) {
         if( file.length() > 100 && file.bytes[0..3] == [0x50, 0x4B, 0x03, 0x04] ) {
-            println "\tERROR: знайдено файл zip, можливо, це документ Word?"
+            println "\tERROR: found zip file, perhaps it's a Word document?"
             return null
         }
         if( file.length() > 100 && text.startsWith("{\rtf") ) {
-            println "\tERROR: знайдено \"{\rtf\", можливо, це документ RTF?"
+            println "\tERROR: found \"{\rtf\", perhaps it's an RTF document?"
             return null
         }
 
@@ -367,7 +367,7 @@ class CleanText {
 		boolean dosNlPresent = dosNlIdx >= 0 && dosNlIdx+1 == nlIdx
 		
         if( text.contains("\r") ) {
-//            println "\tВилучаємо \\r"
+//            println "\tRemoving \\r"
             text = text.replace("\r", "")
         }
 
@@ -876,7 +876,7 @@ class CleanText {
             println "\tERROR: Less than $minUkrWordCount Ukrainian words ($ukrWordCount): " + getSample(text) // + "\n\t" + ukrWords
             return false
         }
-        println "\tУкраїнських слів: $ukrWordCount"
+        println "\tUkrainian words: $ukrWordCount"
         //    if( ukrWordCount < 300 ) println "\t\t: " + ukrWords
 
         // for really big text counting chars takes long time
