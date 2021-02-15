@@ -52,18 +52,10 @@ class TagText {
 	}
 	
 	Stats stats = new Stats()
-	
-    StringWriter writer
-    MarkupBuilder xml
 
 
     void setOptions(options) {
         this.options = options
-
-        if( options.xmlOutput ) {
-            writer = new StringWriter()
-            xml = new MarkupBuilder(writer)
-        }
 
         if( options.semanticTags ) {
 			if( ! options.xmlOutput ) {
@@ -80,13 +72,21 @@ class TagText {
 
     def tagText(String text) {
         List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
+		
+		StringWriter writer
+		MarkupBuilder xml
+	
+		if( options.xmlOutput ) {
+			writer = new StringWriter()
+			xml = new MarkupBuilder(writer)
+		}
 
         def sb = new StringBuilder()
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
             if( options.xmlOutput ) {
                 AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
 
-				outputSentenceXml(tokens)
+				outputSentenceXml(xml, tokens)
 
 				sb.append(writer.toString()).append("\n\n");
                 writer.getBuffer().setLength(0)
@@ -137,7 +137,7 @@ class TagText {
         return new TagResult(sb.toString(), stats)
     }
     
-	private outputSentenceXml(AnalyzedTokenReadings[] tokens) {
+	private outputSentenceXml(MarkupBuilder xml, AnalyzedTokenReadings[] tokens) {
 		xml.'sentence'() {
 
 			tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->

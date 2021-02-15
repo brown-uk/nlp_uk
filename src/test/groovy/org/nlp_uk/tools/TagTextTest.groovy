@@ -128,6 +128,88 @@ class TagTextTest {
 		tagged.stats.printUnknownStats()
 	}
 
+	
+	
+	@Test
+	public void testXmlParallel() {
+		
+		File file = File.createTempFile("tag_input",".tmp")
+		file.deleteOnExit()
+		file.setText("Слово.\n\nДіло.\n\nШвидко.\n\n", "UTF-8")
+
+		File outFile = File.createTempFile("tag_output",".tmp")
+		outFile.deleteOnExit()
+		outFile.text = ''
+
+		
+		tagText.setOptions(["xmlOutput": true, "input": file.path, "output": outFile.path])
+		
+		tagText.process()
+
+		def expected =
+"""<?xml version="1.0" encoding="UTF-8"?>
+<text>
+
+<sentence>
+  <tokenReading>
+    <token value='Слово' lemma='слово' tags='noun:inanim:n:v_naz' />
+    <token value='Слово' lemma='слово' tags='noun:inanim:n:v_zna' />
+  </tokenReading>
+  <tokenReading>
+    <token value='.' tags='punct' whitespaceBefore='false' />
+  </tokenReading>
+</sentence>
+
+<sentence>
+  <tokenReading>
+    <token value='Діло' lemma='діло' tags='noun:inanim:n:v_naz' />
+    <token value='Діло' lemma='діло' tags='noun:inanim:n:v_zna' />
+  </tokenReading>
+  <tokenReading>
+    <token value='.' tags='punct' whitespaceBefore='false' />
+  </tokenReading>
+</sentence>
+
+<sentence>
+  <tokenReading>
+    <token value='Швидко' lemma='швидко' tags='adv:compb' />
+  </tokenReading>
+  <tokenReading>
+    <token value='.' tags='punct' whitespaceBefore='false' />
+  </tokenReading>
+</sentence>
+
+
+</text>
+"""
+		assertEquals expected, outFile.getText("UTF-8")
+	}
+
+	
+	@Test
+	public void testTxtParallel() {
+		
+		File file = File.createTempFile("tag_input",".tmp")
+		file.deleteOnExit()
+		file.setText("Слово.\n\nДіло.\n\nШвидко.\n\n", "UTF-8")
+
+		File outFile = File.createTempFile("tag_output",".tmp")
+		outFile.deleteOnExit()
+		outFile.text = ''
+
+		
+		tagText.setOptions(["input": file.path, "output": outFile.path])
+		
+		tagText.process()
+
+		def expected =
+"""Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].<P/> 
+Діло[діло/noun:inanim:n:v_naz,діло/noun:inanim:n:v_zna].<P/> 
+Швидко[швидко/adv:compb].<P/> 
+"""
+		assertEquals expected, outFile.getText("UTF-8")
+	}
+
 }
 
 
