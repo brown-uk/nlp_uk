@@ -116,9 +116,14 @@ class StressText {
 				String keyTag = getTagKey(anToken.getPOSTag())
 				def tokenLemma = anToken.lemma
 				println "key: $tokenLemma $keyTag"
+				int stressOffset = 0
 
 				if( tokenLemma =~ /^((що)?якнай|щонай).*(ий|е)$/ ) {
 					tokenLemma = tokenLemma.replaceFirst(/^((що)?якнай|щонай)/, '')
+					stressOffset += 2
+					if( tokenLemma.startsWith("щоякнай") ) {
+						stressOffset += 1
+					}
 				}
 					
 				List<StressInfo> infos = []
@@ -172,7 +177,7 @@ class StressText {
 											.collect{ 
 												def x = stripAccent(it.word) == theToken
 													? it.word
-													: restoreAccent(it.word, theToken)  // casing is off - need to apply accent
+													: restoreAccent(it.word, theToken, 0)  // casing is off - need to apply accent
 												x
 											}
 
@@ -186,7 +191,7 @@ class StressText {
 						foundForms
 					}
 					else {
-						restoreAccent(infos[0].word, theToken)
+						restoreAccent(infos[0].word, theToken, stressOffset)
 					}
 				}
 				else {
@@ -306,8 +311,11 @@ class StressText {
 	}
 	
 	@CompileStatic
-	static String restoreAccent(String lemma, String word) {
+	static String restoreAccent(String lemma, String word, int offset) {
 		int[] accents = getAccentSyllIdxs(lemma)
+		if( offset ) {
+			accents.eachWithIndex{ int a, int i -> accents[i]+=offset }
+		}
 		println "restore for: $lemma: $accents"
 		applyAccents(word, accents)
 	}
