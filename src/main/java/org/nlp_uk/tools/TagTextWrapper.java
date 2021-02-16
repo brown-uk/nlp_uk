@@ -1,5 +1,7 @@
 package org.nlp_uk.tools;
 
+import java.lang.reflect.Method;
+
 import groovy.util.GroovyScriptEngine;
 
 /**
@@ -32,11 +34,14 @@ public class TagTextWrapper {
 // Note: for multi-threaded approach create separate tagText instance for each thread
         java.lang.reflect.Constructor<?> constructor = clazz.getDeclaredConstructor();
         Object tagText = constructor.newInstance();
+        Method parseOptionsMethod = clazz.getDeclaredMethod("parseOptions", String[].class);
+        Method processMethod = clazz.getDeclaredMethod("process");
 
         for(int i=0; i<4; i++) {
-            Object options = clazz.getDeclaredMethod("parseOptions", String[].class).invoke(null, (Object)new String[]{"-i", filename, "-o", outFilename});
-            clazz.getDeclaredMethod("setOptions", Object.class).invoke(tagText, options);
-            clazz.getDeclaredMethod("process").invoke(tagText);
+            Object options = parseOptionsMethod.invoke(null, (Object)new String[]{"-i", filename, "-o", outFilename});
+            Method setOptionsMethod = clazz.getDeclaredMethod("setOptions", options.getClass());
+            setOptionsMethod.invoke(tagText, options);
+            processMethod.invoke(tagText);
             System.out.println("Done tagging: " + i);
         }
     }

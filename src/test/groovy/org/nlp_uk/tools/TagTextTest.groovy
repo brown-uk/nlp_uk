@@ -7,11 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.nlp_uk.tools.TagText.TagOptions
 import org.nlp_uk.tools.TagText.TagResult
 
 
 class TagTextTest {
-	def options = [ : ]
+	def options = new TagOptions()
 
 	TagText tagText = new TagText()
 	
@@ -33,7 +34,7 @@ class TagTextTest {
 
 	@Test
 	public void testXml() {
-		tagText.setOptions(["xmlOutput": true])
+		tagText.setOptions(new TagOptions(xmlOutput: true))
 
 		TagResult tagged = tagText.tagText("Слово.")
 		def expected =
@@ -54,7 +55,7 @@ class TagTextTest {
 	
 	@Test
 	public void testForeign() {
-		tagText.setOptions(["xmlOutput": true])
+		tagText.setOptions(new TagOptions(xmlOutput: true))
 
 		TagResult tagged = tagText.tagText("Crow")
 		def expected =
@@ -72,7 +73,7 @@ class TagTextTest {
 	@Disabled
 	@Test
 	public void testIgnoreLang() {
-		tagText.setOptions(["ignoreOtherLanguages": true, "xmlOutput": true])
+		tagText.setOptions(new TagOptions(ignoreOtherLanguages: true, xmlOutput: true))
 
 		TagResult tagged = tagText.tagText("<span lang='ru'>Слво.</span>")
 		assertEquals "<foreign>Слво.</foreign>\n\n", tagged
@@ -110,7 +111,7 @@ class TagTextTest {
 
 """
 		
-		tagText.setOptions(["semanticTags": true, "xmlOutput": true] )
+		tagText.setOptions(new TagOptions(semanticTags: true, xmlOutput: true))
 		TagResult tagged = tagText.tagText("Слово.")
 		assertEquals expected, tagged.tagged
 	}
@@ -118,7 +119,7 @@ class TagTextTest {
 
 	@Test
 	public void testStats() {
-		tagText.setOptions(["unknownStats": true, "output": "-"])
+		tagText.setOptions(new TagOptions(unknownStats: true, output: "-"))
 
 		TagResult tagged = tagText.tagText("десь брарарат")
 
@@ -142,7 +143,7 @@ class TagTextTest {
 		outFile.text = ''
 
 		
-		tagText.setOptions(["xmlOutput": true, "input": file.path, "output": outFile.path])
+		tagText.setOptions(new TagOptions(xmlOutput: true, input: file.path, output: outFile.path))
 		
 		tagText.process()
 
@@ -198,7 +199,7 @@ class TagTextTest {
 		outFile.text = ''
 
 		
-		tagText.setOptions(["input": file.path, "output": outFile.path])
+		tagText.setOptions(new TagOptions(input: file.path, output: outFile.path))
 		
 		tagText.process()
 

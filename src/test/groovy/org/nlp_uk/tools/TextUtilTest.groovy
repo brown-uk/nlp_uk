@@ -10,14 +10,15 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.nlp_uk.tools.TagText.Stats
+import org.nlp_uk.tools.TagText.TagOptions
 import org.nlp_uk.tools.TagText.TagResult
 
 
 class TextUtilTest {
-	def options = [ 
-		"input": "-", 
-		"unknownStats": true 
-		]
+	TagOptions options = new TagOptions( 
+		input: "-", 
+		unknownStats: true 
+		)
 
 	TextUtils tagUtils = new TextUtils()
 	TagText tagText = new TagText()

@@ -16,7 +16,7 @@ package org.nlp_uk.other
 //package org.nlp_uk.other
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.6')
+@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.+')
 @Grab(group='org.languagetool', module='language-uk', version='5.2')
 //@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='5.2')
@@ -41,8 +41,8 @@ import org.languagetool.tagging.uk.UkrainianTagger
 
 
 class CleanText {
-	private static final String UTF8 = StandardCharsets.UTF_8.name();
-	
+    private static final String UTF8 = StandardCharsets.UTF_8.name();
+
     // for higher quality text esp. short newspaper articles you need to keep it low ~100
     // for larger text with possible scanned sources you may want to go higher > 200
     // note: we count words with 2 letters and more
@@ -108,7 +108,7 @@ class CleanText {
         this.options = options
 
         latToCyrMap.each{ String k, String v -> cyrToLatMap[v] = k }
-        
+
         if( options.wordCount ) {
             minUkrWordCount = options.wordCount as int
         }
@@ -172,11 +172,10 @@ class CleanText {
 					: "."
 
             File baseDir = new File(dir)
-//            processDir(baseDir, baseDir)
             def files = []
-            
+
             int maxDepth_ = options.recursive ? -1 : 0;
-                
+
             baseDir.traverse(type: groovy.io.FileType.FILES, 
                 maxDepth: maxDepth_,
                 preDir       : { if (it.name == 'good' || it.name.endsWith('-good') ) return FileVisitResult.SKIP_SUBTREE },
