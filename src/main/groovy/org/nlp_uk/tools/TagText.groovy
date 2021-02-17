@@ -3,10 +3,9 @@
 package org.nlp_uk.tools
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.2')
-//@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='5.2')
+@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
-//@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.7')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
 import java.util.regex.Pattern
@@ -14,16 +13,22 @@ import java.util.regex.Pattern
 import org.languagetool.*
 import org.languagetool.language.*
 
-import picocli.CommandLine
-import picocli.CommandLine.*
-
+import groovy.json.JsonBuilder
+import groovy.json.JsonGenerator
+import groovy.json.JsonOutput
+import groovy.json.StringEscapeUtils
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
-import groovy.xml.MarkupBuilder
 import groovy.util.Eval
+import groovy.xml.MarkupBuilder
+import picocli.CommandLine
+import picocli.CommandLine.Option
+import picocli.CommandLine.ParameterException
 
 
 class TagText {
+    enum OutputFormat { txt, xml, json }
+    
     @groovy.transform.SourceURI
     static SOURCE_URI
     // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
@@ -53,10 +58,11 @@ class TagText {
 
     void setOptions(TagOptions options) {
         this.options = options
+        options.adjust()
 
         if( options.semanticTags ) {
-			if( ! options.xmlOutput ) {
-				System.err.println ("Semantic tagging only available in xml output")
+			if( options.outputFormat == OutputFormat.txt ) {
+				System.err.println ("Semantic tagging only available in xml/json output")
 				System.exit 1
 			}
 			
@@ -67,26 +73,45 @@ class TagText {
     }
 
 
+    @CompileStatic
     def tagText(String text) {
         List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
 		
 		StringWriter writer
-		MarkupBuilder xml
+		GroovyObjectSupport builder
 	
-		if( options.xmlOutput ) {
+		if( options.outputFormat == OutputFormat.xml ) {
 			writer = new StringWriter()
-			xml = new MarkupBuilder(writer)
+			builder = new MarkupBuilder(writer)
 		}
+        else if( options.outputFormat == OutputFormat.json ) {
+            def gen = new JsonGenerator.Options() \
+                .disableUnicodeEscaping()
+                .build()
+            builder = new JsonBuilder(gen)
+        }
 
         def sb = new StringBuilder()
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-            if( options.xmlOutput ) {
+            if( options.outputFormat == OutputFormat.xml ) {
                 AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
 
-				outputSentenceXml(xml, tokens)
+                def tokenReagings = tagAsObject(tokens)
+                
+				outputSentenceXml(builder, tokenReagings)
 
-				sb.append(writer.toString()).append("\n\n");
+				sb.append(writer.toString()).append("\n");
                 writer.getBuffer().setLength(0)
+            }
+            else if( options.outputFormat == OutputFormat.json ) {
+                AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
+
+                def tokenReadingObj = tagAsObject(tokens)
+                
+                def s = outputSentenceJson(builder, tokenReadingObj)
+                if( sb.length() > 0 ) sb.append(",\n");
+                sb.append(s)
+//                sb.append("\n");
             }
             else if ( ! options.noTag ) {
                 String sentenceLine
@@ -112,7 +137,7 @@ class TagText {
                 }
 
 
-                sb.append(sentenceLine).append("\n");
+                sb.append(sentenceLine) //.append("\n");
             }
         }
 
@@ -133,68 +158,105 @@ class TagText {
 
         return new TagResult(sb.toString(), stats)
     }
-    
-	private outputSentenceXml(MarkupBuilder xml, AnalyzedTokenReadings[] tokens) {
-		xml.'sentence'() {
 
-			tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
-				String theToken = tokenReadings.token
+    @CompileStatic
+    private tagAsObject(AnalyzedTokenReadings[] tokens) {
+        def tokenReadingsT = []
 
-				if( tokenReadings.isLinebreak() ) {
-					def nonEndTagToken = tokenReadings.find {
-						! (it.getPOSTag() in [JLanguageTool.PARAGRAPH_END_TAGNAME, JLanguageTool.SENTENCE_END_TAGNAME])
-					}
+        tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
+            String theToken = tokenReadings.getToken()
 
-					if( nonEndTagToken == null )
-						return
-				}
+            if( tokenReadings.isLinebreak() ) {
+                def nonEndTagToken = tokenReadings.find { AnalyzedToken it ->
+                    ! (it.getPOSTag() in [JLanguageTool.PARAGRAPH_END_TAGNAME, JLanguageTool.SENTENCE_END_TAGNAME])
+                }
 
-				if( tokenReadings.isPosTagUnknown() ) {
-					if( isZheleh(options) ) {
-						tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
-					}
-				}
+                if( nonEndTagToken == null )
+                    return
+            }
 
-				'tokenReading'() {
+            if( tokenReadings.isPosTagUnknown() ) {
+                if( isZheleh(options) ) {
+                    tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
+                }
+            }
 
-					if( tokenReadings.isPosTagUnknown() && PUNCT_PATTERN.matcher(theToken).matches() ) {
-						'token'('value': tokenReadings.getToken(), 'tags': 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore() )
-						return
-					}
-					else if( tokenReadings.isPosTagUnknown() && LATIN_WORD_PATTERN.matcher(theToken).matches() ) {
-						'token'('value': tokenReadings.getToken(), 'tags': 'noninfl:foreign' )
-						return
-					}
 
-					List<AnalyzedToken> readings = tokenReadings.getReadings()
+            if( tokenReadings.isPosTagUnknown() && PUNCT_PATTERN.matcher(theToken).matches() ) {
+                tokenReadingsT << [tokens: [['value': tokenReadings.getToken(), 'tags': 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore()]]]
+                return
+            }
+            else if( tokenReadings.isPosTagUnknown() && LATIN_WORD_PATTERN.matcher(theToken).matches() ) {
+                tokenReadingsT << [tokens: [['value': tokenReadings.getToken(), 'tags': 'noninfl:foreign']]]
+                return
+            }
 
-					readings.each { AnalyzedToken tkn ->
-						String posTag = tkn.getPOSTag()
-						if( posTag == JLanguageTool.SENTENCE_END_TAGNAME ) {
-							if( tokenReadings.getReadings().size() > 1 )
-								return
-							posTag = ''
-						}
+            def item = [tokens: []]
+            
+            List<AnalyzedToken> readings = tokenReadings.getReadings()
 
-						def semTags = null
-						if( options.semanticTags && tkn.getLemma() ) {
-							def key = tkn.getLemma()
-							if( posTag ) {
-								int xpIdx = posTag.indexOf(":xp")
-								if( xpIdx >= 0 ) {
-									key += " " + posTag[xpIdx+1..xpIdx+3]
-								}
-							}
-							semTags = semanticTags.get(key)
-						}
-						semTags
-								? 'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag, 'semtags': semTags)
-								: 'token'('value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag)
-					}
-				}
-			}
-		}
-	}
+            readings.each { AnalyzedToken tkn ->
+                String posTag = tkn.getPOSTag()
+                if( posTag == JLanguageTool.SENTENCE_END_TAGNAME ) {
+                    if( tokenReadings.getReadings().size() > 1 )
+                        return
+                    posTag = ''
+                }
+
+                def semTags = null
+                if( options.semanticTags && tkn.getLemma() ) {
+                    def key = tkn.getLemma()
+                    if( posTag ) {
+                        int xpIdx = posTag.indexOf(":xp")
+                        if( xpIdx >= 0 ) {
+                            key += " " + posTag[xpIdx+1..xpIdx+3]
+                        }
+                    }
+                    semTags = semanticTags.get(key)
+                }
+
+                def token = semTags \
+                        ? ['value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag, 'semtags': semTags]
+                        : ['value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag]
+                
+                item.tokens << token 
+            }
+            
+            tokenReadingsT << item
+        }
+            
+        tokenReadingsT
+    }
+
+
+    private outputSentenceXml(GroovyObjectSupport builder, tokenReadings) {
+        builder.'sentence'() {
+            tokenReadings.each { tr -> tr
+                'tokenReading'() {
+                    tr.tokens.each { t -> 
+                       'token'(t)
+                    }
+                } 
+            }
+        }
+    }
+
+    private String outputSentenceJson(GroovyObjectSupport builder, tokenReadingsList) {
+        builder {
+            tokenReadings tokenReadingsList.collect { tr ->
+                [ 
+                    tokens: tr.tokens.collect { t ->
+                        t
+                    }
+                ]
+            }
+        }
+        String jsonOut = builder.toString()
+        jsonOut = JsonOutput.prettyPrint(jsonOut)
+        jsonOut = StringEscapeUtils.unescapeJavaScript(jsonOut)
+        jsonOut = jsonOut.replaceAll(/(?m)^(.)/, '        $1')
+        return jsonOut
+    }
 
     @CompileStatic
     private static String adjustZheleh(String text) {
@@ -331,6 +393,8 @@ class TagText {
         boolean firstLemmaOnly
         @Option(names = ["-x", "--xmlOutput"], description = ["Output in xml format"])
         boolean xmlOutput
+        @Option(names = ["-n", "--outputFormat"], arity="1", description = ["Output format: {txt, xml, json}"])
+        OutputFormat outputFormat
         @Option(names = ["-s", "--homonymStats"], description = ["Collect homohym statistics"])
         boolean homonymStats
         @Option(names = ["-u", "--unknownStats"], description = ["Collect unknown words statistics"])
@@ -345,7 +409,7 @@ class TagText {
         boolean semanticTags
         @Option(names = ["-k", "--noTag"], description = ["Do not write tagged text (only perform stats)"])
         boolean noTag
-        @Option(names = ["-m", "--modules"], arity="1", required = false, description = ["Comma-separated list of modules, supported modules: [zheleh]"])
+        @Option(names = ["-m", "--modules"], arity="1", description = ["Comma-separated list of modules, supported modules: [zheleh]"])
         List<String> modules
         @Option(names = ["--singleThread"], description = ["Always use single thread (default is to use multithreading if > 2 cpus are found)"])
         boolean singleThread
@@ -357,6 +421,20 @@ class TagText {
         List<String> disabledRules
         // experimental
         boolean ignoreOtherLanguages
+        
+        void adjust() {
+            if( ! outputFormat ) {
+                if( xmlOutput ) {
+                    outputFormat = OutputFormat.xml
+                }
+                else {
+                    outputFormat = OutputFormat.txt
+                }
+            }
+            if( ! quiet ) {
+                println "Output format: " + outputFormat
+            }
+        }
     }
     
 
@@ -376,9 +454,10 @@ class TagText {
             System.exit 1
         }
         
-        // ugly way to define default value for output
+        options.adjust()
+        
         if( ! options.output ) {
-            def fileExt = options.xmlOutput ? ".xml" : ".txt"
+            def fileExt = "." + options.outputFormat // ? ".xml" : ".txt"
             def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tagged" + fileExt
             options.output = outfile
         }
@@ -511,7 +590,7 @@ class TagText {
 	            printStream.println "\n\n"
 	        }
 	        else {
-	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.homonym.txt')
+	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml|json)$/, '') + '.homonym.txt')
 	            printStream = new PrintStream(outputFile, "UTF-8")
 	        }
 	
@@ -542,7 +621,7 @@ class TagText {
 	            printStream.println "\n\n"
 	        }
 	        else {
-	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.unknown.txt')
+	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml|json)$/, '') + '.unknown.txt')
 	            printStream = new PrintStream(outputFile, "UTF-8")
 	        }
 	
@@ -568,7 +647,7 @@ class TagText {
 	            printStream.println "\n\n"
 	        }
 	        else {
-	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.freq.txt')
+	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml|json)$/, '') + '.freq.txt')
 	            printStream = new PrintStream(outputFile, "UTF-8")
 	        }
 	
@@ -588,7 +667,7 @@ class TagText {
 	            printStream.println "\n\n"
 	        }
 	        else {
-	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml)$/, '') + '.lemma.freq.txt')
+	            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml|json)$/, '') + '.lemma.freq.txt')
 	            printStream = new PrintStream(outputFile, "UTF-8")
 	        }
 	

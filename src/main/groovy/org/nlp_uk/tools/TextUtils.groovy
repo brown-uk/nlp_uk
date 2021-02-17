@@ -7,10 +7,11 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+
 import groovy.transform.TypeChecked
 
 class TextUtils {
-
+    
     static int MAX_PARAGRAPH_SIZE = 200*1024
 
     static def processByParagraph(options, Closure closure, Closure resultClosure) {
@@ -48,9 +49,13 @@ class TextUtils {
             }
         }
 
-        if( options.xmlOutput ) {
+        if( options.outputFormat.name() == "xml" ) {
             outputFile.println('<?xml version="1.0" encoding="UTF-8"?>')
             outputFile.println('<text>\n')
+        }
+        else if( options.outputFormat.name() == 'json' ) {
+            outputFile.println('{')
+            outputFile.println('    "sentences": [')
         }
 
 		long tm1 = System.currentTimeMillis()
@@ -67,31 +72,57 @@ class TextUtils {
 			System.err.println "Time: " + (tm2-tm1) + " ms"
 		}
 
-        if( options.xmlOutput ) {
+        if( options.outputFormat.name() == 'xml' ) {
             outputFile.println('\n</text>')
+        }
+        else if( options.outputFormat.name() == 'json' ) {
+            outputFile.println('\n    ]')
+            outputFile.println('}')
         }
 
         return outputFile
     }
 
+    static class OutputHandler {
+        PrintStream outputFile
+        boolean outStarted = false
+        boolean jsonStarted = false
+
+        void print(analyzed) {
+            if( jsonStarted ) {
+                outputFile.print(",\n")
+            }
+            else if( outStarted ){
+                outputFile.print("\n")
+            }
+            outputFile.print(analyzed.tagged)
+            if( analyzed.tagged.size() > 0 ) {
+                outStarted = true
+                if( ! jsonStarted && analyzed.tagged.endsWith('}') ) {
+                    jsonStarted = true
+                }
+            }
+        }
+    }
+    
 
 	static void processFile(def inputFile, PrintStream outputFile, Closure closure, Closure resultClosure) {
         StringBuilder buffer = new StringBuilder()
         boolean notEmpty = false
-
+        OutputHandler outputHandler = new OutputHandler(outputFile: outputFile)
+        
         inputFile.eachLine('UTF-8', 0, { line ->
             buffer.append(line).append("\n")
             notEmpty |= line.trim().length() > 0
 
             if( (notEmpty
-//					&& buffer.length() > 1000
                     && buffer.lastIndexOf("\n\n") == buffer.length() - 2 )
                     || buffer.length() > MAX_PARAGRAPH_SIZE ) {
                 def str = buffer.toString()
 
 				try {
 					def analyzed = closure(str)
-					outputFile.print(analyzed.tagged)
+                    outputHandler.print(analyzed)
 					resultClosure(analyzed)
 				}
 				catch(Throwable e) {
@@ -105,7 +136,7 @@ class TextUtils {
 
         if( buffer ) {
             def analyzed = closure(buffer.toString())
-            outputFile.print(analyzed.tagged)
+            outputHandler.print(analyzed)
 			resultClosure(analyzed)
         }
     }
@@ -113,15 +144,22 @@ class TextUtils {
 	static void processFileParallel(def inputFile, PrintStream outputFile, Closure closure, int cores, Closure resultClosure) {
 		ExecutorService executor = Executors.newFixedThreadPool(cores + 1) 	// +1 for consumer
 		BlockingQueue<Future> futures = new ArrayBlockingQueue<>(cores*2)	// we need to poll for futures in order so keep the queue busy
-
+        OutputHandler outputHandler = new OutputHandler(outputFile: outputFile)
+        
 		executor.submit {
-		  for(Future f = futures.poll(5, TimeUnit.MINUTES); ; f = futures.poll(5, TimeUnit.MINUTES)) {
+            for(Future f = futures.poll(5, TimeUnit.MINUTES); ; f = futures.poll(5, TimeUnit.MINUTES)) {
 //				println "queue size: " + futures.size()
-				def result = f.get()
-				if( result == null ) break;
-				outputFile.print result.tagged
-				resultClosure(result)
-			}
+                try {
+                    def analyzed = f.get()
+                    if( analyzed == null ) break;
+                    outputHandler.print(analyzed)
+                    resultClosure(analyzed)
+                }
+                catch(e) {
+                    e.printStackTrace()
+                    System.exit(1)
+                }
+            }
 //			println "done polling"
 		} as Callable
 
@@ -156,7 +194,7 @@ class TextUtils {
 
 		if( buffer ) {
 			def analyzed = closure(buffer.toString())
-			outputFile.print(analyzed.tagged)
+            outputHandler.print(analyzed)
 			resultClosure(analyzed)
 		}
 

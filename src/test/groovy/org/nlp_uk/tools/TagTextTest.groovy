@@ -27,7 +27,7 @@ class TagTextTest {
 	@Test
 	public void test() {
 		TagResult tagged = tagText.tagText("Слово.")
-		def expected = "Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].[</S><P/>]\n"
+		def expected = "Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].[</S><P/>]"
 		assertEquals expected, tagged.tagged
 	}
 	
@@ -47,7 +47,6 @@ class TagTextTest {
     <token value='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
-
 """
 		assertEquals expected, tagged.tagged
 	}
@@ -64,7 +63,6 @@ class TagTextTest {
     <token value='Crow' tags='noninfl:foreign' />
   </tokenReading>
 </sentence>
-
 """
 		assertEquals expected, tagged.tagged
 	}
@@ -108,7 +106,6 @@ class TagTextTest {
     <token value='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
-
 """
 		
 		tagText.setOptions(new TagOptions(semanticTags: true, xmlOutput: true))
@@ -136,7 +133,7 @@ class TagTextTest {
 		
 		File file = File.createTempFile("tag_input",".tmp")
 		file.deleteOnExit()
-		file.setText("Слово.\n\nДіло.\n\nШвидко.\n\n", "UTF-8")
+		file.setText("Слово X.\n\nДіло.\n\nШвидко.\n\n", "UTF-8")
 
 		File outFile = File.createTempFile("tag_output",".tmp")
 		outFile.deleteOnExit()
@@ -155,6 +152,9 @@ class TagTextTest {
   <tokenReading>
     <token value='Слово' lemma='слово' tags='noun:inanim:n:v_naz' />
     <token value='Слово' lemma='слово' tags='noun:inanim:n:v_zna' />
+  </tokenReading>
+  <tokenReading>
+    <token value='X' lemma='X' tags='number:latin' />
   </tokenReading>
   <tokenReading>
     <token value='.' tags='punct' whitespaceBefore='false' />
@@ -179,7 +179,6 @@ class TagTextTest {
     <token value='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
-
 
 </text>
 """
@@ -206,7 +205,117 @@ class TagTextTest {
 		def expected =
 """Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].<P/> 
 Діло[діло/noun:inanim:n:v_naz,діло/noun:inanim:n:v_zna].<P/> 
-Швидко[швидко/adv:compb].<P/> 
+Швидко[швидко/adv:compb].<P/> """
+		assertEquals expected, outFile.getText("UTF-8")
+	}
+
+
+	@Test
+	public void testJsonParallel() {
+		
+		File file = File.createTempFile("tag_input",".tmp")
+		file.deleteOnExit()
+		file.setText("Слово X.\n\nДіло.Швидко.\n\n", "UTF-8")
+
+		File outFile = File.createTempFile("tag_output",".tmp")
+		outFile.deleteOnExit()
+		outFile.text = ''
+
+		
+		tagText.setOptions(new TagOptions(outputFormat: "json", input: file.path, output: outFile.path, singleThread: false))
+		
+		tagText.process()
+
+		def expected =
+"""{
+    "sentences": [
+        {
+            "tokenReadings": [
+                {
+                    "tokens": [
+                        {
+                            "value": "Слово",
+                            "lemma": "слово",
+                            "tags": "noun:inanim:n:v_naz"
+                        },
+                        {
+                            "value": "Слово",
+                            "lemma": "слово",
+                            "tags": "noun:inanim:n:v_zna"
+                        }
+                    ]
+                },
+                {
+                    "tokens": [
+                        {
+                            "value": "X",
+                            "lemma": "X",
+                            "tags": "number:latin"
+                        }
+                    ]
+                },
+                {
+                    "tokens": [
+                        {
+                            "value": ".",
+                            "tags": "punct",
+                            "whitespaceBefore": false
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "tokenReadings": [
+                {
+                    "tokens": [
+                        {
+                            "value": "Діло",
+                            "lemma": "діло",
+                            "tags": "noun:inanim:n:v_naz"
+                        },
+                        {
+                            "value": "Діло",
+                            "lemma": "діло",
+                            "tags": "noun:inanim:n:v_zna"
+                        }
+                    ]
+                },
+                {
+                    "tokens": [
+                        {
+                            "value": ".",
+                            "tags": "punct",
+                            "whitespaceBefore": false
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "tokenReadings": [
+                {
+                    "tokens": [
+                        {
+                            "value": "\u0428\u0432\u0438\u0434\u043a\u043e",
+                            "lemma": "\u0448\u0432\u0438\u0434\u043a\u043e",
+                            "tags": "adv:compb"
+                        }
+                    ]
+                },
+                {
+                    "tokens": [
+                        {
+                            "value": ".",
+                            "tags": "punct",
+                            "whitespaceBefore": false
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
 """
 		assertEquals expected, outFile.getText("UTF-8")
 	}
