@@ -2,24 +2,21 @@
 
 package org.nlp_uk.tools
 
+import static org.nlp_uk.tools.TokenizeText.TagOptions.OutputFormat.txt
+
 @GrabConfig(systemClassLoader=true)
 @Grab(group='org.languagetool', module='language-uk', version='5.2')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
-@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.7')
+@Grab(group='info.picocli', module='picocli', version='4.6.+')
 
-
-import org.languagetool.*
-import org.languagetool.rules.*
-import org.languagetool.tokenizers.*
 import org.languagetool.language.*
-import org.languagetool.uk.*
+import org.languagetool.tokenizers.*
 import org.languagetool.tokenizers.uk.*
 
-import groovy.lang.Closure
-import groovy.cli.picocli.CliBuilder
-
-import java.util.regex.*
-import groovy.util.Eval
+import groovy.transform.CompileStatic
+import picocli.CommandLine
+import picocli.CommandLine.Option
+import picocli.CommandLine.ParameterException
 
 
 class TokenizeText {
@@ -35,7 +32,7 @@ class TokenizeText {
 
     SRXSentenceTokenizer sentTokenizer = new SRXSentenceTokenizer(new Ukrainian())
     UkrainianWordTokenizer wordTokenizer = new UkrainianWordTokenizer()
-    def options
+    TagOptions options
 
     TokenizeText(options) {
         this.options = options
@@ -53,18 +50,20 @@ class TokenizeText {
     }
 
     def getAnalyzed(String textToAnalyze) {
-        if( options.w ) {
-            return splitWords(textToAnalyze, options.onlyWords)
+        String txt
+        if( options.words ) {
+            txt = splitWords(textToAnalyze, options.onlyWords)
         }
         else {
-            return splitSentences(textToAnalyze)
+            txt = splitSentences(textToAnalyze)
         }
+        return ['tagged': txt]
     }
 
     def process() {
         textUtils.processByParagraph(options, { buffer ->
             return getAnalyzed(buffer)
-        })
+        }, {})
     }
 
     def splitWords(String text, boolean onlyWords) {
@@ -90,47 +89,60 @@ class TokenizeText {
             sb.toString()
         }.join("\n") + "\n"
     }
+    
+    static class TagOptions {
+        @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
+        String input
+        @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .tagged.txt/.xml)"])
+        String output
+        @Option(names = ["-w", "--words"], description = ["Tokenize into words"])
+        boolean words
+        @Option(names = ["-u", "--onlyWords"], description = ["Remove non-words (assumes \"-w\")"])
+        boolean onlyWords
+        @Option(names = ["-s", "--sentences"], description = "Tokenize into sentences (default)")
+        boolean sentences
+        @Option(names = ["-q", "--quiet"], description = ["Less output"])
+        boolean quiet
+        @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
+        boolean helpRequested
+        // just stubs
+        boolean noTag
+        boolean singleThread = true
+        enum OutputFormat { txt }
+        OutputFormat outputFormat = txt
+    }
+    
+    @CompileStatic
+    static TagOptions parseOptions(String[] argv) {
+        TagOptions options = new TagOptions()
+        CommandLine commandLine = new CommandLine(options)
+        try {
+            commandLine.parseArgs(argv)
+            if (options.helpRequested) {
+                commandLine.usage(System.out)
+                System.exit 0
+            }
+        } catch (ParameterException ex) {
+            println ex.message
+            commandLine.usage(System.out)
+            System.exit 1
+        }
+
+        if( ! options.output ) {
+            String fileExt = ".txt"
+            String outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tokenized" + fileExt
+            options.output = outfile
+        }
+        options
+    }
+
 
     static void main(String[] argv) {
 
-        def cli = new CliBuilder()
-
-        cli.i(longOpt: 'input', args:1, required: true, 'Input file')
-        cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .tokenized.txt)')
-        cli.w(longOpt: 'words', 'Tokenize into words')
-        cli.u(longOpt: 'onlyWords', 'Remove non-words (assumes "-w")')
-        cli.s(longOpt: 'sentences', 'Tokenize into sentences (default)')
-        cli.q(longOpt: 'quiet', 'Less output')
-        cli.h(longOpt: 'help', 'Help - Usage Information')
-
-
-        def options = cli.parse(argv)
-
-        if (!options) {
-            System.exit(0)
-        }
-
-        if ( options.h ) {
-            cli.usage()
-            System.exit(0)
-        }
-
-        // ugly way to define default value for output
-        if( ! options.output ) {
-            def argv2 = new ArrayList(Arrays.asList(argv))
-
-            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tokenized.txt"
-            argv2 << "-o" << outfile
-
-            options = cli.parse(argv2)
-        }
+        TagOptions options = parseOptions(argv)
 
         if( options.onlyWords && ! options.words ) {
-            def argv2 = new ArrayList(Arrays.asList(argv))
-
-            argv2 << "-w"
-
-            options = cli.parse(argv2)
+            options.words = true
         }
 
         def nlpUk = new TokenizeText(options)
