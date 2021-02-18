@@ -53,7 +53,7 @@ class TextUtilTest {
 				tagText.stats.add(result.stats) 
 			})
 		
-		assertEquals("борода[борода/noun:inanim:f:v_naz] кікука[кікука/null].<P/> \n".repeat(count), byteOS.toString("UTF-8"))
+		assertEquals("борода[борода/noun:inanim:f:v_naz] кікука[кікука/null].<P/> \n".repeat(count), byteOS.toString("UTF-8") + "\n")
 		assertEquals(new HashMap<>(["кікука": count]), new HashMap<>(tagText.stats.unknownMap))
 	}
 
@@ -74,7 +74,7 @@ class TextUtilTest {
 				tagText.stats.add(result.stats) 
 			})
 		
-		assertEquals("борода[борода/noun:inanim:f:v_naz] кікука[кікука/null].<P/> \n".repeat(count), byteOS.toString("UTF-8"))
+		assertEquals("борода[борода/noun:inanim:f:v_naz] кікука[кікука/null].<P/> \n".repeat(count), byteOS.toString("UTF-8") + "\n")
 		assertEquals(new HashMap<>(["кікука": count]), new HashMap<>(tagText.stats.unknownMap))
 	}
 }

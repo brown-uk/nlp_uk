@@ -55,7 +55,7 @@ class TextUtils {
         }
         else if( options.outputFormat.name() == 'json' ) {
             outputFile.println('{')
-            outputFile.println('    "sentences": [')
+            outputFile.println('  "sentences": [')
         }
 
 		long tm1 = System.currentTimeMillis()
@@ -76,7 +76,7 @@ class TextUtils {
             outputFile.println('\n</text>')
         }
         else if( options.outputFormat.name() == 'json' ) {
-            outputFile.println('\n    ]')
+            outputFile.println('\n  ]')
             outputFile.println('}')
         }
 
@@ -136,7 +136,7 @@ class TextUtils {
 
         if( buffer ) {
             def analyzed = closure(buffer.toString())
-            outputHandler.print(analyzed)
+            outputHandler.print(analyzed + "\n")
 			resultClosure(analyzed)
         }
     }
@@ -194,7 +194,7 @@ class TextUtils {
 
 		if( buffer ) {
 			def analyzed = closure(buffer.toString())
-            outputHandler.print(analyzed)
+            outputHandler.print(analyzed + "\n")
 			resultClosure(analyzed)
 		}
 

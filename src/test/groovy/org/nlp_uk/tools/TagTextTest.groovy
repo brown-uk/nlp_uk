@@ -133,7 +133,7 @@ class TagTextTest {
 		
 		File file = File.createTempFile("tag_input",".tmp")
 		file.deleteOnExit()
-		file.setText("Слово X.\n\nДіло.\n\nШвидко.\n\n", "UTF-8")
+		file.setText("Слово X.\n\nДіло'.\n\nМабуть кх.\n\n", "UTF-8")
 
 		File outFile = File.createTempFile("tag_output",".tmp")
 		outFile.deleteOnExit()
@@ -167,13 +167,19 @@ class TagTextTest {
     <token value='Діло' lemma='діло' tags='noun:inanim:n:v_zna' />
   </tokenReading>
   <tokenReading>
+    <token value='&apos;' tags='punct' whitespaceBefore='false' />
+  </tokenReading>
+  <tokenReading>
     <token value='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
 
 <sentence>
   <tokenReading>
-    <token value='Швидко' lemma='швидко' tags='adv:compb' />
+    <token value='Мабуть' lemma='мабуть' tags='adv:&amp;insert' />
+  </tokenReading>
+  <tokenReading>
+    <token value='кх' />
   </tokenReading>
   <tokenReading>
     <token value='.' tags='punct' whitespaceBefore='false' />
@@ -215,7 +221,7 @@ class TagTextTest {
 		
 		File file = File.createTempFile("tag_input",".tmp")
 		file.deleteOnExit()
-		file.setText("Слово X.\n\nДіло.Швидко.\n\n", "UTF-8")
+		file.setText("Слово X.\n\nДіло\".Швидко.\n\n", "UTF-8")
 
 		File outFile = File.createTempFile("tag_output",".tmp")
 		outFile.deleteOnExit()
@@ -228,93 +234,62 @@ class TagTextTest {
 
 		def expected =
 """{
-    "sentences": [
+  "sentences": [
+    {
+      "tokenReadings": [
         {
-            "tokenReadings": [
-                {
-                    "tokens": [
-                        {
-                            "value": "Слово",
-                            "lemma": "слово",
-                            "tags": "noun:inanim:n:v_naz"
-                        },
-                        {
-                            "value": "Слово",
-                            "lemma": "слово",
-                            "tags": "noun:inanim:n:v_zna"
-                        }
-                    ]
-                },
-                {
-                    "tokens": [
-                        {
-                            "value": "X",
-                            "lemma": "X",
-                            "tags": "number:latin"
-                        }
-                    ]
-                },
-                {
-                    "tokens": [
-                        {
-                            "value": ".",
-                            "tags": "punct",
-                            "whitespaceBefore": false
-                        }
-                    ]
-                }
-            ]
+          "tokens": [
+            { "value": "Слово", "lemma": "слово", "tags": "noun:inanim:n:v_naz" },
+            { "value": "Слово", "lemma": "слово", "tags": "noun:inanim:n:v_zna" }
+          ]
         },
         {
-            "tokenReadings": [
-                {
-                    "tokens": [
-                        {
-                            "value": "Діло",
-                            "lemma": "діло",
-                            "tags": "noun:inanim:n:v_naz"
-                        },
-                        {
-                            "value": "Діло",
-                            "lemma": "діло",
-                            "tags": "noun:inanim:n:v_zna"
-                        }
-                    ]
-                },
-                {
-                    "tokens": [
-                        {
-                            "value": ".",
-                            "tags": "punct",
-                            "whitespaceBefore": false
-                        }
-                    ]
-                }
-            ]
+          "tokens": [
+            { "value": "X", "lemma": "X", "tags": "number:latin" }
+          ]
         },
         {
-            "tokenReadings": [
-                {
-                    "tokens": [
-                        {
-                            "value": "\u0428\u0432\u0438\u0434\u043a\u043e",
-                            "lemma": "\u0448\u0432\u0438\u0434\u043a\u043e",
-                            "tags": "adv:compb"
-                        }
-                    ]
-                },
-                {
-                    "tokens": [
-                        {
-                            "value": ".",
-                            "tags": "punct",
-                            "whitespaceBefore": false
-                        }
-                    ]
-                }
-            ]
+          "tokens": [
+            { "value": ".", "tags": "punct", "whitespaceBefore": false }
+          ]
         }
-    ]
+      ]
+    },
+    {
+      "tokenReadings": [
+        {
+          "tokens": [
+            { "value": "Діло", "lemma": "діло", "tags": "noun:inanim:n:v_naz" },
+            { "value": "Діло", "lemma": "діло", "tags": "noun:inanim:n:v_zna" }
+          ]
+        },
+        {
+          "tokens": [
+            { "value": "\\\"", "tags": "punct", "whitespaceBefore": false }
+          ]
+        },
+        {
+          "tokens": [
+            { "value": ".", "tags": "punct", "whitespaceBefore": false }
+          ]
+        }
+      ]
+    },
+    {
+      "tokenReadings": [
+        {
+          "tokens": [
+            { "value": "Швидко", "lemma": "швидко", "tags": "adv:compb" }
+          ]
+        },
+        {
+          "tokens": [
+            { "value": ".", "tags": "punct", "whitespaceBefore": false }
+          ]
+        }
+      ]
+    }
+  ]
 }
 """
 		assertEquals expected, outFile.getText("UTF-8")

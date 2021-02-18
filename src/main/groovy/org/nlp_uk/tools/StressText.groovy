@@ -6,7 +6,7 @@ package org.nlp_uk.tools
 //@Grab(group='org.languagetool', module='language-uk', version='5.2')
 @Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
-@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.7')
+@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.+')
 
 import java.util.regex.Pattern
 

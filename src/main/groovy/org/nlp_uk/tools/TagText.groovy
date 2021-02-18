@@ -13,14 +13,9 @@ import java.util.regex.Pattern
 import org.languagetool.*
 import org.languagetool.language.*
 
-import groovy.json.JsonBuilder
-import groovy.json.JsonGenerator
-import groovy.json.JsonOutput
-import groovy.json.StringEscapeUtils
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
 import groovy.util.Eval
-import groovy.xml.MarkupBuilder
 import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
@@ -77,38 +72,41 @@ class TagText {
     def tagText(String text) {
         List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
 		
-		StringWriter writer
-		GroovyObjectSupport builder
+//		StringWriter writer
+//		GroovyObjectSupport builder
 	
 		if( options.outputFormat == OutputFormat.xml ) {
-			writer = new StringWriter()
-			builder = new MarkupBuilder(writer)
+//			writer = new StringWriter()
+//			builder = new MarkupBuilder(writer)
 		}
         else if( options.outputFormat == OutputFormat.json ) {
-            def gen = new JsonGenerator.Options() \
-                .disableUnicodeEscaping()
-                .build()
-            builder = new JsonBuilder(gen)
+//            def gen = new JsonGenerator.Options() \
+//                .disableUnicodeEscaping()
+//                .build()
+//            builder = new JsonBuilder(gen)
         }
 
         def sb = new StringBuilder()
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
             if( options.outputFormat == OutputFormat.xml ) {
+                def field = AnalyzedSentence.getDeclaredField("nonBlankTokens")
+                field.setAccessible(true)
                 AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
 
                 def tokenReagings = tagAsObject(tokens)
                 
-				outputSentenceXml(builder, tokenReagings)
-
-				sb.append(writer.toString()).append("\n");
-                writer.getBuffer().setLength(0)
+				StringBuilder x = outputSentenceXml(tokenReagings)
+                sb.append(x).append("\n");
+                
+//				sb.append(writer.toString()).append("\n");
+//                writer.getBuffer().setLength(0)
             }
             else if( options.outputFormat == OutputFormat.json ) {
                 AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
 
                 def tokenReadingObj = tagAsObject(tokens)
                 
-                def s = outputSentenceJson(builder, tokenReadingObj)
+                def s = outputSentenceJson(tokenReadingObj)
                 if( sb.length() > 0 ) sb.append(",\n");
                 sb.append(s)
 //                sb.append("\n");
@@ -159,9 +157,13 @@ class TagText {
         return new TagResult(sb.toString(), stats)
     }
 
+    private static class TTR {
+        List<?> tokens
+    }
+
     @CompileStatic
-    private tagAsObject(AnalyzedTokenReadings[] tokens) {
-        def tokenReadingsT = []
+    private List<TTR> tagAsObject(AnalyzedTokenReadings[] tokens) {
+        List<TTR> tokenReadingsT = []
 
         tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
             String theToken = tokenReadings.getToken()
@@ -182,16 +184,18 @@ class TagText {
             }
 
 
-            if( tokenReadings.isPosTagUnknown() && PUNCT_PATTERN.matcher(theToken).matches() ) {
-                tokenReadingsT << [tokens: [['value': tokenReadings.getToken(), 'tags': 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore()]]]
-                return
-            }
-            else if( tokenReadings.isPosTagUnknown() && LATIN_WORD_PATTERN.matcher(theToken).matches() ) {
-                tokenReadingsT << [tokens: [['value': tokenReadings.getToken(), 'tags': 'noninfl:foreign']]]
-                return
+            if( tokenReadings.isPosTagUnknown() ) {
+                if( PUNCT_PATTERN.matcher(theToken).matches() ) {
+                    tokenReadingsT << new TTR(tokens: [[value: tokenReadings.getToken(), 'tags': 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore()]])
+                    return
+                }
+                else if( LATIN_WORD_PATTERN.matcher(theToken).matches() ) {
+                    tokenReadingsT << new TTR(tokens: [['value': tokenReadings.getToken(), 'tags': 'noninfl:foreign']])
+                    return
+                }
             }
 
-            def item = [tokens: []]
+            TTR item = new TTR(tokens: [])
             
             List<AnalyzedToken> readings = tokenReadings.getReadings()
 
@@ -203,7 +207,7 @@ class TagText {
                     posTag = ''
                 }
 
-                def semTags = null
+                String semTags = null
                 if( options.semanticTags && tkn.getLemma() ) {
                     def key = tkn.getLemma()
                     if( posTag ) {
@@ -219,7 +223,7 @@ class TagText {
                         ? ['value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag, 'semtags': semTags]
                         : ['value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag]
                 
-                item.tokens << token 
+                item.tokens.add(token) 
             }
             
             tokenReadingsT << item
@@ -229,33 +233,111 @@ class TagText {
     }
 
 
-    private outputSentenceXml(GroovyObjectSupport builder, tokenReadings) {
-        builder.'sentence'() {
-            tokenReadings.each { tr -> tr
-                'tokenReading'() {
-                    tr.tokens.each { t -> 
-                       'token'(t)
+    private StringBuilder outputSentenceXml(tokenReadingsList) {
+//        builder.'sentence'() {
+//            tokenReadings.each { tr -> tr
+//                'tokenReading'() {
+//                    tr.tokens.each { t -> 
+//                       'token'(t)
+//                    }
+//                } 
+//            }
+//        }
+        
+        // XmlBuilder is nice but using strings gives almost 20% speedup on large files
+        StringBuilder sb = new StringBuilder()
+        sb.append("<sentence>\n");
+        tokenReadingsList.each { tr -> tr
+            sb.append("  <tokenReading>\n");
+            tr.tokens.each { t -> 
+                sb.append("    <token value='").append(quoteXml(t.value)).append("'")
+                if( t.lemma != null ) {
+                    sb.append(" lemma='").append(quoteXml(t.lemma)).append("'")
+                }
+                if( t.tags ) {
+                    sb.append(" tags='").append(quoteXml(t.tags)).append("'")
+                    if( t.tags == "punct" ) {
+                        sb.append(" whitespaceBefore='").append(t.whitespaceBefore).append("'")
                     }
-                } 
+                }
+                if( t.semtags ) {
+                    sb.append(" semtags='").append(quoteXml(t.semtags)).append("'")
+                }
+                sb.append(" />\n")
             }
+            sb.append("  </tokenReading>\n");
         }
+        sb.append("</sentence>");
+        return sb
     }
 
-    private String outputSentenceJson(GroovyObjectSupport builder, tokenReadingsList) {
-        builder {
-            tokenReadings tokenReadingsList.collect { tr ->
-                [ 
-                    tokens: tr.tokens.collect { t ->
-                        t
+    private StringBuilder outputSentenceJson(tokenReadingsList) {
+//        builder {
+//            tokenReadings tokenReadingsList.collect { tr ->
+//                [ 
+//                    tokens: tr.tokens.collect { t ->
+//                        t
+//                    }
+//                ]
+//            }
+//        }
+//        String jsonOut = builder.toString()
+//        jsonOut = JsonOutput.prettyPrint(jsonOut)
+//        jsonOut = StringEscapeUtils.unescapeJavaScript(jsonOut)
+//        jsonOut = jsonOut.replaceAll(/(?m)^(.)/, '        $1')
+//        return jsonOut
+
+        // JsonBuilder is nice but using strings gives almost 40% speedup on large files
+        StringBuilder sb = new StringBuilder()
+        sb.append("    {\n");
+        sb.append("      \"tokenReadings\": [\n");
+        tokenReadingsList.eachWithIndex { tr, trIdx -> tr
+            sb.append("        {\n");
+            sb.append("          \"tokens\": [\n");
+            
+            tr.tokens.eachWithIndex { t, tIdx -> 
+                sb.append("            { ")
+                sb.append("\"value\": \"").append(quoteJson(t.value)).append("\"")
+                if( t.lemma != null ) {
+                    sb.append(", \"lemma\": \"").append(t.lemma).append("\"")
+                }
+                if( t.tags != null ) {
+                    sb.append(", \"tags\": \"").append(t.tags).append("\"")
+                    if( t.tags == "punct" ) {
+                        sb.append(", \"whitespaceBefore\": ").append(t.whitespaceBefore) //.append("")
                     }
-                ]
+                }
+                if( t.semtags ) {
+                    sb.append(", \"semtags\": \"").append(t.semtags).append("\"")
+                }
+                sb.append(" }");
+                if( tIdx < tr.tokens.size() - 1 ) {
+                    sb.append(",")
+                }
+                sb.append("\n")
             }
+
+            sb.append("          ]");
+            sb.append("\n        }");
+            if( trIdx < tokenReadingsList.size() - 1 ) {
+                sb.append(",")
+            }
+            sb.append("\n")
         }
-        String jsonOut = builder.toString()
-        jsonOut = JsonOutput.prettyPrint(jsonOut)
-        jsonOut = StringEscapeUtils.unescapeJavaScript(jsonOut)
-        jsonOut = jsonOut.replaceAll(/(?m)^(.)/, '        $1')
-        return jsonOut
+        sb.append("      ]\n");
+        sb.append("    }");
+        return sb
+    }
+    
+    @CompileStatic
+    static String quoteJson(String s) {
+        s.replace('"', '\\"')
+    }
+    @CompileStatic
+    static String quoteXml(String s) {
+//        XmlUtil.escapeXml(s)
+        // again - much faster on our own
+        s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('\'', "&apos;") //.replace('"', "&quot;")
     }
 
     @CompileStatic
