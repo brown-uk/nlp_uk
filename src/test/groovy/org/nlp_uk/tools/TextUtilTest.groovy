@@ -4,8 +4,6 @@ package org.nlp_uk.tools
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 
-import org.apache.groovy.io.StringBuilderWriter
-import org.apache.tools.ant.filters.StringInputStream
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -42,7 +40,7 @@ class TextUtilTest {
 		def byteOS = new ByteArrayOutputStream(10000)
 		def out = new PrintStream(byteOS)
 		def count = 16
-		def input = new BufferedInputStream(new StringInputStream("борода кікука.\n\n".repeat(count)))
+		def input = new ByteArrayInputStream(("борода кікука.\n\n".repeat(count) + "А").getBytes("UTF-8"))
 		
 		tagUtils.processFileParallel(input, out, 
 			{ buffer ->  
@@ -53,7 +51,8 @@ class TextUtilTest {
 				tagText.stats.add(result.stats) 
 			})
 		
-		assertEquals("борода[борода/noun:inanim:f:v_naz] кікука[кікука/null].<P/> \n".repeat(count), byteOS.toString("UTF-8") + "\n")
+		def expected = "борода[борода/noun:inanim:f:v_naz] кікука[кікука/null].<P/> \n".repeat(count) + "А[а/conj:coord,а/intj,а/part,</S>]<P/> \n\n"
+		assertEquals(expected, byteOS.toString("UTF-8") + "\n")
 		assertEquals(new HashMap<>(["кікука": count]), new HashMap<>(tagText.stats.unknownMap))
 	}
 
@@ -63,8 +62,8 @@ class TextUtilTest {
 		
 		def byteOS = new ByteArrayOutputStream(10000)
 		def out = new PrintStream(byteOS)
-		def count = 16
-		def input = new BufferedInputStream(new StringInputStream("борода кікука.\n\n".repeat(count)))
+		def count = 8
+        def input = new ByteArrayInputStream(("борода кікука.\n\n".repeat(count) + "А").getBytes("UTF-8"))
 		
 		tagUtils.processFile(input, out, 
 			{ buffer ->  
@@ -74,7 +73,8 @@ class TextUtilTest {
 				tagText.stats.add(result.stats) 
 			})
 		
-		assertEquals("борода[борода/noun:inanim:f:v_naz] кікука[кікука/null].<P/> \n".repeat(count), byteOS.toString("UTF-8") + "\n")
+        String expected = "борода[борода/noun:inanim:f:v_naz] кікука[кікука/null].<P/> \n".repeat(count) + "А[а/conj:coord,а/intj,а/part,</S>]<P/> \n\n"
+		assertEquals(expected, byteOS.toString("UTF-8") +"\n")
 		assertEquals(new HashMap<>(["кікука": count]), new HashMap<>(tagText.stats.unknownMap))
 	}
 }

@@ -133,7 +133,7 @@ class TagTextTest {
 		
 		File file = File.createTempFile("tag_input",".tmp")
 		file.deleteOnExit()
-		file.setText("Слово X.\n\nДіло'.\n\nМабуть кх.\n\n", "UTF-8")
+		file.setText("Слово X.\n\nДіло'.\n\nМабуть кх.", "UTF-8")
 
 		File outFile = File.createTempFile("tag_output",".tmp")
 		outFile.deleteOnExit()
@@ -185,6 +185,7 @@ class TagTextTest {
     <token value='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
+
 
 </text>
 """
