@@ -13,29 +13,26 @@ package org.nlp_uk.other
 // it also tries to detect and skip two-column texts
 // it also tries to merge some simple word wraps
 
-//package org.nlp_uk.other
-
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.+')
 @Grab(group='org.languagetool', module='language-uk', version='5.2')
 //@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='5.2')
-//@Grab(group='commons-cli', module='commons-cli', version='1.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
+@Grab(group='info.picocli', module='picocli', version='4.6.+')
 
-import groovy.cli.picocli.CliBuilder
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.regex.Pattern
-import groovy.transform.Field
+
+import picocli.CommandLine
+import picocli.CommandLine.Option
+import picocli.CommandLine.ParameterException
 import groovy.io.FileVisitResult
 import groovy.transform.CompileStatic
-import org.apache.commons.lang3.ArrayUtils
+
 import org.languagetool.tagging.uk.*
 import org.languagetool.tagging.ru.RussianTagger
-import org.languagetool.*
 import org.languagetool.tagging.uk.UkrainianTagger
 //import org.nlp_uk.other.CleanTextNanu
 
@@ -123,35 +120,63 @@ class CleanText {
         }
     }
 
+    static class TagOptions {
+        //        @Parameters(arity="1", paramLabel="input", description="The file(s) whose checksum to calculate.")
+        @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
+        String input
+        @Option(names = ["-o", "--output"], arity="1", description = ["Output file ((default: input file with .out added before extention)"])
+        String output
+        @Option(names = ["--dir"], arity="1", description = ["Directory to process *.txt in (default is current directory)"])
+        String dir
+        @Option(names = ["-k", "--keepInvalidFiles"], description = ["Do not discard invalid files"])
+        boolean keepInvalidFiles
+        @Option(names = ["-n", "--allowTwoColumns"], description = ["do not discard two-column text"])
+        boolean allowTwoColumns
+        @Option(names = ["-w", "--wordCount"], description = "Minimum Ukrainian word count")
+        int wordCount
+        @Option(names = ["-c", "--clean"], description = ["Clean old files in <dir>-good/ directory"])
+        boolean clean
+        @Option(names = ["-r", "--recursive"], description = ["Process directories recursively"])
+        boolean recursive
+        @Option(names = ["-d", "--debug"], description = ["Debug output"])
+        boolean debug
+        @Option(names = ["-p", "--parallel"], description = ["Process files in parallel"])
+        boolean parallel
+        @Option(names = ["-m", "--modules"], description = ["Extra cleanup: remove footnotes, page numbers etc. (supported modules: nanu)"])
+        List<String> modules
+//        @Option(names = ["--singleThread"], description = ["Always use single thread (default is to use multithreading if > 2 cpus are found)"])
+//        boolean singleThread
+        @Option(names = ["-q", "--quiet"], description = ["Less output"])
+        boolean quiet
+        @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
+        boolean helpRequested
+
+    }
+
+
+    @CompileStatic
+    static TagOptions parseOptions(String[] argv) {
+        TagOptions options = new TagOptions()
+        CommandLine commandLine = new CommandLine(options)
+        try {
+            commandLine.parseArgs(argv)
+            if (options.helpRequested) {
+                commandLine.usage(System.out)
+                System.exit 0
+            }
+        } catch (ParameterException ex) {
+            System.err.println ex.message
+            commandLine.usage(System.out)
+            System.exit 1
+        }
+
+        return options
+    }
+
+    
     static int main(String[] args) {
 
-        CliBuilder cli = new CliBuilder(usage: "CleanText.groovy [options] [<dir>]")
-
-        cli.c(longOpt: 'clean', required: false, 'Clean old files in <dir>-good')
-        cli.m(longOpt: 'modules', args:1, required: false, 'Extra cleanup: remove footnotes, page numbers etc. (supported modules: nanu)')
-        cli.w(longOpt: 'wordCount', args:1, required: false, 'Minimum Ukrainian word count')
-        cli.n(longOpt: 'allowTwoColumn', 'do not discard two-column text')
-        cli.k(longOpt: 'keepInvalidFiles', 'do not discard invalid files')
-        cli.p(longOpt: 'parallel', 'Process files in parallel')
-        cli.i(longOpt: 'input', args:1, required: false, 'Input file')
-        cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: input file with .out added before extention')
-        cli.r(longOpt: 'recursive', required: false, 'Process directories recursively')
-        cli.d(longOpt: 'debug', required: false, 'Debug output')
-        cli.h(longOpt: 'help', 'Help - Usage Information')
-        cli._(longOpt: 'dir', args:1, 'Directory to process *.txt in (default is current directory)')
-
-
-        def options = cli.parse(args)
-
-        if (!options) {
-            System.exit(0)
-        }
-
-        if ( options.h ) {
-            cli.usage()
-            System.exit(0)
-        }
-
+        def options = parseOptions(args)
 
         return new CleanText(options).process()
     }

@@ -6,23 +6,16 @@ package org.nlp_uk.tools
 //@Grab(group='org.languagetool', module='language-uk', version='5.2')
 @Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
-@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.+')
-
-import java.util.regex.Pattern
+@Grab(group='info.picocli', module='picocli', version='4.6.+')
 
 import org.languagetool.*
-import org.languagetool.rules.*
-import org.languagetool.tagging.uk.IPOSTag
-import org.languagetool.tokenizers.*
 import org.languagetool.language.*
-import org.languagetool.uk.*
 
-import groovy.cli.picocli.CliBuilder
-import groovy.lang.Closure
-import groovy.lang.Lazy
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
-import groovy.util.Eval
+import picocli.CommandLine
+import picocli.CommandLine.Option
+import picocli.CommandLine.ParameterException
 
 
 class StressText {
@@ -402,53 +395,49 @@ class StressText {
 	}
 	
 
-    static parseOptions(String[] argv) {
-        def cli = new CliBuilder()
-
-        cli.i(longOpt: 'input', args:1, required: true, 'Input file')
-        cli.o(longOpt: 'output', args:1, required: false, 'Output file (default: <input file> - .txt + .stressed.txt)')
-        cli._(longOpt: 'singleThread', 'Always use single thread (default is to use multithreading if > 2 cpus are found)')
-        cli.q(longOpt: 'quiet', 'Less output')
-        cli.h(longOpt: 'help', 'Help - Usage Information')
-
-
-        def options = cli.parse(argv)
-
-        if (!options) {
-            System.exit(0)
+    static class TagOptions {
+        @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
+        String input
+        @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .stressed.txt)"])
+        String output
+        @Option(names = ["--singleThread"], description = ["Always use single thread (default is to use multithreading if > 2 cpus are found)"])
+        boolean singleThread
+        @Option(names= ["-q", "--quiet"], usageHelp= true, description= "Less messages.")
+        boolean quiet
+        @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
+        boolean helpRequested
+    }
+    
+    @CompileStatic
+    static TagOptions parseOptions(String[] argv) {
+        TagOptions options = new TagOptions()
+        CommandLine commandLine = new CommandLine(options)
+        try {
+            commandLine.parseArgs(argv)
+            if (options.helpRequested) {
+                commandLine.usage(System.out)
+                System.exit 0
+            }
+        } catch (ParameterException ex) {
+            println ex.message
+            commandLine.usage(System.out)
+            System.exit 1
         }
 
-        if ( options.h ) {
-            cli.usage()
-            System.exit(0)
-        }
-
-        // ugly way to define default value for output
         if( ! options.output ) {
-            def argv2 = new ArrayList(Arrays.asList(argv))
-
             def fileExt = ".txt"
             def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".stressed" + fileExt
-            argv2 << "-o" << outfile
-
-            options = cli.parse(argv2)
-
-            if( ! options.output ) {
-                cli.usage()
-                System.exit(0)
-            }
+            options.output = outfile
         }
 
-        return options
+        options
     }
 
-	
-	
-    static void main(String[] args) {
+
+    static void main(String[] argv) {
+        TagOptions options = parseOptions(argv)
 
         def nlpUk = new StressText()
-
-        def options = parseOptions(args)
 
         nlpUk.setOptions(options)
 
