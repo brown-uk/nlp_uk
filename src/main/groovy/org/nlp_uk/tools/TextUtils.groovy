@@ -136,7 +136,8 @@ class TextUtils {
 
         if( buffer ) {
             def analyzed = closure(buffer.toString())
-            outputHandler.print(analyzed + "\n")
+            outputHandler.print(analyzed)
+            outputHandler.outputFile.println()
 			resultClosure(analyzed)
         }
     }
@@ -194,7 +195,8 @@ class TextUtils {
 
 		if( buffer ) {
 			def analyzed = closure(buffer.toString())
-            outputHandler.print(analyzed + "\n")
+            outputHandler.print(analyzed)
+            outputHandler.outputFile.println()
 			resultClosure(analyzed)
 		}
 
