@@ -60,10 +60,8 @@ class TagText {
 				System.err.println ("Semantic tagging only available in xml/json output")
 				System.exit 1
 			}
-			
-            System.err.println ("Using semantic tagging")
-			
-			loadSemTags()
+
+            loadSemTags()
         }
     }
 
@@ -432,8 +430,13 @@ class TagText {
             stats.printLemmaFrequencyStats()
         }
     }
-	
-	def loadSemTags() {
+
+    def loadSemTags() {
+        if( semanticTags.size() > 0 )
+            return
+
+        System.err.println ("Using semantic tagging")
+
 		// def base = System.getProperty("user.home") + "/work/ukr/spelling/dict_uk/data/sem"
 		def base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
 		def semDir = new File("sem")
