@@ -141,7 +141,7 @@ class TextUtils {
 			resultClosure(analyzed)
         }
     }
-    
+
 	static void processFileParallel(def inputFile, PrintStream outputFile, Closure closure, int cores, Closure resultClosure) {
 		ExecutorService executor = Executors.newFixedThreadPool(cores + 1) 	// +1 for consumer
 		BlockingQueue<Future> futures = new ArrayBlockingQueue<>(cores*2)	// we need to poll for futures in order so keep the queue busy
@@ -149,7 +149,11 @@ class TextUtils {
         
 		executor.submit {
             for(Future f = futures.poll(5, TimeUnit.MINUTES); ; f = futures.poll(5, TimeUnit.MINUTES)) {
-//				println "queue size: " + futures.size()
+                if( f == null ) {
+                    continue
+                }
+
+//              println "queue size: " + futures.size()
                 try {
                     def analyzed = f.get()
                     if( analyzed == null ) break;
@@ -161,7 +165,7 @@ class TextUtils {
                     System.exit(1)
                 }
             }
-//			println "done polling"
+//          println "done polling"
 		} as Callable
 
 	

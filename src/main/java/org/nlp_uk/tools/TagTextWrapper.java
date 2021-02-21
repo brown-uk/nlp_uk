@@ -38,7 +38,7 @@ public class TagTextWrapper {
         Method processMethod = clazz.getDeclaredMethod("process");
 
         for(int i=0; i<4; i++) {
-            Object options = parseOptionsMethod.invoke(null, (Object)new String[]{"-i", filename, "-o", outFilename});
+            Object options = parseOptionsMethod.invoke(null, (Object)new String[]{"-i", filename, "-o", outFilename, "-e", "-x"});
             Method setOptionsMethod = clazz.getDeclaredMethod("setOptions", options.getClass());
             setOptionsMethod.invoke(tagText, options);
             processMethod.invoke(tagText);
