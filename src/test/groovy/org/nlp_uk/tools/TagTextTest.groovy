@@ -36,12 +36,19 @@ class TagTextTest {
 	public void testXml() {
 		tagText.setOptions(new TagOptions(xmlOutput: true))
 
-		TagResult tagged = tagText.tagText("Слово.")
+		TagResult tagged = tagText.tagText("Слово 1,5 раза.")
+
 		def expected =
 """<sentence>
   <tokenReading>
     <token value='Слово' lemma='слово' tags='noun:inanim:n:v_naz' />
     <token value='Слово' lemma='слово' tags='noun:inanim:n:v_zna' />
+  </tokenReading>
+  <tokenReading>
+    <token value='1,5' lemma='1,5' tags='number' />
+  </tokenReading>
+  <tokenReading>
+    <token value='раза' lemma='раз' tags='noun:inanim:m:v_rod' />
   </tokenReading>
   <tokenReading>
     <token value='.' tags='punct' whitespaceBefore='false' />
@@ -50,6 +57,37 @@ class TagTextTest {
 """
 		assertEquals expected, tagged.tagged
 	}
+
+    
+    @Test
+    public void testXml2() {
+        tagText.setOptions(new TagOptions(xmlOutput: true))
+
+        TagResult tagged = tagText.tagText("На Україна — Іспанія.")
+
+        def expected =
+"""<sentence>
+  <tokenReading>
+    <token value='На' lemma='на' tags='prep' />
+  </tokenReading>
+  <tokenReading>
+    <token value='Україна' lemma='Україна' tags='noun:inanim:f:v_naz:prop:geo' />
+    <token value='Україна' lemma='Україна' tags='&lt;prop_noun&gt;' />
+  </tokenReading>
+  <tokenReading>
+    <token value='—' tags='punct' whitespaceBefore='true' />
+  </tokenReading>
+  <tokenReading>
+    <token value='Іспанія' lemma='Іспанія' tags='noun:inanim:f:v_naz:prop:geo' />
+    <token value='Іспанія' lemma='Іспанія' tags='&lt;/prop_noun&gt;' />
+  </tokenReading>
+  <tokenReading>
+    <token value='.' tags='punct' whitespaceBefore='false' />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
+    }
 
 	
 	@Test
@@ -179,7 +217,7 @@ class TagTextTest {
     <token value='Мабуть' lemma='мабуть' tags='adv:&amp;insert' />
   </tokenReading>
   <tokenReading>
-    <token value='кх' />
+    <token value='кх' lemma='' />
   </tokenReading>
   <tokenReading>
     <token value='.' tags='punct' whitespaceBefore='false' />

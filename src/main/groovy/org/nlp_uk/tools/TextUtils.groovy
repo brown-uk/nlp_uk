@@ -62,7 +62,7 @@ class TextUtils {
 		int cores = Runtime.getRuntime().availableProcessors()
 		if( cores > 2 && ! options.singleThread ) {
 			System.err.println ("Found ${cores} cores, using parallel threads")
-			processFileParallel(inputFile, outputFile, closure, (int)(cores/2), resultClosure)
+			processFileParallel(inputFile, outputFile, closure, (int)(cores), resultClosure)
 		}
 		else {
 			processFile(inputFile, outputFile, closure, resultClosure)
@@ -144,7 +144,7 @@ class TextUtils {
 
 	static void processFileParallel(def inputFile, PrintStream outputFile, Closure closure, int cores, Closure resultClosure) {
 		ExecutorService executor = Executors.newFixedThreadPool(cores + 1) 	// +1 for consumer
-		BlockingQueue<Future> futures = new ArrayBlockingQueue<>(cores*2)	// we need to poll for futures in order so keep the queue busy
+		BlockingQueue<Future> futures = new ArrayBlockingQueue<>(cores*2)	// we need to poll for futures in order to keep the queue busy
         OutputHandler outputHandler = new OutputHandler(outputFile: outputFile)
         
 		executor.submit {
@@ -213,14 +213,16 @@ class TextUtils {
         if ( osName.contains("windows")) {
             if( ! "UTF-8".equals(System.getProperty("file.encoding"))
                     || "UTF-8".equals(java.nio.charset.Charset.defaultCharset()) ) {
+                System.setOut(new PrintStream(System.out,true,"UTF-8"))
+                
                 println "Input/output charset: " + java.nio.charset.Charset.defaultCharset()
                 println "On Windows to get unicode handled correctly you need to set environment variable before running expand:"
-                println "\tbash (recommended):"
-                println "\t\texport JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
-                println "\tcmd:"
-                println "\t\t(change Font to 'Lucida Console' in cmd window properties)"
+//                println "\tbash (recommended):"
+//                println "\t\texport JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
+                println "\tPowerShell:"
+//                println "\t\t(change Font to 'Lucida Console' in cmd window properties)"
                 println "\t\tchcp 65001"
-                println "\t\tset JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
+//                println "\t\tset JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
             }
         }
     }

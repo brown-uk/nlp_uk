@@ -160,29 +160,25 @@ class TagText {
     }
 
     @CompileStatic
+    private static boolean hasPosTag(AnalyzedTokenReadings tokenReadings) {
+        tokenReadings.getReadings().stream()
+            .anyMatch{ t -> t.getPOSTag() != null && t.getPOSTag().length() > 0 && ! t.getPOSTag().endsWith("_END") }
+    }
+    
+    @CompileStatic
     private List<TTR> tagAsObject(AnalyzedTokenReadings[] tokens) {
         List<TTR> tokenReadingsT = []
 
         tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
             String theToken = tokenReadings.getToken()
 
-            if( tokenReadings.isLinebreak() ) {
-                def nonEndTagToken = tokenReadings.find { AnalyzedToken it ->
-                    ! (it.getPOSTag() in [JLanguageTool.PARAGRAPH_END_TAGNAME, JLanguageTool.SENTENCE_END_TAGNAME])
-                }
+            boolean hasTag = hasPosTag(tokenReadings) 
 
-                if( nonEndTagToken == null )
+            // TODO: ugly workaround for disambiguator problem
+            if( ! hasTag || "\u2014".equals(theToken) ) {
+                if( tokenReadings.isLinebreak() )
                     return
-            }
-
-            if( tokenReadings.isPosTagUnknown() ) {
-                if( isZheleh(options) ) {
-                    tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
-                }
-            }
-
-
-            if( tokenReadings.isPosTagUnknown() ) {
+    
                 if( PUNCT_PATTERN.matcher(theToken).matches() ) {
                     tokenReadingsT << new TTR(tokens: [[value: tokenReadings.getToken(), 'tags': 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore()]])
                     return
@@ -191,8 +187,18 @@ class TagText {
                     tokenReadingsT << new TTR(tokens: [['value': tokenReadings.getToken(), 'tags': 'noninfl:foreign']])
                     return
                 }
+    
+                if( isZheleh(options) ) {
+                    tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
+                    hasTag = hasPosTag(tokenReadings)
+                }
             }
 
+            if( ! hasTag ) {
+                tokenReadingsT << new TTR(tokens: [['value': tokenReadings.getToken(), lemma: '']])
+                return
+            }
+            
             TTR item = new TTR(tokens: [])
             
             List<AnalyzedToken> readings = tokenReadings.getReadings()
@@ -217,9 +223,10 @@ class TagText {
                     semTags = semanticTags.get(key)
                 }
 
+                String lemma = tkn.getLemma() ?: ''
                 def token = semTags \
-                        ? ['value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag, 'semtags': semTags]
-                        : ['value': tkn.getToken(), 'lemma': tkn.getLemma(), 'tags': posTag]
+                        ? ['value': tkn.getToken(), 'lemma': lemma, 'tags': posTag, 'semtags': semTags]
+                        : ['value': tkn.getToken(), 'lemma': lemma, 'tags': posTag]
                 
                 item.tokens.add(token) 
             }
