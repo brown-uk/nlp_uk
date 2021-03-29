@@ -14,9 +14,9 @@ package org.nlp_uk.other
 // it also tries to merge some simple word wraps
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.2')
+@Grab(group='org.languagetool', module='language-uk', version='5.3')
 //@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
-@Grab(group='org.languagetool', module='language-ru', version='5.2')
+@Grab(group='org.languagetool', module='language-ru', version='5.3')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 

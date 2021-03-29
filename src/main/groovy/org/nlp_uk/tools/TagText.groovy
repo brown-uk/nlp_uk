@@ -3,8 +3,8 @@
 package org.nlp_uk.tools
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.2')
-//@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='5.3')
+//@Grab(group='org.languagetool', module='language-uk', version='5.4-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
@@ -593,7 +593,7 @@ class TagText {
 				// if any words contain Russian sequence filter out the whole sentence - this removes tons of Russian words from our unknown list
 				// we could also test each word against Russian dictionary but that would filter out some valid Ukrainian words too
 				if( options.filterUnknown ) {
-					def unknownBad = analyzedSentence.getTokensWithoutWhitespace()[1..-1].find { AnalyzedTokenReadings tokenReadings ->
+					def unknownBad = analyzedSentence.getTokensWithoutWhitespace()[1..-1].any { AnalyzedTokenReadings tokenReadings ->
 						tokenReadings.getToken() =~ /[ыэъё]|и[еи]/
 					}
 					if( unknownBad )
@@ -602,9 +602,9 @@ class TagText {
 
 				analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
 					if( (tokenReadings.getAnalyzedToken(0).getPOSTag() == null
-					|| JLanguageTool.SENTENCE_END_TAGNAME.equals(tokenReadings.getAnalyzedToken(0).getPOSTag()) )
-					&& tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
-					&& ! (tokenReadings.getToken() =~ /[ыэъё]|ие|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
+                            || JLanguageTool.SENTENCE_END_TAGNAME.equals(tokenReadings.getAnalyzedToken(0).getPOSTag()) )
+					        && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
+                            && ! (tokenReadings.getToken() =~ /[ыэъё]|ие|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
 						unknownMap[tokenReadings.getToken()] += 1
 					}
 				}
@@ -727,8 +727,13 @@ class TagText {
 			int unknownCnt = unknownMap ? unknownMap.values().sum() as int : 0
 			double unknownPct = knownCnt+unknownCnt ? unknownCnt*100/(knownCnt+unknownCnt) : 0
 	        println "Known: $knownCnt, unknown: $unknownCnt, " + String.format("%.1f", unknownPct) + "%"
-			double unknownFrPct = knownMap.size()+unknownMap.size() ? unknownMap.size()*100/(knownMap.size()+unknownMap.size()) : 0
-	        println "Known unique: ${knownMap.size()}, unknown unique: " + unknownMap.size() + ", " + String.format("%.1f", unknownFrPct) + "%"
+
+            double unknownUniquePct = knownMap.size()+unknownMap.size() ? unknownMap.size()*100/(knownMap.size()+unknownMap.size()) : 0
+	        println "Known unique: ${knownMap.size()}, unknown unique: " + unknownMap.size() + ", " + String.format("%.1f", unknownUniquePct) + "%"
+
+            Map unknownWordsMap = unknownMap.findAll { k,v -> k =~ /(?iu)^[а-яіїєґ][а-яіїєґ'-]*/ }
+            double unknownUniqueWordPct = knownMap.size()+unknownWordsMap.size() ? unknownWordsMap.size()*100/(knownMap.size()+unknownWordsMap.size()) : 0
+            println "\tunknown unique (letters only): " + unknownWordsMap.size() + ", " + String.format("%.1f", unknownUniqueWordPct) + "%"
 	    }
 	
 	    def printFrequencyStats() {
