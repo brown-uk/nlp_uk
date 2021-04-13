@@ -3,12 +3,14 @@
 package org.nlp_uk.other
 
 import org.junit.jupiter.api.Test
+import org.nlp_uk.other.CleanText.CleanOptions
+
 import static org.junit.jupiter.api.Assertions.assertEquals
 
 
 
 class CleanTextTest {
-    def options = [ "wordCount": 20, "debug": true ]
+    CleanOptions options = [ "wordCount": 0, "debug": true ]
 
     CleanText cleanText = new CleanText( options )
 
@@ -44,13 +46,13 @@ class CleanTextTest {
 
 	@Test
 	void test2() {
-		def result = cleanText.cleanUp('просто-\nрово-часового', file(), [])
+		def result = cleanText.cleanUp('просто-\nрово-часового', file(), new CleanOptions())
 		assert result == "просторово-часового\n"
 		//result = cleanText.cleanUp('двох-\nсторонній', file, [])
 		//assert result == "двохсторонній\n"
 		
 		//TODO:
-		result = cleanText.cleanUp("минулого-сучасного-май-\nбутнього", file(), [])
+		result = cleanText.cleanUp("минулого-сучасного-май-\nбутнього", file(), new CleanOptions())
 		assert result == "минулого-сучасного-майбутнього\n"
 	}
 
@@ -58,4 +60,19 @@ class CleanTextTest {
 	public void testDosNewline() {
 		assertEquals "брат\r\n", clean("б_p_ат\r\n")
 	}
+
+    
+    @Test
+    public void testMarkLanguage() {
+        options.markLanguages = true
+        
+        String expected=
+'''Десь там.
+<span lang="ru" rate="1.0">Где-то такой</span>
+
+<span lang="ru" rate="0.8">Да да</span> 
+'''
+        
+        assertEquals expected, clean("Десь там.\nГде-то такой\n\nДа да \n")
+    }
 }
