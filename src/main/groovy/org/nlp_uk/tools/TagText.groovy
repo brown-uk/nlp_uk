@@ -460,6 +460,7 @@ class TagText {
 				? "$base/${cat}.csv".toURL().getText("UTF-8")
 				: new File(semDir, "${cat}.csv").getText("UTF-8")
 			lines.eachLine { line ->
+			    line = line.replaceFirst(/\h+:xp/, 'xp')
 				def parts = line.split(',')
 				if( parts.length < 2 ) {
 					System.err.println("skipping invalid semantic tag for: " + line)
