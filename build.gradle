@@ -14,7 +14,8 @@ repositories {
 
 
 dependencies {
-    implementation group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.+'
+    implementation group: 'org.codehaus.groovy', name: 'groovy', version: '3.0.+'
+    implementation group: 'org.codehaus.groovy', name: 'groovy-json', version: '3.0.+'
 //    implementation group: 'org.codehaus.groovy', name: 'groovy-cli-picocli', version: '3.0.+'
     implementation group: 'info.picocli', name: 'picocli', version: '4.6.+'
 

@@ -213,13 +213,16 @@ class TagText {
 
                 String semTags = null
                 if( options.semanticTags && tkn.getLemma() ) {
-                    def key = tkn.getLemma()
+                    def key = tkn.getLemma() 
                     if( posTag ) {
                         int xpIdx = posTag.indexOf(":xp")
                         if( xpIdx >= 0 ) {
                             key += " " + posTag[xpIdx+1..xpIdx+3]
                         }
+                        String posTagKey = posTag.replaceFirst(/:.*/, '')
+                        key += "_" + posTagKey
                     }
+                    println "key: $key"
                     semTags = semanticTags.get(key)
                 }
 
@@ -466,7 +469,7 @@ class TagText {
 					System.err.println("skipping invalid semantic tag for: " + line)
 					return
 				}
-				def key = parts[0]
+				def key = parts[0] + "_" + cat
 				semanticTags.put(key, parts[1])
 			}
 		}

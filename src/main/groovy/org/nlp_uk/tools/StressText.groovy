@@ -161,7 +161,7 @@ class StressText {
 				if( infos ) {
 					// handle /1/ - simple offset
 					if( infos.size() == 2 && infos[1].offset ) {
-						return applyAccents(theToken, [infos[1].base + infos[1].offset] as int[])
+						return applyAccents(theToken, [infos[1].base + infos[1].offset])
 					}
 					
 					def foundForms = infos.findAll { StressInfo it -> 
@@ -190,7 +190,7 @@ class StressText {
 				else {
 					if( getSyllCount(tokenLemma) == 1 ) {
 						println "single syll lemma: $tokenLemma"
-						applyAccents(theToken, [1] as int[])
+						applyAccents(theToken, [1])
 					}
 					else {
 //						stats.unknownCnt++
@@ -305,7 +305,7 @@ class StressText {
 	
 	@CompileStatic
 	static String restoreAccent(String lemma, String word, int offset) {
-		int[] accents = getAccentSyllIdxs(lemma)
+		List<Integer> accents = getAccentSyllIdxs(lemma)
 		if( offset ) {
 			accents.eachWithIndex{ int a, int i -> accents[i]+=offset }
 		}
@@ -314,7 +314,7 @@ class StressText {
 	}
 
 	@CompileStatic
-	static String applyAccents(String word, int[] accents) {
+	static String applyAccents(String word, List<Integer> accents) {
 		def sb = new StringBuilder()
 		int syll = 0
 		word.getChars().eachWithIndex { char ch, int idx ->

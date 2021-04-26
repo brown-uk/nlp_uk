@@ -141,13 +141,27 @@ class TagTextTest {
     <token value='Слово' lemma='слово' tags='noun:inanim:n:v_zna' semtags='1:conc:speech:2:abst:speech:3:conc:text' />
   </tokenReading>
   <tokenReading>
+    <token value='усе' lemma='усе' tags='adv' semtags='1:dur:max' />
+    <token value='усе' lemma='усе' tags='conj:coord' />
+    <token value='усе' lemma='усе' tags='noun:inanim:n:v_naz:&amp;pron:gen' />
+    <token value='усе' lemma='усе' tags='noun:inanim:n:v_zna:&amp;pron:gen' />
+    <token value='усе' lemma='усе' tags='part' />
+    <token value='усе' lemma='увесь' tags='adj:n:v_naz:&amp;pron:gen' semtags='1:quantit:max' />
+    <token value='усе' lemma='увесь' tags='adj:n:v_zna:&amp;pron:gen' semtags='1:quantit:max' />
+  </tokenReading>
+  <tokenReading>
+    <token value='голова' lemma='голова' tags='noun:anim:f:v_naz:xp1' semtags='1:conc:hum&amp;hierar' />
+    <token value='голова' lemma='голова' tags='noun:anim:m:v_naz:xp1' semtags='1:conc:hum&amp;hierar' />
+    <token value='голова' lemma='голова' tags='noun:inanim:f:v_naz:xp2' semtags='1:conc:body:part:2:abst:ment:3:abst:unit' />
+  </tokenReading>
+  <tokenReading>
     <token value='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
 """
 		
 		tagText.setOptions(new TagOptions(semanticTags: true, xmlOutput: true))
-		TagResult tagged = tagText.tagText("Слово.")
+		TagResult tagged = tagText.tagText("Слово усе голова.")
 		assertEquals expected, tagged.tagged
 	}
 
