@@ -115,8 +115,9 @@ class CleanText {
 
     ThreadLocal<PrintStream> out = new ThreadLocal<>()
     ThreadLocal<ByteArrayOutputStream> outSw = new ThreadLocal<>()
-    
+    String outDirName
             
+
     CleanText(def options) {
         this.options = options
 
@@ -238,7 +239,7 @@ class CleanText {
             println "Found ${files.size()} .txt files in $dir"
             
 			if( files ) {
-				def outDirName = prepareDir(baseDir)
+				outDirName = prepareDir(baseDir)
             
 				processFiles(files, baseDir, null, outDirName)
 			}
@@ -519,7 +520,15 @@ class CleanText {
 			.join("\n\n")
            
         if( options.markLanguages == MarkOption.cut ) {
-            new File(file.absolutePath.replaceFirst(/\.txt/, '.ru.txt')).setText(ruChunks.join("\n\n"), "UTF-8")
+            String ruText = ruChunks.join("\n\n")
+            def ruFile
+            if( outDirName ) {
+                ruFile = new File(outDirName, file.name.replaceFirst(/\.txt/, '.ru.txt'))
+            }
+            else {
+                ruFile = new File(file.absolutePath.replaceFirst(/\.txt/, '.ru.txt'))
+            }
+            ruFile.setText(ruText, UTF8)
         }
 
         text
