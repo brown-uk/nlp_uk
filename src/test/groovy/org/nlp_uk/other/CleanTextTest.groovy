@@ -4,6 +4,7 @@ package org.nlp_uk.other
 
 import org.junit.jupiter.api.Test
 import org.nlp_uk.other.CleanText.CleanOptions
+import org.nlp_uk.other.CleanText.MarkOption
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 
@@ -64,15 +65,49 @@ class CleanTextTest {
     
     @Test
     public void testMarkLanguage() {
-        options.markLanguages = true
+        options.markLanguages = MarkOption.mark 
         
         String expected=
 '''Десь там.
+
 <span lang="ru" rate="1.0">Где-то такой</span>
 
 <span lang="ru" rate="0.8">Да да</span> 
 '''
         
-        assertEquals expected, clean("Десь там.\nГде-то такой\n\nДа да \n")
+        assertEquals expected, clean("Десь там.\n\nГде-то такой\n\nДа да \n")
+        
+        assertEquals '<span lang="ru" rate="0.8">Кому я продался?</span>', clean("Кому я продался?")
+        
+        def ukrSent = "Депутате Хмаро, я закликаю вас до порядку."
+        assertEquals ukrSent, clean(ukrSent)
+        
+        def ukrSent1 = "– Прим. ред."
+        assertEquals ukrSent1, clean(ukrSent1)
+        
+        def ukrSent2 = "Classmark Р 382.c.367.2."
+        assertEquals ukrSent2, clean(ukrSent2)
+        
+//        def ukrSent3 = 
+//'''Фінал передбачується на початку оповіді у незначних зауваженнях: «Стены 
+//казались несокрушимыми» [7; 65] («Призывающий Зверя»), «Петр Антонович вспомнил прочитанную им вчера в журнале 
+//министерства народного просвещения статью, из которой ему особенно почему-то запомнилось в коротких словах 
+//пересказанное предание о лесной волшебнице Турандине.'''
+//        assertEquals ukrSent3, clean(ukrSent3)
+
+    }
+
+    @Test
+    public void testMarkLanguageCut() {
+        options.markLanguages = MarkOption.cut 
+        
+        String expected=
+'''Десь там.
+
+<span lang="ru">---</span>
+
+<span lang="ru">---</span>'''
+
+        assertEquals expected, clean("Десь там.\n\nГде-то такой\n\nДа да \n")
     }
 }

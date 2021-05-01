@@ -3,6 +3,8 @@
 package org.nlp_uk.other
 
 
+import static org.nlp_uk.other.CleanText.MarkOption.none
+
 // This script reads all .txt files in given directory (default is "txt/") 
 // and tries to find all with acceptable criterias for Ukrainian text (e.g. > 3k Ukrainian words)
 // output files go into <dir>/good/
@@ -28,6 +30,7 @@ package org.nlp_uk.other
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.function.Function
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import picocli.CommandLine
@@ -39,6 +42,7 @@ import groovy.transform.CompileStatic
 
 import org.languagetool.tagging.uk.*
 import org.languagetool.tokenizers.SRXSentenceTokenizer
+import org.languagetool.tokenizers.uk.UkrainianWordTokenizer
 import org.languagetool.tagging.ru.RussianTagger
 import org.languagetool.AnalyzedToken
 import org.languagetool.language.Ukrainian
@@ -103,9 +107,11 @@ class CleanText {
 	@Lazy
 	def ruTagger = { new RussianTagger() }()
     @Lazy
-    SRXSentenceTokenizer ukSentTokenizer = new SRXSentenceTokenizer(new Ukrainian());
-	
-    def options
+    SRXSentenceTokenizer ukSentTokenizer = new SRXSentenceTokenizer(new Ukrainian())
+    @Lazy
+    UkrainianWordTokenizer ukWordTokenizer = new UkrainianWordTokenizer()
+
+    CleanOptions options
 
     ThreadLocal<PrintStream> out = new ThreadLocal<>()
     ThreadLocal<ByteArrayOutputStream> outSw = new ThreadLocal<>()
@@ -150,8 +156,8 @@ class CleanText {
         boolean recursive
         @Option(names = ["-d", "--debug"], description = ["Debug output"])
         boolean debug
-        @Option(names = ["-z", "--markLanguages"], description = ["Mark text in another language (supported: Russian)"])
-        boolean markLanguages
+        @Option(names = ["-z", "--markLanguages"], description = ["Mark text in another language, modes: none, mark, cut (supported language: Russian)"], defaultValue="none")
+        MarkOption markLanguages = none
         @Option(names = ["-p", "--parallel"], description = ["Process files in parallel"])
         boolean parallel
         @Option(names = ["-m", "--modules"], description = ["Extra cleanup: remove footnotes, page numbers etc. (supported modules: nanu)"])
@@ -163,6 +169,10 @@ class CleanText {
         @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
         boolean helpRequested
 
+    }
+    
+    enum MarkOption {
+        none, mark, cut
     }
 
 
@@ -467,7 +477,7 @@ class CleanText {
 			text = text.replaceAll(/(?!<\r)\n/, "\r\n")
 		}
 		
-		if( options.markLanguages ) {
+		if( options.markLanguages != none ) {
 		    text = markRussian(text, file)
 		}
 
@@ -475,17 +485,109 @@ class CleanText {
     }
 
 	String markRussian(String text, File file) {
-        text = text.replaceAll(/(?s)<span lang="ru"( rate="[0-9.]+")?>(.*?)<\/span>/, '$2')
+        Pattern pattern = ~/(?s)<span lang="ru"( rate="[0-9.]+")?>(.*?)<\/span>/
         
-		List<String> sentences = ukSentTokenizer.tokenize(text)
+        // clean previous marks
+        text = pattern.matcher(text).replaceAll('$2')
+        
+        // by paragraphs now
+		List<String> chunks = text.split(/\n\n/) // ukSentTokenizer.tokenize(text)
 		
-		sentences
+        def ruChunks = []
+        
+		text = chunks
             .collect { String sent ->
-                markRussianChunk(sent)
+                float ukRate, ruRate
+                (ukRate, ruRate) = evalChunk(sent)
+                
+                if( ukRate < ruRate ) {
+                    ruRate = Math.round(ruRate * 100)/100
+                    String marked = "<span lang=\"ru\" rate=\"${ruRate}\">$sent</span>".replaceFirst(/(?s)([\h\v]+)(<\/span>)$/, '$2$1')
+                    if( options.markLanguages == MarkOption.mark ) {
+                        marked
+                    }
+                    else {
+                        ruChunks << marked
+                        '<span lang="ru">---</span>'
+                    }
+                }
+                else {
+                    sent
+                }
+        
             }
-			.join("")
+			.join("\n\n")
+           
+        if( options.markLanguages == MarkOption.cut ) {
+            new File(file.absolutePath.replaceFirst(/\.txt/, '.ru.txt')).setText(ruChunks.join("\n\n"), "UTF-8")
+        }
+
+        text
     }
-	
+
+    def evalChunk(String text) {
+        
+        double ukCnt = 0
+        int ruCnt = 0
+        int totalCnt = 0
+        int ruCharCnt = 0
+
+        def chunks = ukWordTokenizer.tokenize(text)
+            .findAll{ it && it ==~ /(?ius)[а-яіїєґё'\u2019\u02BC\u0301-]+/ }
+            .collect { it.replaceAll(/^['\u2019\u02BC]+|['\u2019\u02BC]+$/, '') }
+            .findAll { it ==~ /(?ius)[а-яіїєґё'\u2019\u02BC\u0301-]+/ }
+
+        if( chunks.isEmpty() )
+            return [1.0, 0.0]
+            
+        int ukSum = 0
+        int ruSum = 0
+        int ukSum10 = 0
+        int ruSum10 = 0
+        for(String w: chunks) {
+            
+            int ukWeight = getUkWordRating(w)
+            ukSum += ukWeight
+            if( ukWeight == 10 ) {
+                ukSum10 += ukWeight
+            }
+            def debugStr = "$w: uk: $ukWeight"
+            if( ukWeight < 10 ) {
+                int ruWeight = w =~ /(?iu)[ыэёъ]/ ? 10 : knownWordRu(w) ? 8 : 0
+                
+                // workaround for 1-letter abbreviations that Russian tagger claims to know
+                if( w ==~ /(?iu)[бвгдежзклмнпрстуфхцчшщю]/ ) {
+                    ruWeight = 0
+                }
+                 
+                ruSum += ruWeight
+
+                if( ruWeight == 10 ) {
+                    ruSum10 += ruWeight
+                }
+                debugStr += ", ru: $ruWeight"
+            }
+//            println debugStr
+        }
+
+        float ukRate = ukSum / chunks.size() / 10
+        float ruRate = ruSum / chunks.size() / 10
+        
+        if( ruSum10 > 0 && ukSum10 == 0 ) {
+            ruRate = 1
+        }
+
+        //println ":: uk: $ukRate ru: $ruRate words: ${chunks.size()}"
+
+        if( ukRate == 0 && ruRate > 0.1 ) {
+            ruRate = 1
+        }
+
+//        println "check:: '${text.trim()}' : $ukRate, $ruRate"
+        
+        [ukRate, ruRate]
+    }
+
 	@CompileStatic
 	private static List<String> splitWithDelimiters(String str, Pattern delimPattern) {
 		List<String> parts = new ArrayList<String>();
@@ -513,64 +615,8 @@ class CleanText {
 		}
 	
 		return parts;
-	  }
-	
-	String markRussianChunk(String text) {
-		println "checking:: '${text.trim()}'"
-		
-		double ukCnt = 0
-		int ruCnt = 0
-		int totalCnt = 0
-		int ruCharCnt = 0
-
-        // TODO: why can we have empty items?
-		def chunks = text.split(/(?ius)[^а-яіїєґё'\u2019\u02BC\u0301-]+/)
-            .findAll { it }
-            .collect { it.replaceAll(/^['\u2019\u02BC]+|['\u2019\u02BC]+$/, '') }
-
-        int ukSum = 0
-        int ruSum = 0
-        int ukSum10 = 0
-        int ruSum10 = 0
-		for(String w: chunks) {
-            
-            int ukWeight = getUkWordRating(w)
-            ukSum += ukWeight
-            if( ukWeight == 10 ) {
-                ukSum10 += ukWeight
-            }
-            
-            if( ukWeight < 10 ) {
-                int ruWeight = w =~ /(?iu)[ыэёъ]/ ? 10 : knownWordRu(w) ? 8 : 0 
-                ruSum += ruWeight
-
-                if( ruWeight == 10 ) {
-                    ruSum10 += ruWeight
-                }
-            }
-		}
-
-        float ukRate = ukSum / chunks.size() / 10
-        float ruRate = ruSum / chunks.size() / 10
-        
-        if( ruSum10 > 0 && ukSum10 == 0 ) {
-            ruRate = 1
-        }
-
-//		println ":: uk: $ukRate ru: $ruRate words: ${chunks.size()}"
-
-        if( ukRate == 0 && ruRate > 0.1 ) {
-            ruRate = 1
-        }
-        
-        if( ukRate < 0.4 && ruRate > 0.6 ) {
-			ruRate = Math.round(ruRate * 100)/100
-			"<span lang=\"ru\" rate=\"${ruRate}\">$text</span>".replaceFirst(/(?s)([\h\v]+)(<\/span>)$/, '$2$1')
-		}
-		else {
-			text
-		}
     }
+	
 
 
 	void checkForSpacing(text, file) {
@@ -711,9 +757,9 @@ class CleanText {
             if( token[0].hasNoTag() )
                 return 0
             if( token.find { AnalyzedToken t -> t.getPOSTag().contains(":bad") } )
-                return 1
-            if( token.find { AnalyzedToken t -> t.getPOSTag() =~ /:prop:geo|noun:inanim:.:v_kly/ } )
-                return 5
+                return 2
+//            if( token.find { AnalyzedToken t -> t.getPOSTag() =~ /:prop:geo|noun:inanim:.:v_kly/ } )
+//                return 5
             return 8
         }
         catch (Exception e) {

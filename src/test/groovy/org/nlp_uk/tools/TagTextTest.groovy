@@ -143,11 +143,11 @@ class TagTextTest {
   <tokenReading>
     <token value='усе' lemma='усе' tags='adv' semtags='1:dur:max' />
     <token value='усе' lemma='усе' tags='conj:coord' />
-    <token value='усе' lemma='усе' tags='noun:inanim:n:v_naz:&amp;pron:gen' />
-    <token value='усе' lemma='усе' tags='noun:inanim:n:v_zna:&amp;pron:gen' />
+    <token value='усе' lemma='усе' tags='noun:inanim:n:v_naz:&amp;pron:gen' semtags='1:quantif' />
+    <token value='усе' lemma='усе' tags='noun:inanim:n:v_zna:&amp;pron:gen' semtags='1:quantif' />
     <token value='усе' lemma='усе' tags='part' />
-    <token value='усе' lemma='увесь' tags='adj:n:v_naz:&amp;pron:gen' semtags='1:quantit:max' />
-    <token value='усе' lemma='увесь' tags='adj:n:v_zna:&amp;pron:gen' semtags='1:quantit:max' />
+    <token value='усе' lemma='увесь' tags='adj:n:v_naz:&amp;pron:gen' semtags='1:quantif' />
+    <token value='усе' lemma='увесь' tags='adj:n:v_zna:&amp;pron:gen' semtags='1:quantif' />
   </tokenReading>
   <tokenReading>
     <token value='голова' lemma='голова' tags='noun:anim:f:v_naz:xp1' semtags='1:conc:hum&amp;hierar' />
@@ -155,13 +155,17 @@ class TagTextTest {
     <token value='голова' lemma='голова' tags='noun:inanim:f:v_naz:xp2' semtags='1:conc:body:part:2:abst:ment:3:abst:unit' />
   </tokenReading>
   <tokenReading>
+    <token value='аахенська' lemma='аахенський' tags='adj:f:v_kly' semtags='1:abst' />
+    <token value='аахенська' lemma='аахенський' tags='adj:f:v_naz' semtags='1:abst' />
+  </tokenReading>
+  <tokenReading>
     <token value='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
 """
-		
+
 		tagText.setOptions(new TagOptions(semanticTags: true, xmlOutput: true))
-		TagResult tagged = tagText.tagText("Слово усе голова.")
+		TagResult tagged = tagText.tagText("Слово усе голова аахенська.")
 		assertEquals expected, tagged.tagged
 	}
 

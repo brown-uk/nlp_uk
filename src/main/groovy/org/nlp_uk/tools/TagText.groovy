@@ -215,14 +215,14 @@ class TagText {
                 if( options.semanticTags && tkn.getLemma() ) {
                     def key = tkn.getLemma() 
                     if( posTag ) {
+                        String posTagKey = posTag.replaceFirst(/:.*/, '')
+                        key += " " + posTagKey
                         int xpIdx = posTag.indexOf(":xp")
                         if( xpIdx >= 0 ) {
-                            key += " " + posTag[xpIdx+1..xpIdx+3]
+                            key += posTag[xpIdx..xpIdx+3]
                         }
-                        String posTagKey = posTag.replaceFirst(/:.*/, '')
-                        key += "_" + posTagKey
                     }
-                    println "key: $key"
+//                    println "key: $key"
                     semTags = semanticTags.get(key)
                 }
 
@@ -458,18 +458,24 @@ class TagText {
 			System.err.println("Loading semantic tags from $base")
 		}
 
-		["noun", "adj", "adv", "verb"].each { cat ->
+		["noun", "adj", "adv", "verb", "numr"].each { cat ->
 			def lines = base.startsWith("http")
 				? "$base/${cat}.csv".toURL().getText("UTF-8")
 				: new File(semDir, "${cat}.csv").getText("UTF-8")
+            lines = lines.replaceFirst(/^\uFEFF/, "")
+
 			lines.eachLine { line ->
-			    line = line.replaceFirst(/\h+:xp/, 'xp')
 				def parts = line.split(',')
 				if( parts.length < 2 ) {
 					System.err.println("skipping invalid semantic tag for: " + line)
 					return
 				}
-				def key = parts[0] + "_" + cat
+				def add = ""
+				if( parts.length >= 3 && parts[2].trim().startsWith(':xp') ) {
+				   add = parts[2].trim()
+				}
+				def key = parts[0] + " " + cat + add
+//                println key
 				semanticTags.put(key, parts[1])
 			}
 		}
