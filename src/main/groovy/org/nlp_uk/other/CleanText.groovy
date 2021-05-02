@@ -17,7 +17,7 @@ import static org.nlp_uk.other.CleanText.MarkOption.none
 
 @GrabConfig(systemClassLoader=true)
 @Grab(group='org.languagetool', module='language-uk', version='5.3')
-//@Grab(group='org.languagetool', module='language-uk', version='5.3-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='5.4-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='5.3')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
@@ -277,13 +277,17 @@ class CleanText {
             System.exit 1
         }
 
-        def prevFiles = outDirFile.list()
+        def prevFiles = outDirFile.listFiles()
 
         if( prevFiles.size() > 0 ) {
             if( options.clean ) {
                 println "Removing files from $outDirName"
-                prevFiles.each { String f->
-                    new File(f).delete()
+                prevFiles.each { File f ->
+                    boolean res = f.isDirectory() ? f.deleteDir() : f.delete()
+                    if( ! res ) {
+                        System.err.println "Failed to delete $fn"
+                        System.exit 1
+                    }
                 }
             }
             else {
@@ -300,12 +304,12 @@ class CleanText {
         def stream = options.parallel ? files.parallelStream() : files.stream()
 
         if( options.parallel ) {
-            println "Cleaning ${files.size()} files in parallel"
+            println "Processing ${files.size()} files in parallel"
         }
         else {
             out.set(System.out)
             if( ! options.input ) {
-                println "Cleaning ${files.size()} files"
+                println "Processing ${files.size()} files"
             }
         }
 
@@ -357,11 +361,14 @@ class CleanText {
             if( outFilename == null ) {
 //                def outDirName = outDirName == "." ? "good" : outDirName + "-good/"
                 new File(outDirName).mkdirs()
-				
-				int idx = file.canonicalPath.lastIndexOf(baseDir.canonicalPath)
-                String outFilename2 = file.canonicalPath.take(idx) + outDirName + "/" + file.getName()
-                new File(new File(outFilename2).getParent()).mkdirs()
-                outFile = new File(outFilename2)
+
+                Path pathAbsolute = Paths.get(file.absolutePath)
+                Path pathBase = Paths.get(baseDir.absolutePath)
+                Path pathRelative = pathBase.relativize(pathAbsolute);
+                
+                File parentDir = new File(outDirName, pathRelative.toString()).getParentFile()
+                parentDir.mkdirs()
+                outFile = new File(parentDir, file.getName())
             }
             else {
                 outFile = new File(outFilename)
@@ -450,6 +457,14 @@ class CleanText {
             text = text.replaceAll(/\u2028\n?/, '\n')
         }
 
+        // digit 3 instead of letter З
+        text = text.replaceAll(/\b3[аa]([\h\v]*[а-яіїєґА-ЯІЇЄҐ])/, 'За$1')
+
+        // CO/CO2 with cyr/lat mix
+        text = text.replaceAll(/\b(СO|CО)(2?)\b/, 'CO$2')
+        // CO2 with cyr
+        text = text.replaceAll(/\bСО2\b/, 'CO2')
+        
 
         text = fixCyrLatMix(text, file)
         if( ! text )
