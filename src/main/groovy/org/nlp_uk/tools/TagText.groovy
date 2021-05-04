@@ -484,42 +484,42 @@ class TagText {
 	
     static class TagOptions {
 //        @Parameters(arity="1", paramLabel="input", description="The file(s) whose checksum to calculate.")
-        @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
+        @Option(names = ["-i", "--input"], arity="1", description = "Input file")
         String input
-        @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .tagged.txt/.xml)"])
+        @Option(names = ["-o", "--output"], arity="1", description = "Output file (default: <input file> - .txt + .tagged.txt/.xml)")
         String output
-        @Option(names = ["-l", "--tokenPerLine"], description = ["One token per line"])
+        @Option(names = ["-l", "--tokenPerLine"], description = "One token per line")
         boolean tokenPerLine
-        @Option(names = ["-f", "--firstLemmaOnly"], description = ["print only first lemma with first set of tags"
-            + " (note: this mode is not recommended as first lemma/tag is almost random, this may be improved later with statistical analysis)"])
+        @Option(names = ["-f", "--firstLemmaOnly"], description = "print only first lemma with first set of tags"
+            + " (note: this mode is not recommended as first lemma/tag is almost random, this may be improved later with statistical analysis)")
         boolean firstLemmaOnly
-        @Option(names = ["-x", "--xmlOutput"], description = ["Output in xml format"])
+        @Option(names = ["-x", "--xmlOutput"], description = "Output in xml format")
         boolean xmlOutput
-        @Option(names = ["-n", "--outputFormat"], arity="1", description = ["Output format: {txt, xml, json}"])
+        @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {txt, xml, json}")
         OutputFormat outputFormat
-        @Option(names = ["-s", "--homonymStats"], description = ["Collect homohym statistics"])
+        @Option(names = ["-s", "--homonymStats"], description = "Collect homohym statistics")
         boolean homonymStats
-        @Option(names = ["-u", "--unknownStats"], description = ["Collect unknown words statistics"])
+        @Option(names = ["-u", "--unknownStats"], description = "Collect unknown words statistics")
         boolean unknownStats
-        @Option(names = ["-b", "--filterUnknown"], description = ["Filter out unknown words with non-Ukrainian character combinations"])
+        @Option(names = ["-b", "--filterUnknown"], description = "Filter out unknown words with non-Ukrainian character combinations")
         boolean filterUnknown
-        @Option(names = ["-w", "--frequencyStats"], description = ["Collect word frequency"])
+        @Option(names = ["-w", "--frequencyStats"], description = "Collect word frequency")
         boolean frequencyStats
-        @Option(names = ["-z", "--lemmaStats"], description = ["Collect lemma frequency"])
+        @Option(names = ["-z", "--lemmaStats"], description = "Collect lemma frequency")
         boolean lemmaStats
-        @Option(names = ["-e", "--semanticTags"], description = ["Add semantic tags"])
+        @Option(names = ["-e", "--semanticTags"], description = "Add semantic tags")
         boolean semanticTags
-        @Option(names = ["-k", "--noTag"], description = ["Do not write tagged text (only perform stats)"])
+        @Option(names = ["-k", "--noTag"], description = "Do not write tagged text (only perform stats)")
         boolean noTag
-        @Option(names = ["-m", "--modules"], arity="1", description = ["Comma-separated list of modules, supported modules: [zheleh]"])
+        @Option(names = ["-m", "--modules"], arity="1", description = "Comma-separated list of modules, supported modules: [zheleh]")
         List<String> modules
-        @Option(names = ["--singleThread"], description = ["Always use single thread (default is to use multithreading if > 2 cpus are found)"])
+        @Option(names = ["--singleThread"], description = "Always use single thread (default is to use multithreading if > 2 cpus are found)")
         boolean singleThread
-        @Option(names = ["-q", "--quiet"], description = ["Less output"])
+        @Option(names = ["-q", "--quiet"], description = "Less output")
         boolean quiet
         @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
         boolean helpRequested
-        @Option(names = ["-d", "--disableDisamgigRules"], arity="1", required = false, description = ["Comma-separated list of ids of disambigation rules to disable"])
+        @Option(names = ["-d", "--disableDisamgigRules"], arity="1", required = false, description = "Comma-separated list of ids of disambigation rules to disable")
         List<String> disabledRules
         // experimental
         boolean ignoreOtherLanguages
