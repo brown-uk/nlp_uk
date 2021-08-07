@@ -107,7 +107,12 @@ class CleanText {
 	@Lazy
 	def ruTagger = { new RussianTagger() }()
     @Lazy
-    SRXSentenceTokenizer ukSentTokenizer = new SRXSentenceTokenizer(new Ukrainian())
+    def ukLanguage = new Ukrainian() {
+        @Override
+        protected synchronized List<?> getPatternRules() { return [] }
+    }
+    @Lazy
+    SRXSentenceTokenizer ukSentTokenizer = new SRXSentenceTokenizer(ukLanguage)
     @Lazy
     UkrainianWordTokenizer ukWordTokenizer = new UkrainianWordTokenizer()
 
@@ -198,10 +203,23 @@ class CleanText {
 
     
     static int main(String[] args) {
+        
+        setup()
 
         def options = parseOptions(args)
 
         return new CleanText(options).process()
+    }
+    
+    private static void setup() {
+        // windows have non-unicode encoding set by default
+        String osName = System.getProperty("os.name").toLowerCase()
+        if ( osName.contains("windows")) {
+            if( ! "UTF-8".equals(System.getProperty("file.encoding"))
+                    || "UTF-8".equals(java.nio.charset.Charset.defaultCharset()) ) {
+                System.setOut(new PrintStream(System.out,true,"UTF-8"))
+            }
+        }
     }
 
     void println(String txt) {
@@ -440,6 +458,8 @@ class CleanText {
         if( text.contains("''") ) {
             text = text.replaceAll(/(?<!')''(?!')/, '"')
         }
+        
+        text = text.replace(/U+02BA/, '"')
 
         // SINGLE LOW-9 QUOTATION MARK sometimes used as a comma
         text = text.replace('\u201A', ',')
@@ -447,7 +467,15 @@ class CleanText {
         // weird ї and й via combining characters
         text = text.replaceAll(/[іi]\u0308/, 'ї')
         text = text.replace(/и\u0306/, 'й')
+        text = text.replaceAll(/[ІI]\u0308/, 'Ї')
+        text = text.replace(/И\u0306/, 'Й')
 
+        // промисловоі
+        text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ])(о[іi])\b/, { all, w1, w2 ->
+            String fix = "${w1}ої"
+            knownWord(fix) ? fix : all
+        })
+        
         // fix weird apostrophes
         text = text.replaceAll(/([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384\u0092´`?*]([єїюя])/, /$1'$2/) // "
 
@@ -464,6 +492,10 @@ class CleanText {
         text = text.replaceAll(/\b(СO|CО)(2?)\b/, 'CO$2')
         // CO2 with cyr
         text = text.replaceAll(/\bСО2\b/, 'CO2')
+        // degree Celcius with cyr
+        text = text.replaceAll(/\b[\u00B0\u00BA][СC]\b/, '\u00B0C')
+
+        text = text.replaceAll(/(чоло|Людо)[ -](в[іі]к)/, '$1$2')
         
 
         text = fixCyrLatMix(text, file)
@@ -761,6 +793,18 @@ class CleanText {
         }
     }
 
+    static final List<String> ignoreHypLemmas = ["дійний", "ленський"]
+    boolean isHyphenBadLemma(String word) {
+        try {
+            List<String> lemmas = ukTagger.getAnalyzedTokens(word)*.getLemma()
+            return lemmas.intersect(ignoreHypLemmas)
+        }
+        catch (Exception e) {
+            System.err.println("Failed on word: " + word)
+            throw e
+        }
+    }
+
 	boolean knownWordTwoLang(String word) {
 		try {
 			return ! ukTagger.getAnalyzedTokens(word)[0].hasNoTag() \
@@ -780,7 +824,9 @@ class CleanText {
             List<AnalyzedToken> token = ukTagger.getAnalyzedTokens(word) 
             if( token[0].hasNoTag() )
                 return 0
-            if( token.find { AnalyzedToken t -> t.getPOSTag().contains(":bad") } )
+            if( token.find { AnalyzedToken t ->
+                    t.getPOSTag().contains(":bad") && ! t.getPOSTag().contains("&adjp:actv") && ! (t.getLemma() =~ /(ння|ий)$/)
+                    } )
                 return 2
 //            if( token.find { AnalyzedToken t -> t.getPOSTag() =~ /:prop:geo|noun:inanim:.:v_kly/ } )
 //                return 5
@@ -1017,7 +1063,7 @@ class CleanText {
 					first = it[0] ? it[0].replace('\n', "\\n") : it[0]
                 //            println "== " + (it[1] + "-" + it[3]) + ", known: " + knownWord(it[1] + "-" + it[3])
                 // consider words with two or more hyphens with one of them before end of line to be rare
-                if( /*it[0].count('-') > 1 ||*/ ! knownWord(it[1] + "-" + it[3]) ) {
+                if( /*it[0].count('-') > 1 ||*/ isHyphenBadLemma(it[3]) || ! knownWord(it[1] + "-" + it[3]) ) {
                     //                println "== " + (it[1] + it[3]) + ", known: " + knownWord(it[1] + it[3])
                     if( knownWord(it[1] + it[3]) ) {
                         cnt += 1

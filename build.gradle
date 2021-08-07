@@ -1,11 +1,15 @@
-apply plugin: 'java'
-apply plugin: 'groovy'
-apply plugin: 'eclipse'
+plugins {
+    id 'java'
+    id 'groovy'
+    id 'eclipse'
+    id 'maven-publish'
+}
 
 compileJava.options.encoding = 'UTF-8'
 
-String ltVersion="5.2"
 
+group = 'ua.net.nlp'
+version="2.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -14,18 +18,36 @@ repositories {
 
 
 dependencies {
-    implementation group: 'org.codehaus.groovy', name: 'groovy', version: '3.0.+'
-    implementation group: 'org.codehaus.groovy', name: 'groovy-json', version: '3.0.+'
-//    implementation group: 'org.codehaus.groovy', name: 'groovy-cli-picocli', version: '3.0.+'
-    implementation group: 'info.picocli', name: 'picocli', version: '4.6.+'
+    implementation group: 'org.codehaus.groovy', name: 'groovy', version: '3.0.8'
+    implementation group: 'org.codehaus.groovy', name: 'groovy-json', version: '3.0.8'
+//    implementation group: 'org.codehaus.groovy', name: 'groovy-cli-picocli', version: '3.0.8'
+    implementation group: 'info.picocli', name: 'picocli', version: '4.6.1'
 
     implementation group:'ch.qos.logback', name:'logback-classic', version:'1.2.3'
 
-    implementation 'org.languagetool:language-uk:' + ltVersion
-    implementation 'org.languagetool:language-ru:' + ltVersion
+    implementation("org.languagetool:language-uk:$ltUkVersion") {
+        exclude module: 'hunspell'
+        exclude module: 'language-detector'
+        exclude module: 'lucene-core'
+        exclude group: 'org.apache.lucene'
+        exclude group: 'io.grpc'
+    }
+    implementation ("org.languagetool:language-ru:$ltVersion") {
+        exclude module: 'hunspell'
+        exclude module: 'language-detector'
+        exclude module: 'lucene-core'
+        exclude group: 'org.apache.lucene'
+        exclude group: 'io.grpc'
+    }
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.+'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.+'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.+'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.+'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
 }
 
 sourceSets {
@@ -33,7 +55,7 @@ sourceSets {
         resources {
             srcDir "src/main/groovy"
 //            include "**/*.groovy"
-            includes = ["**/tools/*.md", "*.groovy"]
+//            includes = ["**/tools/*.md", "*.groovy", "**/*.txt"]
         }
     }
 }
@@ -71,6 +93,43 @@ test {
     jvmArgs '-Dgroovy.grape.enable=false'
 }
 
+
+task run(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = "ua.net.nlp_uk.ubertext.MongoDriver"
+
+    jvmArgs '-Dgroovy.grape.enable=false'
+
+  //  args "--properties", propFile
+}
+
+
+// fatJar does not work due to LT having same file in different language modules
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'nlp_uk classes',
+            'Implementation-Version': archiveVersion
+    }
+    archiveBaseName = project.name + '-all'
+//    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+
+publishing {
+    repositories {
+        mavenLocal()
+    }
+
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            //artifact dictJar
+            //artifact ltJar
+        }
+    }
+}
 
 
 // windows have non-unicode encoding set by default

@@ -2,8 +2,9 @@
 
 package org.nlp_uk.tools
 
-import static org.nlp_uk.tools.TokenizeText.TagOptions.OutputFormat.txt
+import java.util.regex.Pattern
 
+import org.languagetool.JLanguageTool
 @GrabConfig(systemClassLoader=true)
 @Grab(group='org.languagetool', module='language-uk', version='5.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
@@ -28,11 +29,17 @@ class TokenizeText {
     static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
 
-    def WORD_PATTERN = ~/[а-яіїєґА-ЯІЇЄҐa-zA-Z0-9]/
+    Pattern WORD_PATTERN = ~/[а-яіїєґА-ЯІЇЄҐa-zA-Z0-9]/
+    Pattern FOOTER_PATTERN = ~/\[[0-9]{1,3}\]/
+    
+    def language = new Ukrainian() {
+        @Override
+        protected synchronized List<?> getPatternRules() { return [] }
+    }
 
-    SRXSentenceTokenizer sentTokenizer = new SRXSentenceTokenizer(new Ukrainian())
+    SRXSentenceTokenizer sentTokenizer = new SRXSentenceTokenizer(language)
     UkrainianWordTokenizer wordTokenizer = new UkrainianWordTokenizer()
-    TagOptions options
+    TokenizeOptions options
 
     TokenizeText(options) {
         this.options = options
@@ -43,7 +50,7 @@ class TokenizeText {
 
         def sb = new StringBuilder()
         for (String sent: tokenized) {
-            sb.append(sent.replace("\n", "\\n")).append("\n")
+            sb.append(sent.replace("\n", options.newLine)).append("\n")
         }
 
         return sb.toString()
@@ -67,6 +74,10 @@ class TokenizeText {
     }
 
     def splitWords(String text, boolean onlyWords) {
+        if( onlyWords ) {
+            text = FOOTER_PATTERN.matcher(text).replaceAll('')
+        }
+        
         List<String> sentences = sentTokenizer.tokenize(text);
 
 //        ParallelEnhancer.enhanceInstance(sentences)
@@ -77,20 +88,26 @@ class TokenizeText {
             def sb = new StringBuilder()
 
             if( onlyWords ) {
+                words = words.collect { it.replace('\u0301', '') } 
                 words = words.findAll { WORD_PATTERN.matcher(it) }
+                words = TextUtils.adjustTokens(words, true)
 
                 sb.append(words.join(" "))
             }
             else {
+                words = TextUtils.adjustTokens(words, true)
+
                 words.each { word ->
-                sb.append(word.replace("\n", "\\n").replace("\t", "\\t")).append('|')
+                    sb.append(word.replace("\n", options.newLine).replace("\t", " ")).append('|')
                 }
             }
             sb.toString()
         }.join("\n") + "\n"
     }
     
-    static class TagOptions {
+    
+    
+    static class TokenizeOptions {
         @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
         String input
         @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .tagged.txt/.xml)"])
@@ -109,12 +126,16 @@ class TokenizeText {
         boolean noTag
         boolean singleThread = true
         enum OutputFormat { txt }
-        OutputFormat outputFormat = txt
+        OutputFormat outputFormat = OutputFormat.txt
+        boolean splitHyphenParts = true
+        
+        // internal for now
+        String newLine = ' '
     }
     
     @CompileStatic
-    static TagOptions parseOptions(String[] argv) {
-        TagOptions options = new TagOptions()
+    static TokenizeOptions parseOptions(String[] argv) {
+        TokenizeOptions options = new TokenizeOptions()
         CommandLine commandLine = new CommandLine(options)
         try {
             commandLine.parseArgs(argv)
@@ -133,17 +154,16 @@ class TokenizeText {
             String outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tokenized" + fileExt
             options.output = outfile
         }
+        if( options.onlyWords && ! options.words ) {
+            options.words = true
+        }
         options
     }
 
 
     static void main(String[] argv) {
 
-        TagOptions options = parseOptions(argv)
-
-        if( options.onlyWords && ! options.words ) {
-            options.words = true
-        }
+        TokenizeOptions options = parseOptions(argv)
 
         def nlpUk = new TokenizeText(options)
 

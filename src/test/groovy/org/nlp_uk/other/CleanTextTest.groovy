@@ -59,6 +59,21 @@ class CleanTextTest {
 		//TODO:
 		result = cleanText.cleanUp("минулого-сучасного-май-\nбутнього", file(), new CleanOptions())
 		assert result == "минулого-сучасного-майбутнього\n"
+        
+        result = cleanText.cleanUp("новоствореноі", file(), new CleanOptions())
+        assert result == "новоствореної"
+
+        result = cleanText.cleanUp("Північноірландські", file(), new CleanOptions())
+        assert result == "Північноірландські"
+
+        result = cleanText.cleanUp("благо-\nдійної", file(), new CleanOptions())
+        assert result == "благодійної\n"
+
+        result = cleanText.cleanUp("Зе- ленський", file(), new CleanOptions())
+        assert result == "Зеленський"
+
+        result = cleanText.cleanUp("чоло-віка", file(), new CleanOptions())
+        assert result == "чоловіка"
 	}
 
 	@Test
@@ -91,7 +106,13 @@ class CleanTextTest {
         
         def ukrSent2 = "Classmark Р 382.c.367.2."
         assertEquals ukrSent2, clean(ukrSent2)
-        
+
+        def expectedRates = [(float)0.8, (float)0.0]
+        assertEquals(expectedRates, cleanText.evalChunk("дерзаючий"))
+
+//        expectedRates = [(float)0.8, (float)0.0]
+        assertEquals(expectedRates, cleanText.evalChunk("енергозбереженню"))
+
 //        def ukrSent3 = 
 //'''Фінал передбачується на початку оповіді у незначних зауваженнях: «Стены 
 //казались несокрушимыми» [7; 65] («Призывающий Зверя»), «Петр Антонович вспомнил прочитанную им вчера в журнале 

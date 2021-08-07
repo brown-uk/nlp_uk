@@ -12,12 +12,13 @@ import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
 
-import static org.nlp_uk.tools.LemmatizeText.TagOptions.OutputFormat.txt
+import static org.nlp_uk.tools.LemmatizeText.LemmatizeOptions.OutputFormat.txt
 
 import org.languagetool.*
 import org.languagetool.language.*
 
 import groovy.util.Eval
+import java.util.regex.Pattern
 
 
 class LemmatizeText {
@@ -28,10 +29,18 @@ class LemmatizeText {
     // easy way to include a class without forcing classpath to be set
     static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
+    Pattern WORD_PATTERN = ~/[а-яіїєґА-ЯІЇЄҐa-zA-Z0-9]/
+    Pattern FOOTER_PATTERN = ~/\[[0-9]{1,3}\]/
+    
+    def language = new Ukrainian() {
+        @Override
+        protected synchronized List<?> getPatternRules() { return [] }
+    }
 
-    JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
+    JLanguageTool langTool = new MultiThreadedJLanguageTool(language)
 
-    def options
+    LemmatizeOptions options
+    Map<String, Integer> lemmaFreqs
 
     LemmatizeText(options) {
         this.options = options
@@ -41,24 +50,77 @@ class LemmatizeText {
         String tagged
     }
 
-    def analyzeText(String text) {
+    @CompileStatic
+    Analyzed analyzeText(String text) {
+        text = FOOTER_PATTERN.matcher(text).replaceAll('')
+        
         List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
 
-        def sb = new StringBuilder()
+        List<String> sentences = []
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+            List<String> sentLemmas = []
             analyzedSentence.getTokens().each { AnalyzedTokenReadings readings->
-                if( readings.isWhitespace() || readings.getAnalyzedToken(0).lemma == null ) {
-                    sb.append(readings.token)
+                String cleanToken = readings.getCleanToken()
+                if( readings.isWhitespace() ) {
+//                    cleanToken = cleanToken.replace("\t", " ")
+//                    sb.append(cleanToken)
                 }
                 else {
-                    def lemmas = options.firstLemmaOnly ? readings.readings[0].getLemma() : readings*.lemma.unique().join("|")
-                    sb.append(lemmas)
+                    if (readings.getAnalyzedToken(0).lemma == null ) {
+                        if( WORD_PATTERN.matcher(cleanToken) ) {
+                            sentLemmas << cleanToken
+                        }
+                    }
+                    else {
+                        def tokenReadings = readings.readings.findAll { it.getPOSTag() != null && ! (it.getPOSTag() =~ /_END|^</) }
+                        String lemmas = options.firstLemmaOnly ? findSingleLemma(tokenReadings) : readings*.lemma.unique().join("|")
+                        sentLemmas << lemmas
+                    }
                 }
             }
+            sentLemmas = TextUtils.adjustTokens(sentLemmas, false)
+            sentences << sentLemmas.join(" ")
         }
-        return new Analyzed(tagged: sb.toString())
+        return new Analyzed(tagged: sentences.join("\n"))
     }
 
+    @CompileStatic
+    String findSingleLemma(List<AnalyzedToken> readings) {
+        if( lemmaFreqs == null ) {
+            def freqFile = "org/nlp_uk/tools/lemma_ambig_freq.txt"
+            InputStream freqResource = getClass().getResourceAsStream("/$freqFile")
+            if( freqResource == null ) {
+                freqResource = new File("$SCRIPT_DIR/../../../../resources/$freqFile").newInputStream()
+            }
+            lemmaFreqs = freqResource
+                .readLines("UTF-8")
+                .collectEntries{ def parts = it.trim().split(/\s+/); [parts[1], parts[0] as int] } 
+            println "Loading ${lemmaFreqs.size()} lemma frequencies"
+        }
+        
+        readings = filterTokens(readings, "arch")
+        readings = filterTokens(readings, "alt")
+        readings = filterTokens(readings, "bad")
+        
+        List<String> lemmas = readings.collect{ it.getLemma() }.unique()
+        if( lemmas.size() > 1 ) {
+            return lemmas.max{ Integer cnt = lemmaFreqs[it]; cnt ?: 0 } 
+//            lemmas.sort { a,b -> 
+//                def f1 = a in lemmaFreqs ? lemmaFreqs[a] : 0
+//                def f2 = b in lemmaFreqs ? lemmaFreqs[b] : 0
+//                f2 - f1
+//            }
+        }
+        lemmas[0]
+    }
+    
+    @CompileStatic
+    List<AnalyzedToken> filterTokens(List<AnalyzedToken> readings, String tag) {
+        def withOtherTags = readings.findAll { ! it.getPOSTag().contains(tag) }
+        withOtherTags ? withOtherTags : readings
+    }
+    
+    
     def process() {
         textUtils.processByParagraph(options, { buffer->
             return analyzeText(buffer)
@@ -66,7 +128,7 @@ class LemmatizeText {
     }
 
 
-    static class TagOptions {
+    static class LemmatizeOptions {
         @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
         String input
         @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .tagged.txt/.xml)"])
@@ -86,8 +148,8 @@ class LemmatizeText {
     }
     
     @CompileStatic
-    static TagOptions parseOptions(String[] argv) {
-        TagOptions options = new TagOptions()
+    static LemmatizeOptions parseOptions(String[] argv) {
+        LemmatizeOptions options = new LemmatizeOptions()
         CommandLine commandLine = new CommandLine(options)
         try {
             commandLine.parseArgs(argv)
@@ -111,7 +173,7 @@ class LemmatizeText {
     
     static void main(String[] argv) {
 
-        TagOptions options = parseOptions(argv)
+        LemmatizeOptions options = parseOptions(argv)
 
         def nlpUk = new LemmatizeText(options)
 

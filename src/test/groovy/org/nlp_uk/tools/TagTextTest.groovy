@@ -3,6 +3,7 @@
 package org.nlp_uk.tools
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
@@ -30,7 +31,15 @@ class TagTextTest {
 		def expected = "Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].[</S><P/>]"
 		assertEquals expected, tagged.tagged
 	}
-	
+
+    @Test
+    public void testOmitMultiwordTag() {
+        TagResult tagged = tagText.tagText("Де можна")
+        // def orig = "Де[де/adv:&pron:int:rel,де/noninfl:foreign,де/part,де можна/<adv>] можна[можна/noninfl:&predic,</S>де можна/<adv>,<P/>]"
+        def expected = "Де[де/adv:&pron:int:rel,де/noninfl:foreign,де/part] можна[можна/noninfl:&predic,</S><P/>]"
+        assertEquals expected, tagged.tagged
+    }
+
 
 	@Test
 	public void testXml() {
@@ -72,14 +81,12 @@ class TagTextTest {
   </tokenReading>
   <tokenReading>
     <token value='Україна' lemma='Україна' tags='noun:inanim:f:v_naz:prop:geo' />
-    <token value='Україна' lemma='Україна' tags='&lt;prop_noun&gt;' />
   </tokenReading>
   <tokenReading>
     <token value='—' tags='punct' whitespaceBefore='true' />
   </tokenReading>
   <tokenReading>
     <token value='Іспанія' lemma='Іспанія' tags='noun:inanim:f:v_naz:prop:geo' />
-    <token value='Іспанія' lemma='Іспанія' tags='&lt;/prop_noun&gt;' />
   </tokenReading>
   <tokenReading>
     <token value='.' tags='punct' whitespaceBefore='false' />
@@ -104,6 +111,58 @@ class TagTextTest {
 """
 		assertEquals expected, tagged.tagged
 	}
+
+    @Test
+    public void testNoMultiword() {
+        tagText.setOptions(new TagOptions(xmlOutput: true))
+
+        TagResult tagged = tagText.tagText("від малку")
+        def expected =
+"""<sentence>
+  <tokenReading>
+    <token value='від' lemma='від' tags='prep' />
+  </tokenReading>
+  <tokenReading>
+    <token value='малку' lemma='малка' tags='noun:inanim:f:v_zna' />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
+    
+    @Test
+    public void testZheleh() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, modules: ["zheleh"]))
+
+        TagResult tagged = tagText.tagText("миготїнь купаєть ся житє і смерть")
+        def expected =
+"""<sentence>
+  <tokenReading>
+    <token value='миготїнь' lemma='миготіння' tags='noun:inanim:p:v_rod' />
+  </tokenReading>
+  <tokenReading>
+    <token value='купаєть' lemma='купатися' tags='verb:rev:imperf:pres:s:3' />
+  </tokenReading>
+  <tokenReading>
+    <token value='ся' lemma='ся' tags='part:arch' />
+    <token value='ся' lemma='сей' tags='adj:f:v_naz:&amp;pron:dem:arch' />
+  </tokenReading>
+  <tokenReading>
+    <token value='житє' lemma='' />
+  </tokenReading>
+  <tokenReading>
+    <token value='і' lemma='і' tags='conj:coord' />
+    <token value='і' lemma='і' tags='part' />
+  </tokenReading>
+  <tokenReading>
+    <token value='смерть' lemma='смерть' tags='noun:inanim:f:v_naz' />
+    <token value='смерть' lemma='смерть' tags='noun:inanim:f:v_zna' />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
+    }
 
 
 	@Disabled
@@ -172,13 +231,19 @@ class TagTextTest {
 
 	@Test
 	public void testStats() {
-		tagText.setOptions(new TagOptions(unknownStats: true, output: "-"))
+		tagText.setOptions(new TagOptions(unknownStats: true, homonymStats: true, output: "-"))
 
 		TagResult tagged = tagText.tagText("десь брарарат")
 
 		assertEquals 1, tagged.stats.knownCnt
 		assertEquals 1, tagged.stats.unknownMap.values().sum()
-		
+        assertEquals Arrays.asList("десь"), tagged.stats.homonymTokenMap.values().flatten()
+
+        tagged = tagText.tagText("ОУН\u2013УПА")
+        assertEquals 1, tagged.stats.knownCnt
+        assertEquals Arrays.asList("ОУН-УПА"), tagged.stats.homonymTokenMap.values().flatten()
+        assertFalse tagged.stats.homonymTokenMap.keySet().toString().contains("\u2013")
+        
 		tagged.stats.printUnknownStats()
 	}
 

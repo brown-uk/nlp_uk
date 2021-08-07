@@ -37,7 +37,12 @@ class TagText {
     static final Pattern PUNCT_PATTERN = Pattern.compile(/[\p{Punct}«»„“…—–]+/)
     static final Pattern LATIN_WORD_PATTERN = Pattern.compile(/\p{IsLatin}+/)
 
-    JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian())
+    def language = new Ukrainian() {
+        @Override
+        protected synchronized List<?> getPatternRules() { return [] }
+    }
+
+    JLanguageTool langTool = new MultiThreadedJLanguageTool(language)
 
     TagOptions options
 	Map<String, String> semanticTags = new HashMap<>()
@@ -86,6 +91,16 @@ class TagText {
 
         def sb = new StringBuilder()
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+            
+            analyzedSentence.getTokens().each { AnalyzedTokenReadings t ->
+                def multiWordReadings = t.getReadings().findAll { r ->
+                    r.getPOSTag() != null && r.getPOSTag().startsWith("<")
+                }
+                multiWordReadings.each { r ->
+                    t.removeReading(r, "remove_multiword")
+                }
+            }
+            
             if( options.outputFormat == OutputFormat.xml ) {
                 def field = AnalyzedSentence.getDeclaredField("nonBlankTokens")
                 field.setAccessible(true)
@@ -111,6 +126,7 @@ class TagText {
             }
             else if ( ! options.noTag ) {
                 String sentenceLine
+                // TODO: use frequencies
                 if( options.firstLemmaOnly ) {
                     sentenceLine = analyzedSentence.tokens.collect { 
                         AnalyzedTokenReadings it -> 
@@ -118,25 +134,47 @@ class TagText {
                             ? ''
                             : it.isWhitespace()
                                 ? ( "\n".equals(it.getToken()) ? '' : it.getToken() )
-                                : it.getToken() + "[" + it.getReadings().get(0).toString() + "]" 
+                                : it.getToken() + "[" + it.getReadings().get(0).getLemma() + "/" + it.getReadings().get(0).getPOSTag() + "]" 
                     }
                     .join('') //(' --- ')
                 }
                 else {
                     sentenceLine = analyzedSentence.toString()
+                    sentenceLine.replaceAll(/,[^\/].*?\/<.*?>/, '')
                     if( options.tokenPerLine ) {
                         sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
                     }
                     else {
                         sentenceLine = sentenceLine.replaceAll(/ *(<S>|\[<\/S>\]) */, '')
                     }
+
+                    if( options.showDisambig ) {
+                      sentenceLine = analyzedSentence.tokens.each {
+                        AnalyzedTokenReadings it -> 
+                        if( it.getHistoricalAnnotations() ) {
+                          println it.getHistoricalAnnotations()
+                        }
+                      }
+                    }
                 }
 
 
                 sb.append(sentenceLine) //.append("\n");
             }
+            
+            // DEBUG:
+//            AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
+//            for(AnalyzedTokenReadings atokenr: tokens) {
+//                for(AnalyzedToken token: atokenr.getReadings())
+//                if( token.getLemma() != null && token.getLemma().startsWith("західно-український") 
+//                        && "adj:f:v_rod".equals(token.getPOSTag()) ) {
+//                    System.err.println ":: " + analyzedSentence
+//                    System.exit(1)
+//                }
+//            }
         }
 
+        
 		def stats = new Stats()
         if( options.homonymStats ) {
             stats.collectHomonyms(analyzedSentences)
@@ -147,7 +185,6 @@ class TagText {
         if( options.frequencyStats ) {
             stats.collectFrequency(analyzedSentences)
         }
-
         if( options.lemmaStats ) {
             stats.collectLemmaFrequency(analyzedSentences)
         }
@@ -162,8 +199,8 @@ class TagText {
     @CompileStatic
     private static boolean hasPosTag(AnalyzedTokenReadings tokenReadings) {
         tokenReadings.getReadings().stream()
-            .anyMatch{ t -> t.getPOSTag() != null && t.getPOSTag().length() > 0 && ! t.getPOSTag().endsWith("_END") }
-    }
+            .anyMatch{ t -> ! isTagEmpty(t.getPOSTag()) }
+    }   
     
     @CompileStatic
     private List<TTR> tagAsObject(AnalyzedTokenReadings[] tokens) {
@@ -201,16 +238,14 @@ class TagText {
             
             TTR item = new TTR(tokens: [])
             
-            List<AnalyzedToken> readings = tokenReadings.getReadings()
+            List<AnalyzedToken> readings = new ArrayList<>(tokenReadings.getReadings())
+            readings.removeIf{ it -> it.getPOSTag() != null && it.getPOSTag().endsWith("_END") }
 
             readings.each { AnalyzedToken tkn ->
                 String posTag = tkn.getPOSTag()
-                if( posTag == JLanguageTool.SENTENCE_END_TAGNAME ) {
-                    if( tokenReadings.getReadings().size() > 1 )
-                        return
-                    posTag = ''
-                }
-
+                if( posTag != null && posTag.startsWith("<") )
+                      return
+                
                 String semTags = null
                 if( options.semanticTags && tkn.getLemma() ) {
                     def key = tkn.getLemma() 
@@ -350,11 +385,14 @@ class TagText {
 
     @CompileStatic
     private static String adjustZheleh(String text) {
+        // найпаскуднїшою
         text = text.replaceAll(/(?ui)([бвгґджзклмнпрстфхцчшщ])ї/, '$1і')
+        // і у сімї
         text = text.replaceAll(/(?ui)([бвпмфр])([юяє])/, '$1\'$2')
         text = text.replaceAll(/(?ui)([сцз])ь([бвпмф])([ія])/, '$1$2$3')
-        text = text.replaceAll(/(?ui)ь([сц])(к)/, '$1ь$2')
-        text = text.replaceAll(/(?ui)-(же|ж|би|б)/, ' $1')
+        // next are tagged as ":bad" in tagger
+//        text = text.replaceAll(/(?ui)ь([сц])(к)/, '$1ь$2')
+//        text = text.replaceAll(/(?ui)-(же|ж|би|б)/, ' $1')
     }
 
     @CompileStatic
@@ -481,7 +519,14 @@ class TagText {
 		}
 		System.err.println("Loaded ${semanticTags.size()} semantic tags")
 	}
-	
+
+    @CompileStatic
+    static boolean isTagEmpty(String posTag) {
+        posTag == null || posTag.endsWith("_END")
+    }
+    
+
+    	
     static class TagOptions {
 //        @Parameters(arity="1", paramLabel="input", description="The file(s) whose checksum to calculate.")
         @Option(names = ["-i", "--input"], arity="1", description = "Input file")
@@ -490,8 +535,8 @@ class TagText {
         String output
         @Option(names = ["-l", "--tokenPerLine"], description = "One token per line")
         boolean tokenPerLine
-        @Option(names = ["-f", "--firstLemmaOnly"], description = "print only first lemma with first set of tags"
-            + " (note: this mode is not recommended as first lemma/tag is almost random, this may be improved later with statistical analysis)")
+//        @Option(names = ["-f", "--firstLemmaOnly"], description = "print only first lemma with first set of tags"
+//            + " (note: this mode is not recommended as first lemma/tag is almost random, this may be improved later with statistical analysis)")
         boolean firstLemmaOnly
         @Option(names = ["-x", "--xmlOutput"], description = "Output in xml format")
         boolean xmlOutput
@@ -519,11 +564,11 @@ class TagText {
         boolean quiet
         @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
         boolean helpRequested
-        @Option(names = ["-d", "--disableDisamgigRules"], arity="1", required = false, description = "Comma-separated list of ids of disambigation rules to disable")
-        List<String> disabledRules
-        // experimental
-        boolean ignoreOtherLanguages
-        
+//        @Option(names = ["--disableDisambigRules"], arity="1", required = false, description = "Comma-separated list of ids of disambigation rules to disable")
+        boolean disabledRules
+        @Option(names = ["-d", "--showDisambig"], description = "Show disambiguation rules applied")
+        boolean showDisambig
+
         void adjust() {
             if( ! outputFormat ) {
                 if( xmlOutput ) {
@@ -578,50 +623,57 @@ class TagText {
     }
 
 	
+    @CompileStatic
 	class Stats {
-		def homonymFreqMap = [:].withDefault { 0 }
-		def homonymTokenMap = [:].withDefault{ new HashSet<>() }
-		def unknownMap = [:].withDefault { 0 }
-		def frequencyMap = [:].withDefault { 0 }
-		def lemmaFrequencyMap = [:].withDefault { 0 }
-		def knownMap = [:].withDefault { 0 }
-		def knownCnt = 0
+		Map<String, Integer> homonymFreqMap = [:].withDefault { 0 }
+		Map<String, Set<String>> homonymTokenMap = [:].withDefault{ new LinkedHashSet<>() }
+		Map<String, Integer> unknownMap = [:].withDefault { 0 }
+		Map<String, Integer> frequencyMap = [:].withDefault { 0 }
+		Map<String, Integer> lemmaFrequencyMap = [:].withDefault { 0 }
+        Set lemmaAmbigs = new HashSet<>()
+		Map<String, Integer> knownMap = [:].withDefault { 0 }
+		int knownCnt = 0
 
-		
 		synchronized void add(Stats stats) {
 			stats.homonymFreqMap.each { k,v -> homonymFreqMap[k] += v }
-			stats.homonymTokenMap.each { k,v -> homonymTokenMap[k] += v }
+			stats.homonymTokenMap.each { k,v -> homonymTokenMap[k].addAll(v) }
 			stats.unknownMap.each { k,v -> unknownMap[k] += v }
 			stats.knownMap.each { k,v -> knownMap[k] += v }
 			stats.frequencyMap.each { k,v -> frequencyMap[k] += v }
 			stats.lemmaFrequencyMap.each { k,v -> lemmaFrequencyMap[k] += v }
+            lemmaAmbigs.addAll(stats.lemmaAmbigs)
 		    knownCnt += stats.knownCnt
 		}
 		
+        @CompileStatic
 		def collectUnknown(List<AnalyzedSentence> analyzedSentences) {
 			for (AnalyzedSentence analyzedSentence : analyzedSentences) {
 				// if any words contain Russian sequence filter out the whole sentence - this removes tons of Russian words from our unknown list
 				// we could also test each word against Russian dictionary but that would filter out some valid Ukrainian words too
-				if( options.filterUnknown ) {
-					def unknownBad = analyzedSentence.getTokensWithoutWhitespace()[1..-1].any { AnalyzedTokenReadings tokenReadings ->
-						tokenReadings.getToken() =~ /[ыэъё]|и[еи]/
+				
+                def tokensNoSpace = analyzedSentence.getTokensWithoutWhitespace()[1..-1]
+                if( options.filterUnknown ) {
+					def unknownBad = tokensNoSpace.any { AnalyzedTokenReadings tokenReadings ->
+						tokenReadings.getCleanToken() =~ /[ыэъё]|и[еи]/
 					}
 					if( unknownBad )
 						continue
 				}
 
-				analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
-					if( (tokenReadings.getAnalyzedToken(0).getPOSTag() == null
-                            || JLanguageTool.SENTENCE_END_TAGNAME.equals(tokenReadings.getAnalyzedToken(0).getPOSTag()) )
-					        && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
-                            && ! (tokenReadings.getToken() =~ /[ыэъё]|ие|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
-						unknownMap[tokenReadings.getToken()] += 1
+				tokensNoSpace.each { AnalyzedTokenReadings tokenReadings ->
+                    String posTag = tokenReadings.getAnalyzedToken(0).getPOSTag()
+					if( isTagEmpty(posTag) ) {
+                        String token = tokenReadings.getCleanToken()
+                        if( token =~ /[а-яіїєґА-ЯІЇЄҐ]/
+                            && ! (token =~ /[ыэъё]|ие|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
+						unknownMap[token] += 1
+					}
 					}
 				}
-				analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
-				    if( ! (tokenReadings.getToken() =~ /[0-9]|^[a-zA-Z-]+$/) && tokenReadings.getReadings().any { AnalyzedToken at -> 
-				            at.getPOSTag() != null && ! (at.getPOSTag() =~ /_END/)
-				        } ) {
+
+				tokensNoSpace.each { AnalyzedTokenReadings tokenReadings ->
+				    if( ! (tokenReadings.getToken() =~ /[0-9]|^[a-zA-Z-]+$/) 
+                            && tokenReadings.getReadings().any { AnalyzedToken at -> ! isTagEmpty(at.getPOSTag())} ) {
 				      knownCnt++
 				      knownMap[tokenReadings.getToken()] += 1
 				    }
@@ -630,55 +682,63 @@ class TagText {
 		}
 
 
+        @CompileStatic
 		def collectHomonyms(List<AnalyzedSentence> analyzedSentences) {
 
 			for (AnalyzedSentence analyzedSentence : analyzedSentences) {
 				for(AnalyzedTokenReadings readings: analyzedSentence.getTokens()) {
-					if( readings.size() > 1 ) {
-						if( readings.getReadings()[0].getPOSTag().equals(JLanguageTool.SENTENCE_END_TAGNAME) )
-							continue
+                    if( readings.getReadingsLength() < 2 )
+                        continue
 
-						if( readings.getReadings()[-1].getPOSTag().equals(JLanguageTool.SENTENCE_END_TAGNAME) ) {
-							if( readings.size() == 2 )
-								continue
-							readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
-						}
-						if( readings.getReadings()[-1].getPOSTag() == null && readings.getToken().contains('\u0301') ) {
-							readings = new AnalyzedTokenReadings(readings.getReadings()[0..-2], readings.getStartPos())
-						}
+                    List<AnalyzedToken> tokenReadings = new ArrayList<>(readings.getReadings())
+                    tokenReadings.removeIf{ AnalyzedToken it -> 
+                        it.getPOSTag() == null \
+                            || it.getPOSTag() in [JLanguageTool.SENTENCE_END_TAGNAME, JLanguageTool.PARAGRAPH_END_TAGNAME] \
+                            || it.getPOSTag().startsWith('<') 
+                    }
 
-						def key = readings.join("|")
-						homonymFreqMap[key] += 1
-						homonymTokenMap[key] << readings.getToken()
-					}
+					if( tokenReadings.size() < 2 )
+						continue
+
+					def key = tokenReadings.join("|")
+					homonymFreqMap[key] += 1
+					homonymTokenMap[key] << readings.getCleanToken()
 				}
 			}
 		}
 
 
+        @CompileStatic
 		def collectFrequency(List<AnalyzedSentence> analyzedSentences) {
 			for (AnalyzedSentence analyzedSentence : analyzedSentences) {
 				analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
-					if( tokenReadings.getAnalyzedToken(0).getPOSTag()
-					&& tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/
-					&& ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
-						frequencyMap[tokenReadings.getToken()] += 1
+					if( isTagEmpty(tokenReadings.getAnalyzedToken(0).getPOSTag())
+                            && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/ ) {
+//                            && ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
+						frequencyMap[tokenReadings.getCleanToken()] += 1
 					}
 				}
 			}
 		}
 
-		def collectLemmaFrequency(List<AnalyzedSentence> analyzedSentences) {
+        @CompileStatic
+		def collectLemmaFrequency(List<AnalyzedSentence> analyzedSentences) { 
 			for (AnalyzedSentence analyzedSentence : analyzedSentences) {
 				analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
-					tokenReadings.getReadings()
-							.findAll { it.getLemma() \
-						&& tokenReadings.getToken() ==~ /[а-яіїєґА-ЯІЇЄҐ'-]+/
-							}
-							.unique()
-							.each {
-								lemmaFrequencyMap[ it.getLemma() ] += 1
-							}
+					def lemmas = tokenReadings.getReadings()
+						.findAll { it.getLemma() \
+                            && tokenReadings.getCleanToken() ==~ /[а-яіїєґА-ЯІЇЄҐ'-]+/ \
+                            && ! (it.getPOSTag() =~ /arch|alt|short|long|bad|</) 
+						}
+                        .collect { it.getLemma() }
+						.unique()
+                    
+                    lemmas.each {
+						lemmaFrequencyMap[ it ] += 1
+                        if( lemmas.size() > 1 ) {
+                            lemmaAmbigs << it
+                        }
+					}
 				}
 			}
 		}
@@ -699,20 +759,20 @@ class TagText {
 	        printStream.println("Час-та\tОм.\tЛем\tСлово\tОмоніми")
 	
 	        homonymFreqMap
-	        .sort { -it.value }
-	        .each{ k, v ->
-	            def items = k.split(/\|/)
-	            def homonimCount = items.size()
-	            def posHomonimCount = items.collect { it.split(":", 2)[0] }.unique().size()
-	
-	            def lemmasHaveCaps = items.any { Character.isUpperCase(it.charAt(0)) }
-	            if( ! lemmasHaveCaps ) {
-	                homonymTokenMap[k] = homonymTokenMap[k].collect { it.toLowerCase() }.unique()
-	            }
-	
-	            def str = String.format("%6d\t%d\t%d\t%s\t\t%s", v, homonimCount, posHomonimCount, homonymTokenMap[k].join(","), k)
-	            printStream.println(str)
-	        }
+    	        .sort { -it.value }
+    	        .each{ k, v ->
+    	            def items = k.split(/\|/)
+    	            def homonimCount = items.size()
+    	            def posHomonimCount = items.collect { it.split(":", 2)[0] }.unique().size()
+    	
+    	            def lemmasHaveCaps = items.any { Character.isUpperCase(it.charAt(0)) }
+    	            if( ! lemmasHaveCaps ) {
+    	                homonymTokenMap[k] = homonymTokenMap[k].collect { it.toLowerCase() } as Set
+    	            }
+    	
+    	            def str = String.format("%6d\t%d\t%d\t%s\t\t%s", v, homonimCount, posHomonimCount, homonymTokenMap[k].join(","), k)
+    	            printStream.println(str)
+    	        }
 	    }
 	
 	    def printUnknownStats() {
@@ -735,14 +795,14 @@ class TagText {
 		        }
 
 			int unknownCnt = unknownMap ? unknownMap.values().sum() as int : 0
-			double unknownPct = knownCnt+unknownCnt ? unknownCnt*100/(knownCnt+unknownCnt) : 0
+			double unknownPct = knownCnt+unknownCnt ? (double)unknownCnt*100/(knownCnt+unknownCnt) : 0
 	        println "Known: $knownCnt, unknown: $unknownCnt, " + String.format("%.1f", unknownPct) + "%"
 
-            double unknownUniquePct = knownMap.size()+unknownMap.size() ? unknownMap.size()*100/(knownMap.size()+unknownMap.size()) : 0
+            double unknownUniquePct = knownMap.size()+unknownMap.size() ? (double)unknownMap.size()*100/(knownMap.size()+unknownMap.size()) : 0
 	        println "Known unique: ${knownMap.size()}, unknown unique: " + unknownMap.size() + ", " + String.format("%.1f", unknownUniquePct) + "%"
 
             Map unknownWordsMap = unknownMap.findAll { k,v -> k =~ /(?iu)^[а-яіїєґ][а-яіїєґ'-]*/ }
-            double unknownUniqueWordPct = knownMap.size()+unknownWordsMap.size() ? unknownWordsMap.size()*100/(knownMap.size()+unknownWordsMap.size()) : 0
+            double unknownUniqueWordPct = knownMap.size()+unknownWordsMap.size() ? (double)unknownWordsMap.size()*100/(knownMap.size()+unknownWordsMap.size()) : 0
             println "\tunknown unique (letters only): " + unknownWordsMap.size() + ", " + String.format("%.1f", unknownUniqueWordPct) + "%"
 	    }
 	
@@ -779,11 +839,12 @@ class TagText {
 	        }
 	
 	        lemmaFrequencyMap
-	        .sort { it.key }
-	        .each{ k, v ->
-	            def str = String.format("%6d\t%s", v, k)
-	            printStream.println(str)
-	        }
+	            .sort { it.key }
+                .each{ k, v ->
+                    String amb = k in lemmaAmbigs ? "\tA" : ""
+                    def str = String.format("%6d\t%s%s", v, k, amb)
+                    printStream.println(str)
+                }
 	    }
 	}
 

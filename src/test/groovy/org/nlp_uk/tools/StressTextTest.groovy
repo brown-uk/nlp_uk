@@ -3,26 +3,35 @@
 package org.nlp_uk.tools
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+
 import org.nlp_uk.tools.StressText.StressResult
 
 
 class StressTextTest {
+    final boolean enabled = false
+    
 	def options = [ : ]
 
-	static StressText stressText = new StressText()
+	static StressText stressText
 	StressResult result
 	
 	@BeforeEach
 	void before() {
+        assumeTrue(enabled)
+        if( stressText == null ) {
+            stressText = new StressText()
+        }
 		stressText.setOptions(options)
 	}
 
 	@AfterEach
 	void after() {
+        assumeTrue(enabled)
 		println "Unknown: " + result.stats.unknownCnt
 		println "Homonym: " + result.stats.homonymCnt
 	}

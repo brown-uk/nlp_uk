@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import java.util.regex.Pattern
 
 import groovy.transform.TypeChecked
 
@@ -227,4 +228,31 @@ class TextUtils {
         }
     }
 
+    // common helpers
+    
+    
+    static List<String> notParts = ['себ-то', 'накінець-то', 'як-от', 'ф-но']
+    static Pattern WITH_PARTS = ~/(?iu)([а-яіїєґ][а-яіїєґ'\u2019\u02bc-]+)[-\u2013](бо|но|то|от|таки)$/
+    
+    static List<String> adjustTokens(List<String> words, boolean withHyphen) {
+        List<String> newWords = []
+        String hyph = withHyphen ? "-" : ""
+        
+        words.forEach { String word ->
+            String lWord = word.toLowerCase().replace('\u2013', '-')
+            if( lWord.contains('-') && ! (lWord in notParts) ) {
+                def matcher = WITH_PARTS.matcher(word)
+
+                if( matcher ) {
+                    newWords << matcher[0][1] << hyph + matcher[0][2]
+                    return
+                }
+            }
+
+            newWords << word
+        }
+        
+        return newWords
+    }
+    
 }
