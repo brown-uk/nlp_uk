@@ -3,8 +3,8 @@
 package org.nlp_uk.tools
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.4')
-//@Grab(group='org.languagetool', module='language-uk', version='5.5-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='5.4')
+@Grab(group='org.languagetool', module='language-uk', version='5.5-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
@@ -36,6 +36,7 @@ class TagText {
 
     static final Pattern PUNCT_PATTERN = Pattern.compile(/[\p{Punct}«»„“…—–]+/)
     static final Pattern LATIN_WORD_PATTERN = Pattern.compile(/\p{IsLatin}+/)
+    static final Pattern XML_TAG_PATTERN = Pattern.compile(/<\/?[a-zA-Z_0-9]+>/)
 
     def language = new Ukrainian() {
         @Override
@@ -217,14 +218,18 @@ class TagText {
                     return
     
                 if( PUNCT_PATTERN.matcher(theToken).matches() ) {
-                    tokenReadingsT << new TTR(tokens: [[value: tokenReadings.getToken(), 'tags': 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore()]])
+                    tokenReadingsT << new TTR(tokens: [[value: tokenReadings.getToken(), tags: 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore()]])
                     return
                 }
                 else if( LATIN_WORD_PATTERN.matcher(theToken).matches() ) {
-                    tokenReadingsT << new TTR(tokens: [['value': tokenReadings.getToken(), 'tags': 'noninfl:foreign']])
+                    tokenReadingsT << new TTR(tokens: [['value': tokenReadings.getToken(), tags: 'noninfl:foreign']])
                     return
                 }
-    
+                else if( XML_TAG_PATTERN.matcher(theToken).matches() ) {
+                    tokenReadingsT << new TTR(tokens: [[value: tokenReadings.getToken(), lemma: '', tags: 'xmltag']])
+                    return
+                }
+
                 if( isZheleh(options) ) {
                     tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
                     hasTag = hasPosTag(tokenReadings)
@@ -232,7 +237,7 @@ class TagText {
             }
 
             if( ! hasTag ) {
-                tokenReadingsT << new TTR(tokens: [['value': tokenReadings.getToken(), lemma: '']])
+                tokenReadingsT << new TTR(tokens: [['value': tokenReadings.getToken(), lemma: '', tags: 'unknown']])
                 return
             }
             

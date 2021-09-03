@@ -84,9 +84,13 @@ compileGroovy {
 eclipse {
   classpath {
     defaultOutputDir = file('build')
+    file {
+        whenMerged { classpath ->
+            classpath.entries.findAll { entry -> entry.kind == 'lib' && entry.path =~ /languagetool-core|language-(uk|ru)/ }*.exported = true
+        }
+    }
   }
 }
-
 
 test {
     useJUnitPlatform()

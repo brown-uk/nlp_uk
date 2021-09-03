@@ -111,6 +111,24 @@ class TagTextTest {
 """
 		assertEquals expected, tagged.tagged
 	}
+    
+    @Test
+    public void testSymbols() {
+        tagText.setOptions(new TagOptions(xmlOutput: true))
+
+        TagResult tagged = tagText.tagText(", €")
+        def expected =
+"""<sentence>
+  <tokenReading>
+    <token value=',' tags='punct' whitespaceBefore='false' />
+  </tokenReading>
+  <tokenReading>
+    <token value='€' lemma='' tags='unknown' />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
+    }
 
     @Test
     public void testNoMultiword() {
@@ -123,7 +141,23 @@ class TagTextTest {
     <token value='від' lemma='від' tags='prep' />
   </tokenReading>
   <tokenReading>
+    <token value='малку' lemma='малку' tags='noninfl' />
     <token value='малку' lemma='малка' tags='noun:inanim:f:v_zna' />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
+    @Test
+    public void testUnknown() {
+        tagText.setOptions(new TagOptions(xmlOutput: true))
+
+        TagResult tagged = tagText.tagText("житєє")
+        def expected =
+"""<sentence>
+  <tokenReading>
+    <token value='житєє' lemma='' tags='unknown' />
   </tokenReading>
 </sentence>
 """
@@ -149,7 +183,8 @@ class TagTextTest {
     <token value='ся' lemma='сей' tags='adj:f:v_naz:&amp;pron:dem:arch' />
   </tokenReading>
   <tokenReading>
-    <token value='житє' lemma='' />
+    <token value='житє' lemma='житє' tags='noun:inanim:n:v_naz:alt' />
+    <token value='житє' lemma='житє' tags='noun:inanim:n:v_zna:alt' />
   </tokenReading>
   <tokenReading>
     <token value='і' lemma='і' tags='conj:coord' />
@@ -300,7 +335,7 @@ class TagTextTest {
     <token value='Мабуть' lemma='мабуть' tags='adv:&amp;insert' />
   </tokenReading>
   <tokenReading>
-    <token value='кх' lemma='' />
+    <token value='кх' lemma='' tags='unknown' />
   </tokenReading>
   <tokenReading>
     <token value='.' tags='punct' whitespaceBefore='false' />

@@ -475,7 +475,13 @@ class CleanText {
             String fix = "${w1}ої"
             knownWord(fix) ? fix : all
         })
-        
+
+        // Нацполіціі
+        text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ][стц])([іi][іi])\b/, { all, w1, w2 ->
+            String fix = "${w1}ії"
+            knownWord(fix) ? fix : all
+        })
+
         // fix weird apostrophes
         text = text.replaceAll(/([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384\u0092´`?*]([єїюя])/, /$1'$2/) // "
 
@@ -581,9 +587,9 @@ class CleanText {
         text
     }
 
-    def evalChunk(String text) {
+    List<Double> evalChunk(String text) {
         
-        double ukCnt = 0
+//        double ukCnt = 0
         int ruCnt = 0
         int totalCnt = 0
         int ruCharCnt = 0
@@ -594,7 +600,7 @@ class CleanText {
             .findAll { it ==~ /(?ius)[а-яіїєґё'\u2019\u02BC\u0301-]+/ }
 
         if( chunks.isEmpty() )
-            return [1.0, 0.0]
+            return [(double)1.0, (double)0.0]
             
         int ukSum = 0
         int ruSum = 0
@@ -626,8 +632,8 @@ class CleanText {
 //            println debugStr
         }
 
-        float ukRate = ukSum / chunks.size() / 10
-        float ruRate = ruSum / chunks.size() / 10
+        double ukRate = (double)ukSum / chunks.size() / 10
+        double ruRate = (double)ruSum / chunks.size() / 10
         
         if( ruSum10 > 0 && ukSum10 == 0 ) {
             ruRate = 1

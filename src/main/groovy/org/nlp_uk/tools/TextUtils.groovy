@@ -230,8 +230,19 @@ class TextUtils {
 
     // common helpers
     
+    static List<String> notParts = ['себ-то', 'накінець-то', 'як-от', 'ф-но', 'все-таки', 'усе-таки', 'то-то',
+        'тим-то', 'аби-то', 'єй-бо', 'їй-бо', 'от-от', 'от-от-от']
     
-    static List<String> notParts = ['себ-то', 'накінець-то', 'як-от', 'ф-но']
+    // TODO: disambig
+    /*
+        отож-то conj:subord - розбиваємо й відразу присвоюємо отож conj (без варіантів)
+        отож-бо conj:subord - розбиваємо й  присвоюємо отож conj (без варіантів)
+        так-таки part - розбиваємо й присвоюємо лише так part
+        так-то part|adv - розбиваємо й тоді так може бути adv|(рідше)part
+        ото-то intj - треба розбивати на ото part + то part (ото-то разом - це теж part)
+        тому-то conj:subord - розбиваємо лише на тільки conj:subord + то part
+     */
+    
     static Pattern WITH_PARTS = ~/(?iu)([а-яіїєґ][а-яіїєґ'\u2019\u02bc-]+)[-\u2013](бо|но|то|от|таки)$/
     
     static List<String> adjustTokens(List<String> words, boolean withHyphen) {

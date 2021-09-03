@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.nlp_uk.other.CleanText.CleanOptions
 import org.nlp_uk.other.CleanText.MarkOption
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals
 import static org.junit.jupiter.api.Assertions.assertEquals
 
 
@@ -69,8 +70,12 @@ class CleanTextTest {
         result = cleanText.cleanUp("благо-\nдійної", file(), new CleanOptions())
         assert result == "благодійної\n"
 
-        result = cleanText.cleanUp("Зе- ленський", file(), new CleanOptions())
-        assert result == "Зеленський"
+        result = cleanText.cleanUp("Нацполіціі", file(), new CleanOptions())
+        assert result == "Нацполіції"
+
+        //TODO:
+//        result = cleanText.cleanUp("Зе- ленський", file(), new CleanOptions())
+//        assert result == "Зеленський"
 
         result = cleanText.cleanUp("чоло-віка", file(), new CleanOptions())
         assert result == "чоловіка"
@@ -107,12 +112,16 @@ class CleanTextTest {
         def ukrSent2 = "Classmark Р 382.c.367.2."
         assertEquals ukrSent2, clean(ukrSent2)
 
-        def expectedRates = [(float)0.8, (float)0.0]
+        def expectedRates = [(double)0.8, (double)0.0]
         assertEquals(expectedRates, cleanText.evalChunk("дерзаючий"))
 
-//        expectedRates = [(float)0.8, (float)0.0]
+//        expectedRates = [(double)0.8, (double)0.0]
         assertEquals(expectedRates, cleanText.evalChunk("енергозбереженню"))
 
+        def rates = cleanText.evalChunk("Arsenal по\u2013царськи")
+        assertEquals(1.0, rates[0], 1E-2)
+        assertEquals(0.0, rates[1], 1E-2)
+        
 //        def ukrSent3 = 
 //'''Фінал передбачується на початку оповіді у незначних зауваженнях: «Стены 
 //казались несокрушимыми» [7; 65] («Призывающий Зверя»), «Петр Антонович вспомнил прочитанную им вчера в журнале 
