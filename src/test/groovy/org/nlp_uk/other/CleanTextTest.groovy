@@ -21,7 +21,7 @@ class CleanTextTest {
     String clean(String str) {
         println "---------"
         str = str.replace('_', '')
-        cleanText.cleanUp(str, file(), options)
+        cleanText.cleanUp(str, file(), options, file())
     }
 
 	
@@ -34,7 +34,9 @@ class CleanTextTest {
 		assertEquals "on throughпортал в", clean("on throughпортал в")
 
 		assertEquals "урахування\n", clean("ураху-\nвання")
-
+        assertEquals "Прем’єр-ліги\n", clean("Прем’єр-\nліги")
+//        assertEquals "інформаційно\u2013звітний\n", clean("інформаційно\u2013\nзвітний")
+        
 		assertEquals "екс-«депутат»\n", clean("екс-\n«депутат»")
 
 		assertEquals "\"депутат\" H'''", clean("''депутат'' H'''")
@@ -52,32 +54,36 @@ class CleanTextTest {
 
 	@Test
 	void test2() {
-		def result = cleanText.cleanUp('просто-\nрово-часового', file(), new CleanOptions())
+		def result = cleanText.cleanUp('просто-\nрово-часового', file(), new CleanOptions(), file())
 		assert result == "просторово-часового\n"
 		//result = cleanText.cleanUp('двох-\nсторонній', file, [])
 		//assert result == "двохсторонній\n"
 		
 		//TODO:
-		result = cleanText.cleanUp("минулого-сучасного-май-\nбутнього", file(), new CleanOptions())
+		result = cleanText.cleanUp("минулого-сучасного-май-\nбутнього", file(), new CleanOptions(), file())
 		assert result == "минулого-сучасного-майбутнього\n"
         
-        result = cleanText.cleanUp("новоствореноі", file(), new CleanOptions())
+        result = cleanText.cleanUp("новоствореноі", file(), new CleanOptions(), file())
         assert result == "новоствореної"
 
-        result = cleanText.cleanUp("Північноірландські", file(), new CleanOptions())
+        // don't touch abbreviations or short words
+        result = cleanText.cleanUp("МОІ", file(), new CleanOptions(), file())
+        assert result == "МОІ"
+
+        result = cleanText.cleanUp("Північноірландські", file(), new CleanOptions(), file())
         assert result == "Північноірландські"
 
-        result = cleanText.cleanUp("благо-\nдійної", file(), new CleanOptions())
+        result = cleanText.cleanUp("благо-\nдійної", file(), new CleanOptions(), file())
         assert result == "благодійної\n"
 
-        result = cleanText.cleanUp("Нацполіціі", file(), new CleanOptions())
+        result = cleanText.cleanUp("Нацполіціі", file(), new CleanOptions(), file())
         assert result == "Нацполіції"
 
         //TODO:
 //        result = cleanText.cleanUp("Зе- ленський", file(), new CleanOptions())
 //        assert result == "Зеленський"
 
-        result = cleanText.cleanUp("чоло-віка", file(), new CleanOptions())
+        result = cleanText.cleanUp("чоло-віка", file(), new CleanOptions(), file())
         assert result == "чоловіка"
 	}
 

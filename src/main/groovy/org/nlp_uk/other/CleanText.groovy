@@ -16,33 +16,33 @@ import static org.nlp_uk.other.CleanText.MarkOption.none
 // it also tries to merge some simple word wraps
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.4')
-//@Grab(group='org.languagetool', module='language-uk', version='5.5-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='5.5')
+//@Grab(group='org.languagetool', module='language-uk', version='5.6-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='5.4')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
 @GrabConfig(systemClassLoader=true)
 @Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.6')
-@Grab(group='org.languagetool', module='language-uk', version='5.1')
-//@Grab(group='org.languagetool', module='language-uk', version='5.2-SNAPSHOT')
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.function.Function
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
-import groovy.transform.TypeChecked
 import groovy.io.FileVisitResult
 import groovy.transform.CompileStatic
+import groovy.transform.Field
 
 import org.languagetool.tagging.uk.*
 import org.languagetool.tokenizers.SRXSentenceTokenizer
 import org.languagetool.tokenizers.uk.UkrainianWordTokenizer
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.languagetool.tagging.Tagger
 import org.languagetool.tagging.ru.RussianTagger
 import org.languagetool.AnalyzedToken
 import org.languagetool.language.Ukrainian
@@ -50,8 +50,9 @@ import org.languagetool.language.Ukrainian
 
 
 class CleanText {
-    private static final String UTF8 = StandardCharsets.UTF_8.name();
-
+    private static final String UTF8 = StandardCharsets.UTF_8.name()
+    Logger logger
+    
     // for higher quality text esp. short newspaper articles you need to keep it low ~100
     // for larger text with possible scanned sources you may want to go higher > 200
     // note: we count words with 2 letters and more
@@ -105,9 +106,9 @@ class CleanText {
     @Lazy
     UkrainianTagger ukTagger = { new UkrainianTagger() }()
 	@Lazy
-	def ruTagger = { new RussianTagger() }()
+	RussianTagger ruTagger = { new RussianTagger() }()
     @Lazy
-    def ukLanguage = new Ukrainian() {
+    Ukrainian ukLanguage = new Ukrainian() {
         @Override
         protected synchronized List<?> getPatternRules() { return [] }
     }
@@ -123,6 +124,11 @@ class CleanText {
     String outDirName
             
 
+    public void setLogger(Logger logger) {
+        this.logger = logger
+    }            
+    
+    
     CleanText(def options) {
         this.options = options
 
@@ -223,7 +229,12 @@ class CleanText {
     }
 
     void println(String txt) {
-        out.get().println(txt)
+        if( logger ) {
+            logger.info txt
+        }
+        else {
+            out.get().println(txt)
+        }
     }
 
 
@@ -347,10 +358,29 @@ class CleanText {
                 println "Looking at " + pathRelative
             }
 
+            
+            File outFile
+            if( outFilename == null ) {
+//                def outDirName = outDirName == "." ? "good" : outDirName + "-good/"
+                new File(outDirName).mkdirs()
+
+                Path pathAbsolute = Paths.get(file.absolutePath)
+                Path pathBase = Paths.get(baseDir.absolutePath)
+                Path pathRelative = pathBase.relativize(pathAbsolute);
+                
+                File parentDir = new File(outDirName, pathRelative.toString()).getParentFile()
+                parentDir.mkdirs()
+                outFile = new File(parentDir, file.getName())
+            }
+            else {
+                outFile = new File(outFilename)
+            }
+
+            
 			String origText = file.getText(UTF8)
             String text = origText
 
-            text = cleanUp(text, file, options)
+            text = cleanUp(text, file, options, outFile)
             if( ! text ) {
                 if( options.parallel ) {
                     out.get().flush()
@@ -373,24 +403,6 @@ class CleanText {
 
 
 //            println "\tGOOD: $file.name\n"
-
-
-			File outFile
-            if( outFilename == null ) {
-//                def outDirName = outDirName == "." ? "good" : outDirName + "-good/"
-                new File(outDirName).mkdirs()
-
-                Path pathAbsolute = Paths.get(file.absolutePath)
-                Path pathBase = Paths.get(baseDir.absolutePath)
-                Path pathRelative = pathBase.relativize(pathAbsolute);
-                
-                File parentDir = new File(outDirName, pathRelative.toString()).getParentFile()
-                parentDir.mkdirs()
-                outFile = new File(parentDir, file.getName())
-            }
-            else {
-                outFile = new File(outFilename)
-            }
 
 			if( text != null ) {
 				outFile.setText(text, UTF8)
@@ -426,7 +438,7 @@ class CleanText {
     
     
     @CompileStatic
-    String cleanUp(String text, File file, CleanOptions options) {
+    String cleanUp(String text, File file, CleanOptions options, File outFile) {
         if( file.length() > 100 && file.bytes[0..3] == [0x50, 0x4B, 0x03, 0x04] ) {
             println "\tERROR: found zip file, perhaps it's a Word document?"
             return null
@@ -532,13 +544,13 @@ class CleanText {
 		}
 		
 		if( options.markLanguages != none ) {
-		    text = markRussian(text, file)
+		    text = markRussian(text, file, outFile)
 		}
 
         text
     }
 
-	String markRussian(String text, File file) {
+	String markRussian(String text, File file, File outFile) {
         Pattern pattern = ~/(?s)<span lang="ru"( rate="[0-9.]+")?>(.*?)<\/span>/
         
         // clean previous marks
@@ -573,15 +585,17 @@ class CleanText {
 			.join("\n\n")
            
         if( options.markLanguages == MarkOption.cut ) {
-            String ruText = ruChunks.join("\n\n")
-            def ruFile
-            if( outDirName ) {
-                ruFile = new File(outDirName, file.name.replaceFirst(/\.txt/, '.ru.txt'))
+            if( ruChunks ) {
+                String ruText = ruChunks.join("\n\n")
+                def ruFile
+                if( outDirName ) {
+                    ruFile = new File(outDirName, file.name.replaceFirst(/\.txt/, '.ru.txt'))
+                }
+                else {
+                    ruFile = new File(outFile.absolutePath.replaceFirst(/\.txt/, '.ru.txt'))
+                }
+                ruFile.setText(ruText, UTF8)
             }
-            else {
-                ruFile = new File(file.absolutePath.replaceFirst(/\.txt/, '.ru.txt'))
-            }
-            ruFile.setText(ruText, UTF8)
         }
 
         text
@@ -788,10 +802,17 @@ class CleanText {
         return text
     }
 
-
+    @CompileStatic
+    String normalize(String word) {
+        word.replace('\u2019', '\'')
+        .replace('\u02BC', '\'')
+        .replace('\u2018', '\'')
+    }
+    
+    @CompileStatic
     boolean knownWord(String word) {
         try {
-            return ! ukTagger.getAnalyzedTokens(word)[0].hasNoTag()
+            return ! tag(ukTagger, normalize(word))[0].hasNoTag()
         }
         catch (Exception e) {
             System.err.println("Failed on word: " + word)
@@ -799,10 +820,16 @@ class CleanText {
         }
     }
 
+    @CompileStatic
+    List<AnalyzedToken> tag(Tagger tagger, String word) {
+        tagger.tag(Arrays.asList(word)).get(0).getReadings()
+    }
+    
     static final List<String> ignoreHypLemmas = ["дійний", "ленський"]
+    @CompileStatic
     boolean isHyphenBadLemma(String word) {
         try {
-            List<String> lemmas = ukTagger.getAnalyzedTokens(word)*.getLemma()
+            List<String> lemmas = tag(ukTagger, normalize(word))*.getLemma()
             return lemmas.intersect(ignoreHypLemmas)
         }
         catch (Exception e) {
@@ -811,10 +838,11 @@ class CleanText {
         }
     }
 
+    @CompileStatic
 	boolean knownWordTwoLang(String word) {
 		try {
-			return ! ukTagger.getAnalyzedTokens(word)[0].hasNoTag() \
-				|| ! ruTagger.getAnalyzedTokens(word)[0].hasNoTag()
+			return ! tag(ukTagger, normalize(word))[0].hasNoTag() \
+				|| ! tag(ruTagger, word)[0].hasNoTag()
 		}
 		catch (Exception e) {
 			System.err.println("Failed dual lang on word: " + word)
@@ -1069,23 +1097,20 @@ class CleanText {
 					first = it[0] ? it[0].replace('\n', "\\n") : it[0]
                 //            println "== " + (it[1] + "-" + it[3]) + ", known: " + knownWord(it[1] + "-" + it[3])
                 // consider words with two or more hyphens with one of them before end of line to be rare
-                if( /*it[0].count('-') > 1 ||*/ isHyphenBadLemma(it[3]) || ! knownWord(it[1] + "-" + it[3]) ) {
-                    //                println "== " + (it[1] + it[3]) + ", known: " + knownWord(it[1] + it[3])
-                    if( knownWord(it[1] + it[3]) ) {
-                        cnt += 1
-                        //                print "."
-                        it[1] + it[3] + (it[4] ?: "") + "\n" + it[2]
-                    }
-                    else {
-                        it[0]
-                    }
+                boolean knownWithHyphen = knownWord(it[1] + "-" + it[3]) && ! isHyphenBadLemma(it[3])
+                if( knownWithHyphen )
+                    return it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
+                
+                if( knownWord(it[1] + it[3]) ) {
+                    cnt += 1
+                    //                print "."
+                    it[1] + it[3] + (it[4] ?: "") + "\n" + it[2]
                 }
                 else {
-                    cntWithHyphen += 1
-                    //                print ","
-                    it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
+                    it[0]
                 }
             })
+
             println "\t\t$cnt word wraps removed, $cntWithHyphen newlines after hyphen removed"
             if( cnt == 0 && cntWithHyphen == 0 ) {
                 println "\t\tfirst match: \"$first\""
