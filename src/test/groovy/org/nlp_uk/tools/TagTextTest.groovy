@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.nlp_uk.tools.TagText.OutputFormat
 import org.nlp_uk.tools.TagText.TagOptions
 import org.nlp_uk.tools.TagText.TagResult
 
@@ -27,6 +28,7 @@ class TagTextTest {
 
 	@Test
 	public void test() {
+        tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt))
 		TagResult tagged = tagText.tagText("Слово.")
 		def expected = "Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].[</S><P/>]"
 		assertEquals expected, tagged.tagged
@@ -34,6 +36,7 @@ class TagTextTest {
 
     @Test
     public void testOmitMultiwordTag() {
+        tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt))
         TagResult tagged = tagText.tagText("Де можна")
         // def orig = "Де[де/adv:&pron:int:rel,де/noninfl:foreign,де/part,де можна/<adv>] можна[можна/noninfl:&predic,</S>де можна/<adv>,<P/>]"
         def expected = "Де[де/adv:&pron:int:rel,де/noninfl:foreign,де/part] можна[можна/noninfl:&predic,</S><P/>]"
@@ -60,7 +63,7 @@ class TagTextTest {
     <token value='раза' lemma='раз' tags='noun:inanim:m:v_rod' />
   </tokenReading>
   <tokenReading>
-    <token value='.' tags='punct' whitespaceBefore='false' />
+    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
 """
@@ -83,13 +86,13 @@ class TagTextTest {
     <token value='Україна' lemma='Україна' tags='noun:inanim:f:v_naz:prop:geo' />
   </tokenReading>
   <tokenReading>
-    <token value='—' tags='punct' whitespaceBefore='true' />
+    <token value='—' lemma='—' tags='punct' whitespaceBefore='true' />
   </tokenReading>
   <tokenReading>
     <token value='Іспанія' lemma='Іспанія' tags='noun:inanim:f:v_naz:prop:geo' />
   </tokenReading>
   <tokenReading>
-    <token value='.' tags='punct' whitespaceBefore='false' />
+    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
 """
@@ -105,7 +108,7 @@ class TagTextTest {
 		def expected =
 """<sentence>
   <tokenReading>
-    <token value='Crow' tags='noninfl:foreign' />
+    <token value='Crow' lemma='Crow' tags='unclass' />
   </tokenReading>
 </sentence>
 """
@@ -120,10 +123,10 @@ class TagTextTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value=',' tags='punct' whitespaceBefore='false' />
+    <token value=',' lemma=',' tags='punct' whitespaceBefore='false' />
   </tokenReading>
   <tokenReading>
-    <token value='€' lemma='' tags='unknown' />
+    <token value='€' lemma='€' tags='symb' />
   </tokenReading>
 </sentence>
 """
@@ -157,7 +160,7 @@ class TagTextTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value='житєє' lemma='' tags='unknown' />
+    <token value='житєє' lemma='житєє' tags='unknown' />
   </tokenReading>
 </sentence>
 """
@@ -253,7 +256,7 @@ class TagTextTest {
     <token value='аахенська' lemma='аахенський' tags='adj:f:v_naz' semtags='1:abst' />
   </tokenReading>
   <tokenReading>
-    <token value='.' tags='punct' whitespaceBefore='false' />
+    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
 """
@@ -313,7 +316,7 @@ class TagTextTest {
     <token value='X' lemma='X' tags='number:latin' />
   </tokenReading>
   <tokenReading>
-    <token value='.' tags='punct' whitespaceBefore='false' />
+    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
 
@@ -323,10 +326,10 @@ class TagTextTest {
     <token value='Діло' lemma='діло' tags='noun:inanim:n:v_zna' />
   </tokenReading>
   <tokenReading>
-    <token value='&apos;' tags='punct' whitespaceBefore='false' />
+    <token value='&apos;' lemma='&apos;' tags='punct' whitespaceBefore='false' />
   </tokenReading>
   <tokenReading>
-    <token value='.' tags='punct' whitespaceBefore='false' />
+    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
 
@@ -335,10 +338,10 @@ class TagTextTest {
     <token value='Мабуть' lemma='мабуть' tags='adv:&amp;insert' />
   </tokenReading>
   <tokenReading>
-    <token value='кх' lemma='' tags='unknown' />
+    <token value='кх' lemma='кх' tags='unknown' />
   </tokenReading>
   <tokenReading>
-    <token value='.' tags='punct' whitespaceBefore='false' />
+    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
   </tokenReading>
 </sentence>
 
@@ -361,7 +364,7 @@ class TagTextTest {
 		outFile.text = ''
 
 		
-		tagText.setOptions(new TagOptions(input: file.path, output: outFile.path))
+		tagText.setOptions(new TagOptions(input: file.path, output: outFile.path, outputFormat: OutputFormat.txt))
 		
 		tagText.process()
 
@@ -407,7 +410,7 @@ class TagTextTest {
         },
         {
           "tokens": [
-            { "value": ".", "tags": "punct", "whitespaceBefore": false }
+            { "value": ".", "lemma": ".", "tags": "punct", "whitespaceBefore": false }
           ]
         }
       ]
@@ -422,12 +425,12 @@ class TagTextTest {
         },
         {
           "tokens": [
-            { "value": "\\\"", "tags": "punct", "whitespaceBefore": false }
+            { "value": "\\\"", "lemma": "\\\"", "tags": "punct", "whitespaceBefore": false }
           ]
         },
         {
           "tokens": [
-            { "value": ".", "tags": "punct", "whitespaceBefore": false }
+            { "value": ".", "lemma": ".", "tags": "punct", "whitespaceBefore": false }
           ]
         }
       ]
@@ -441,7 +444,7 @@ class TagTextTest {
         },
         {
           "tokens": [
-            { "value": ".", "tags": "punct", "whitespaceBefore": false }
+            { "value": ".", "lemma": ".", "tags": "punct", "whitespaceBefore": false }
           ]
         }
       ]

@@ -3,8 +3,8 @@
 package org.nlp_uk.tools
 
 @GrabConfig(systemClassLoader=true)
-//@Grab(group='org.languagetool', module='language-uk', version='5.4')
-@Grab(group='org.languagetool', module='language-uk', version='5.5-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='5.5')
+//@Grab(group='org.languagetool', module='language-uk', version='5.6-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
@@ -34,8 +34,10 @@ class TagText {
     // easy way to include a class without forcing classpath to be set
     def textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
-    static final Pattern PUNCT_PATTERN = Pattern.compile(/[\p{Punct}«»„“…—–]+/)
-    static final Pattern LATIN_WORD_PATTERN = Pattern.compile(/\p{IsLatin}+/)
+    static final Pattern PUNCT_PATTERN = Pattern.compile(/[,.:;!?\/()\[\]{}«»„“"'…\u2013\u2014\u201D\u201C•■♦-]+/)
+    static final Pattern SYMBOL_PATTERN = Pattern.compile(/[\u00A0-\u00BF\u2000-\u20CF\u2100-\u218F\u2200-\u22FF]+/)
+    static final Pattern UNKNOWN_PATTERN = Pattern.compile(/(.*-)?[а-яіїєґА-ЯІЇЄҐ]+(-.*)?/)
+//    static final Pattern UNCLASS_PATTERN = Pattern.compile(/\p{IsLatin}[\p{IsLatin}\p{IsDigit}-]*|[0-9]+-?[а-яіїєґА-ЯІЇЄҐ]+|[а-яіїєґА-ЯІЇЄҐ]+-?[0-9]+/)
     static final Pattern XML_TAG_PATTERN = Pattern.compile(/<\/?[a-zA-Z_0-9]+>/)
 
     def language = new Ukrainian() {
@@ -209,7 +211,8 @@ class TagText {
 
         tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
             String theToken = tokenReadings.getToken()
-
+            String cleanToken = tokenReadings.getCleanToken()
+            
             boolean hasTag = hasPosTag(tokenReadings) 
 
             // TODO: ugly workaround for disambiguator problem
@@ -218,28 +221,35 @@ class TagText {
                     return
     
                 if( PUNCT_PATTERN.matcher(theToken).matches() ) {
-                    tokenReadingsT << new TTR(tokens: [[value: tokenReadings.getToken(), tags: 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore()]])
+                    tokenReadingsT << new TTR(tokens: [[value: theToken, lemma: cleanToken, tags: 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore()]])
                     return
                 }
-                else if( LATIN_WORD_PATTERN.matcher(theToken).matches() ) {
-                    tokenReadingsT << new TTR(tokens: [['value': tokenReadings.getToken(), tags: 'noninfl:foreign']])
+                else if( SYMBOL_PATTERN.matcher(theToken).matches() ) {
+                    tokenReadingsT << new TTR(tokens: [['value': theToken, lemma: cleanToken, tags: 'symb']])
                     return
+                }
+                else if( UNKNOWN_PATTERN.matcher(theToken).matches() ) {
+                    if( isZheleh(options) ) {
+                        tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
+                        hasTag = hasPosTag(tokenReadings)
+                    }
+                    
+                    if( ! hasTag ) {
+                        tokenReadingsT << new TTR(tokens: [['value': theToken, lemma: cleanToken, tags: 'unknown']])
+                        return
+                    }
                 }
                 else if( XML_TAG_PATTERN.matcher(theToken).matches() ) {
-                    tokenReadingsT << new TTR(tokens: [[value: tokenReadings.getToken(), lemma: '', tags: 'xmltag']])
+                    tokenReadingsT << new TTR(tokens: [[value: theToken, lemma: cleanToken, tags: 'xmltag']])
+                    return
+                }
+                else { // if( UNCLASS_PATTERN.matcher(theToken).matches() ) {
+                    tokenReadingsT << new TTR(tokens: [['value': theToken, lemma: cleanToken, tags: 'unclass']])
                     return
                 }
 
-                if( isZheleh(options) ) {
-                    tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
-                    hasTag = hasPosTag(tokenReadings)
-                }
             }
 
-            if( ! hasTag ) {
-                tokenReadingsT << new TTR(tokens: [['value': tokenReadings.getToken(), lemma: '', tags: 'unknown']])
-                return
-            }
             
             TTR item = new TTR(tokens: [])
             
@@ -347,7 +357,7 @@ class TagText {
                 sb.append("            { ")
                 sb.append("\"value\": \"").append(quoteJson(t.value)).append("\"")
                 if( t.lemma != null ) {
-                    sb.append(", \"lemma\": \"").append(t.lemma).append("\"")
+                    sb.append(", \"lemma\": \"").append(quoteJson(t.lemma)).append("\"")
                 }
                 if( t.tags != null ) {
                     sb.append(", \"tags\": \"").append(t.tags).append("\"")
@@ -385,7 +395,7 @@ class TagText {
     static String quoteXml(String s) {
 //        XmlUtil.escapeXml(s)
         // again - much faster on our own
-        s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('\'', "&apos;") //.replace('"', "&quot;")
+        s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('\'', "&apos;").replace('"', "&quot;")
     }
 
     @CompileStatic
@@ -545,7 +555,7 @@ class TagText {
         boolean firstLemmaOnly
         @Option(names = ["-x", "--xmlOutput"], description = "Output in xml format")
         boolean xmlOutput
-        @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {txt, xml, json}")
+        @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt}")
         OutputFormat outputFormat
         @Option(names = ["-s", "--homonymStats"], description = "Collect homohym statistics")
         boolean homonymStats
@@ -580,7 +590,7 @@ class TagText {
                     outputFormat = OutputFormat.xml
                 }
                 else {
-                    outputFormat = OutputFormat.txt
+                    outputFormat = OutputFormat.xml
                 }
             }
             if( ! quiet ) {
