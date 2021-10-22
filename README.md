@@ -24,11 +24,11 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 ### Утиліта розбиття тексту: TokenizeText.groovy
 ### Утиліта лематизації тексту: LemmatizeText.groovy
 
-[докладніше про утиліти аналізу](doc/README_other.md)
+[докладніше про утиліти аналізу](doc/README_tools.md)
 
 
 ## Допоміжні утиліти:
-[докладніше про допоміжні утиліти](doc/README_tools.md)
+[докладніше про допоміжні утиліти](doc/README_other.md)
 
 
 ### Використовувані програмні засоби
