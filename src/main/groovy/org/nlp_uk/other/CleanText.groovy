@@ -174,6 +174,8 @@ class CleanText {
         boolean parallel
         @Option(names = ["-m", "--modules"], description = ["Extra cleanup: remove footnotes, page numbers etc. (supported modules: nanu)"])
         List<String> modules
+        @Option(names = ["-x", "--disable-rules"], description = ["Rules to disable (supported: oi)"])
+        List<String> disabledRules = []
 //        @Option(names = ["--singleThread"], description = ["Always use single thread (default is to use multithreading if > 2 cpus are found)"])
 //        boolean singleThread
         @Option(names = ["-q", "--quiet"], description = ["Less output"])
@@ -482,17 +484,19 @@ class CleanText {
         text = text.replaceAll(/[ІI]\u0308/, 'Ї')
         text = text.replace(/И\u0306/, 'Й')
 
-        // промисловоі
-        text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ])(о[іi])\b/, { all, w1, w2 ->
-            String fix = "${w1}ої"
-            knownWord(fix) ? fix : all
-        })
-
-        // Нацполіціі
-        text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ][стц])([іi][іi])\b/, { all, w1, w2 ->
-            String fix = "${w1}ії"
-            knownWord(fix) ? fix : all
-        })
+        if( ! options.disabledRules.contains("oi") ) {
+            // промисловоі
+            text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ])(о[іi])\b/, { all, w1, w2 ->
+                String fix = "${w1}ої"
+                knownWord(fix) ? fix : all
+            })
+    
+            // Нацполіціі
+            text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ][стц])([іi][іi])\b/, { all, w1, w2 ->
+                String fix = "${w1}ії"
+                knownWord(fix) ? fix : all
+            })
+        }
 
         // fix weird apostrophes
         text = text.replaceAll(/([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384\u0092´`?*]([єїюя])/, /$1'$2/) // "
