@@ -103,80 +103,70 @@ class TagText {
                     t.removeReading(r, "remove_multiword")
                 }
             }
-            
-            if( options.outputFormat == OutputFormat.xml ) {
-                def field = AnalyzedSentence.getDeclaredField("nonBlankTokens")
-                field.setAccessible(true)
-                AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
 
-                def tokenReagings = tagAsObject(tokens)
-                
-				StringBuilder x = outputSentenceXml(tokenReagings)
-                sb.append(x).append("\n");
-                
-//				sb.append(writer.toString()).append("\n");
-//                writer.getBuffer().setLength(0)
-            }
-            else if( options.outputFormat == OutputFormat.json ) {
-                AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
+            if ( ! options.noTag ) {
 
-                def tokenReadingObj = tagAsObject(tokens)
-                
-                def s = outputSentenceJson(tokenReadingObj)
-                if( sb.length() > 0 ) sb.append(",\n");
-                sb.append(s)
-//                sb.append("\n");
-            }
-            else if ( ! options.noTag ) {
-                String sentenceLine
-                // TODO: use frequencies
-                if( options.firstLemmaOnly ) {
-                    sentenceLine = analyzedSentence.tokens.collect { 
-                        AnalyzedTokenReadings it -> 
-                        it.isSentenceStart()
-                            ? ''
-                            : it.isWhitespace()
-                                ? ( "\n".equals(it.getToken()) ? '' : it.getToken() )
-                                : it.getToken() + "[" + it.getReadings().get(0).getLemma() + "/" + it.getReadings().get(0).getPOSTag() + "]" 
-                    }
-                    .join('') //(' --- ')
+                if( options.outputFormat == OutputFormat.xml ) {
+                    def field = AnalyzedSentence.getDeclaredField("nonBlankTokens")
+                    field.setAccessible(true)
+                    AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
+
+                    def tokenReagings = tagAsObject(tokens)
+
+                    StringBuilder x = outputSentenceXml(tokenReagings)
+                    sb.append(x).append("\n");
+
+                    //				sb.append(writer.toString()).append("\n");
+                    //                writer.getBuffer().setLength(0)
+                }
+                else if( options.outputFormat == OutputFormat.json ) {
+                    AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
+
+                    def tokenReadingObj = tagAsObject(tokens)
+
+                    def s = outputSentenceJson(tokenReadingObj)
+                    if( sb.length() > 0 ) sb.append(",\n");
+                    sb.append(s)
+                    //                sb.append("\n");
                 }
                 else {
-                    sentenceLine = analyzedSentence.toString()
-                    sentenceLine.replaceAll(/,[^\/].*?\/<.*?>/, '')
-                    if( options.tokenPerLine ) {
-                        sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
+                    String sentenceLine
+                    // TODO: use frequencies
+                    if( options.firstLemmaOnly ) {
+                        sentenceLine = analyzedSentence.tokens.collect {
+                            AnalyzedTokenReadings it ->
+                            it.isSentenceStart()
+                            ? ''
+                            : it.isWhitespace()
+                            ? ( "\n".equals(it.getToken()) ? '' : it.getToken() )
+                            : it.getToken() + "[" + it.getReadings().get(0).getLemma() + "/" + it.getReadings().get(0).getPOSTag() + "]"
+                        }
+                        .join('') //(' --- ')
                     }
                     else {
-                        sentenceLine = sentenceLine.replaceAll(/ *(<S>|\[<\/S>\]) */, '')
-                    }
-
-                    if( options.showDisambig ) {
-                      sentenceLine = analyzedSentence.tokens.each {
-                        AnalyzedTokenReadings it -> 
-                        if( it.getHistoricalAnnotations() ) {
-                          println it.getHistoricalAnnotations()
+                        sentenceLine = analyzedSentence.toString()
+                        sentenceLine.replaceAll(/,[^\/].*?\/<.*?>/, '')
+                        if( options.tokenPerLine ) {
+                            sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
                         }
-                      }
+                        else {
+                            sentenceLine = sentenceLine.replaceAll(/ *(<S>|\[<\/S>\]) */, '')
+                        }
+
+                        if( options.showDisambig ) {
+                            sentenceLine = analyzedSentence.tokens.each {
+                                AnalyzedTokenReadings it ->
+                                if( it.getHistoricalAnnotations() ) {
+                                    println it.getHistoricalAnnotations()
+                                }
+                            }
+                        }
                     }
+
+                    sb.append(sentenceLine) //.append("\n");
                 }
-
-
-                sb.append(sentenceLine) //.append("\n");
             }
-            
-            // DEBUG:
-//            AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
-//            for(AnalyzedTokenReadings atokenr: tokens) {
-//                for(AnalyzedToken token: atokenr.getReadings())
-//                if( token.getLemma() != null && token.getLemma().startsWith("західно-український") 
-//                        && "adj:f:v_rod".equals(token.getPOSTag()) ) {
-//                    System.err.println ":: " + analyzedSentence
-//                    System.exit(1)
-//                }
-//            }
         }
-
         
 		def stats = new Stats()
         if( options.homonymStats ) {
