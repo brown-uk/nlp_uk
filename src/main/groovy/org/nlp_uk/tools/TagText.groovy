@@ -9,7 +9,7 @@ package org.nlp_uk.tools
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
 import java.util.regex.Pattern
-
+import java.util.stream.Collectors
 import org.languagetool.*
 import org.languagetool.language.*
 
@@ -608,6 +608,9 @@ class TagText {
         
         options.adjust()
         
+        if( ! options.input ) {
+            options.input = "-"
+        }
         if( ! options.output ) {
             def fileExt = "." + options.outputFormat // ? ".xml" : ".txt"
             def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tagged" + fileExt
@@ -635,6 +638,7 @@ class TagText {
 		Map<String, Integer> unknownMap = [:].withDefault { 0 }
 		Map<String, Integer> frequencyMap = [:].withDefault { 0 }
 		Map<String, Integer> lemmaFrequencyMap = [:].withDefault { 0 }
+        Map<String, Set<String>> lemmaFrequencyPostagsMap = [:].withDefault { [] as Set }
         Set lemmaAmbigs = new HashSet<>()
 		Map<String, Integer> knownMap = [:].withDefault { 0 }
 		int knownCnt = 0
@@ -646,6 +650,7 @@ class TagText {
 			stats.knownMap.each { k,v -> knownMap[k] += v }
 			stats.frequencyMap.each { k,v -> frequencyMap[k] += v }
 			stats.lemmaFrequencyMap.each { k,v -> lemmaFrequencyMap[k] += v }
+            stats.lemmaFrequencyPostagsMap.each { k,v -> lemmaFrequencyPostagsMap[k] += v }
             lemmaAmbigs.addAll(stats.lemmaAmbigs)
 		    knownCnt += stats.knownCnt
 		}
@@ -730,19 +735,20 @@ class TagText {
 		def collectLemmaFrequency(List<AnalyzedSentence> analyzedSentences) { 
 			for (AnalyzedSentence analyzedSentence : analyzedSentences) {
 				analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
-					def lemmas = tokenReadings.getReadings()
+					 Map<String, List<AnalyzedToken>> lemmas = tokenReadings.getReadings()
 						.findAll { it.getLemma() \
                             && tokenReadings.getCleanToken() ==~ /[а-яіїєґА-ЯІЇЄҐ'-]+/ \
                             && ! (it.getPOSTag() =~ /arch|alt|short|long|bad|</) 
 						}
-                        .collect { it.getLemma() }
-						.unique()
+                        .groupBy{ it.getLemma() }
                     
-                    lemmas.each {
-						lemmaFrequencyMap[ it ] += 1
+                    lemmas.each { String k, List<AnalyzedToken> v ->
+						lemmaFrequencyMap[ k ] += 1
                         if( lemmas.size() > 1 ) {
-                            lemmaAmbigs << it
+                            lemmaAmbigs << k
                         }
+                        def tags = v.findAll{ it.getPOSTag() && ! it.getPOSTag().startsWith("SENT") }.collect { it.getPOSTag().replaceFirst(/:.*/, '') }
+                        lemmaFrequencyPostagsMap[k].addAll( tags ) 
 					}
 				}
 			}
@@ -843,11 +849,12 @@ class TagText {
 	            printStream = new PrintStream(outputFile, "UTF-8")
 	        }
 	
+            println ":: " + lemmaFrequencyPostagsMap.size()            
 	        lemmaFrequencyMap
 	            .sort { it.key }
                 .each{ k, v ->
                     String amb = k in lemmaAmbigs ? "\tA" : ""
-                    def str = String.format("%6d\t%s%s", v, k, amb)
+                    def str = String.format("%6d\t%s%s\t%s", v, k, amb, lemmaFrequencyPostagsMap[k].join(","))
                     printStream.println(str)
                 }
 	    }
