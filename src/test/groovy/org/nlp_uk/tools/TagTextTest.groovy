@@ -160,11 +160,21 @@ class TagTextTest {
         def expected =
 """<sentence>
   <tokenReading>
+    <token value='житєє' lemma='' tags='unknown' />
+  </tokenReading>
+</sentence>
+"""
+        tagText.setOptions(new TagOptions(xmlOutput: true, setLemmaForUnknown: true))
+        
+        assertEquals expected, tagged.tagged
+
+        def expected2 =
+"""<sentence>
+  <tokenReading>
     <token value='житєє' lemma='житєє' tags='unknown' />
   </tokenReading>
 </sentence>
 """
-        assertEquals expected, tagged.tagged
     }
 
     
@@ -247,13 +257,25 @@ class TagTextTest {
     <token value='усе' lemma='увесь' tags='adj:n:v_zna:&amp;pron:gen' semtags='1:quantif' />
   </tokenReading>
   <tokenReading>
-    <token value='голова' lemma='голова' tags='noun:anim:f:v_naz:xp1' semtags='1:conc:hum&amp;hierar' />
-    <token value='голова' lemma='голова' tags='noun:anim:m:v_naz:xp1' semtags='1:conc:hum&amp;hierar' />
-    <token value='голова' lemma='голова' tags='noun:inanim:f:v_naz:xp2' semtags='1:conc:body:part:2:abst:ment:3:abst:unit' />
+    <token value='голова' lemma='голова' tags='noun:anim:f:v_naz' semtags='1:conc:hum&amp;hierar' />
+    <token value='голова' lemma='голова' tags='noun:anim:m:v_naz' semtags='1:conc:hum&amp;hierar' />
+    <token value='голова' lemma='голова' tags='noun:inanim:f:v_naz' semtags='1:conc:body:part:2:abst:ment:3:abst:unit' />
   </tokenReading>
   <tokenReading>
     <token value='аахенська' lemma='аахенський' tags='adj:f:v_kly' semtags='1:abst' />
     <token value='аахенська' lemma='аахенський' tags='adj:f:v_naz' semtags='1:abst' />
+  </tokenReading>
+  <tokenReading>
+    <token value='Вашингтон' lemma='Вашингтон' tags='noun:anim:m:v_naz:prop:lname' semtags='1:conc:hum' />
+    <token value='Вашингтон' lemma='Вашингтон' tags='noun:inanim:m:v_naz:prop:geo:xp1' semtags='1:conc:loc' />
+    <token value='Вашингтон' lemma='Вашингтон' tags='noun:inanim:m:v_naz:prop:geo:xp2' semtags='1:conc:loc' />
+    <token value='Вашингтон' lemma='Вашингтон' tags='noun:inanim:m:v_zna:prop:geo:xp1' semtags='1:conc:loc' />
+    <token value='Вашингтон' lemma='Вашингтон' tags='noun:inanim:m:v_zna:prop:geo:xp2' semtags='1:conc:loc' />
+  </tokenReading>
+  <tokenReading>
+    <token value='акту' lemma='акт' tags='noun:inanim:m:v_dav:xp1' semtags='1:conc:text' />
+    <token value='акту' lemma='акт' tags='noun:inanim:m:v_dav:xp2' semtags='1:abst:part:2:abst:quantum' />
+    <token value='акту' lemma='акт' tags='noun:inanim:m:v_rod:xp2' semtags='1:abst:part:2:abst:quantum' />
   </tokenReading>
   <tokenReading>
     <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
@@ -262,7 +284,7 @@ class TagTextTest {
 """
 
 		tagText.setOptions(new TagOptions(semanticTags: true, xmlOutput: true))
-		TagResult tagged = tagText.tagText("Слово усе голова аахенська.")
+		TagResult tagged = tagText.tagText("Слово усе голова аахенська Вашингтон акту.")
 		assertEquals expected, tagged.tagged
 	}
 
@@ -338,7 +360,7 @@ class TagTextTest {
     <token value='Мабуть' lemma='мабуть' tags='adv:&amp;insert' />
   </tokenReading>
   <tokenReading>
-    <token value='кх' lemma='кх' tags='unknown' />
+    <token value='кх' lemma='' tags='unknown' />
   </tokenReading>
   <tokenReading>
     <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
