@@ -472,6 +472,10 @@ class CleanText {
         if( text.contains("''") ) {
             text = text.replaceAll(/(?<!')''(?!')/, '"')
         }
+
+        // sometimes quotes are escaped
+        text = text.replace('\\"', '"')
+        text = text.replaceAll(/([бвгґдзкмнпрстфхш])\\'([яєюї])/, '$1\'$2')
         
         text = text.replace(/U+02BA/, '"')
 

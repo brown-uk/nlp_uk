@@ -31,6 +31,10 @@ class CleanTextTest {
 
 		assertEquals "труба", clean("тр_y_ба")
 
+        assertEquals "\"труба", clean("\\\"трyба")
+
+        assertEquals "п'яний", clean("п\\'яний")
+        
 		assertEquals "on throughпортал в", clean("on throughпортал в")
 
 		assertEquals "урахування\n", clean("ураху-\nвання")
