@@ -48,7 +48,7 @@ class TagText {
     JLanguageTool langTool = new MultiThreadedJLanguageTool(language)
 
     TagOptions options
-	Map<String, String> semanticTags = new HashMap<>()
+	Map<String, Map<String,List<String>>> semanticTags = new HashMap<>()
 
 	@Canonical
 	static class TagResult {
@@ -225,7 +225,8 @@ class TagText {
                     }
                     
                     if( ! hasTag ) {
-                        tokenReadingsT << new TTR(tokens: [['value': theToken, lemma: cleanToken, tags: 'unknown']])
+                        def lemma = options.setLemmaForUnknown ? cleanToken : ''
+                        tokenReadingsT << new TTR(tokens: [['value': theToken, lemma: lemma, tags: 'unknown']])
                         return
                     }
                 }
@@ -252,18 +253,26 @@ class TagText {
                       return
                 
                 String semTags = null
-                if( options.semanticTags && tkn.getLemma() ) {
-                    def key = tkn.getLemma() 
-                    if( posTag ) {
-                        String posTagKey = posTag.replaceFirst(/:.*/, '')
-                        key += " " + posTagKey
-                        int xpIdx = posTag.indexOf(":xp")
-                        if( xpIdx >= 0 ) {
-                            key += posTag[xpIdx..xpIdx+3]
+                if( options.semanticTags && tkn.getLemma() != null && posTag != null ) {
+                    def lemma = tkn.getLemma() 
+                    String posTagKey = posTag.replaceFirst(/:.*/, '')
+                    String key = "$lemma $posTagKey"
+
+                    def potentialSemTags = semanticTags.get(key)
+//                    println ":: potentialSemTags: $potentialSemTags for $lemma $posTag"
+                    if( potentialSemTags ) {
+                        Map<String, List<String>> potentialSemTags2 = semanticTags.get(key)
+                        List<String> potentialSemTags3 = null
+                        if( potentialSemTags2 ) {
+                            potentialSemTags2 = potentialSemTags2.findAll { k,v -> !k || posTag.contains(k) }
+//                            println ":: filteredSemTags2: $potentialSemTags2"
+                            List<String> values = (java.util.List<java.lang.String>) potentialSemTags2.values().flatten()
+                            potentialSemTags3 = values.findAll { filterSemtag(lemma, posTag, it) }
+//                            println ":: filteredSemTags3: $potentialSemTags3"
+
+                            semTags = potentialSemTags3 ? potentialSemTags3.join(';') : null
                         }
                     }
-//                    println "key: $key"
-                    semTags = semanticTags.get(key)
                 }
 
                 String lemma = tkn.getLemma() ?: ''
@@ -278,6 +287,32 @@ class TagText {
         }
             
         tokenReadingsT
+    }
+
+    @CompileStatic
+    private static boolean filterSemtag(String lemma, String posTag, String semtag) {
+        if( posTag.contains("pron") )
+            return semtag =~ ":deictic|:quantif"
+
+        if( posTag.startsWith("noun") ) {
+            
+            if( Character.isUpperCase(lemma.charAt(0)) && posTag.contains(":geo") ) {
+                return semtag.contains(":loc")
+            }
+
+            if( posTag.contains(":anim") ) {
+                if( posTag.contains("name") )
+                    return semtag =~ ":hum|:supernat"
+                else
+                    return semtag =~ ":hum|:supernat|:animal"
+            }
+
+            if( posTag.contains(":unanim") )
+                return semtag.contains(":animal")
+
+            return ! (semtag =~ /:hum|:supernat|:animal/)
+        }
+        true
     }
 
 
@@ -412,7 +447,7 @@ class TagText {
 
 			if( syaIsNext ) {
 				tokenReadings = langTool.getLanguage().getTagger().tag([adjustedToken + 'ся']).get(0)
-				//                                    println "trying verb:rev $adjustedToken " + tokenReadings.getReadings()
+				// println "trying verb:rev $adjustedToken " + tokenReadings.getReadings()
 			}
 
 			if( tokenReadings.isPosTagUnknown() ) {
@@ -439,25 +474,25 @@ class TagText {
     }
 
 
-    def adjustRules() {
-        if( options.disabledRules ) {
-            if( ! options.quiet ) {
-                System.err.println("Disabled rules: $options.disabledRules")
-            }
-
-            def allRules = nlpUk.langTool.language.disambiguator.disambiguator.disambiguationRules
-            def rulesToDisable = options.disabledRules.split(",")
-
-            def rulesNotFound = rulesToDisable - allRules.collect { it.id }
-            if( rulesNotFound ) {
-                System.err.println("WARNING: rules not found for ids: " + rulesNotFound.join(", "))
-            }
-
-            allRules.removeAll {
-                it.id in rulesToDisable
-            }
-        }
-    }
+//    def adjustRules() {
+//        if( options.disabledRules ) {
+//            if( ! options.quiet ) {
+//                System.err.println("Disabled rules: $options.disabledRules")
+//            }
+//
+//            def allRules = nlpUk.langTool.language.disambiguator.disambiguator.disambiguationRules
+//            def rulesToDisable = options.disabledRules.split(",")
+//
+//            def rulesNotFound = rulesToDisable - allRules.collect { it.id }
+//            if( rulesNotFound ) {
+//                System.err.println("WARNING: rules not found for ids: " + rulesNotFound.join(", "))
+//            }
+//
+//            allRules.removeAll {
+//                it.id in rulesToDisable
+//            }
+//        }
+//    }
 
     def process() {
         def outputFile = textUtils.processByParagraph(options, { buffer ->
@@ -484,6 +519,7 @@ class TagText {
         }
     }
 
+    @CompileStatic
     def loadSemTags() {
         if( semanticTags.size() > 0 )
             return
@@ -491,7 +527,7 @@ class TagText {
         System.err.println ("Using semantic tagging")
 
 		// def base = System.getProperty("user.home") + "/work/ukr/spelling/dict_uk/data/sem"
-		def base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
+		String base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
 		def semDir = new File("sem")
 		if( semDir.isDirectory() ) {
 			base = "${semDir.path}"
@@ -501,28 +537,49 @@ class TagText {
 			System.err.println("Loading semantic tags from $base")
 		}
 
+        int semtagCount = 0
 		["noun", "adj", "adv", "verb", "numr"].each { cat ->
-			def lines = base.startsWith("http")
+			String text = base.startsWith("http")
 				? "$base/${cat}.csv".toURL().getText("UTF-8")
 				: new File(semDir, "${cat}.csv").getText("UTF-8")
-            lines = lines.replaceFirst(/^\uFEFF/, "")
 
-			lines.eachLine { line ->
-				def parts = line.split(',')
+            if( text.startsWith("\uFEFF") ) {
+                text = text.substring(1)
+            }
+
+			text.eachLine { line ->
+                line = line.trim().replaceFirst(/\s*#.*/, '')
+                if( ! line )
+                    return
+
+                def parts = line.split(',')
 				if( parts.length < 2 ) {
-					System.err.println("skipping invalid semantic tag for: " + line)
+					System.err.println("skipping invalid semantic tag for: \"$line\"")
 					return
 				}
+
 				def add = ""
-				if( parts.length >= 3 && parts[2].trim().startsWith(':xp') ) {
+				if( parts.length >= 3 && parts[2].trim().startsWith(':') ) {
 				   add = parts[2].trim()
 				}
-				def key = parts[0] + " " + cat + add
-//                println key
-				semanticTags.put(key, parts[1])
+                def semtags = parts[1]
+				def key = parts[0] + " " + cat
+                
+                if( ! (key in semanticTags) ) {
+                    semanticTags[key] = [:]
+                }
+                if( ! (add in semanticTags[key]) ) {
+                    semanticTags[key][add] = []
+                }
+
+                // semtags sometimes have duplicate lines
+                if( ! (semtags in semanticTags[key][add]) ) {
+                    semanticTags[key][add] << semtags
+                    semtagCount += 1
+                }
 			}
 		}
-		System.err.println("Loaded ${semanticTags.size()} semantic tags")
+		System.err.println("Loaded $semtagCount semantic tags for ${semanticTags.size()} lemmas")
 	}
 
     @CompileStatic
@@ -570,9 +627,11 @@ class TagText {
         @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
         boolean helpRequested
 //        @Option(names = ["--disableDisambigRules"], arity="1", required = false, description = "Comma-separated list of ids of disambigation rules to disable")
-        boolean disabledRules
+//        boolean disabledRules
         @Option(names = ["-d", "--showDisambig"], description = "Show disambiguation rules applied")
         boolean showDisambig
+        @Option(names = ["--setLemmaForUnknown"], description = "Fill lemma for unknown words (default: empty lemma)")
+        boolean setLemmaForUnknown
 
         void adjust() {
             if( ! outputFormat ) {
