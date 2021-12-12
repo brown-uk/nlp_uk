@@ -50,19 +50,26 @@ class TextUtils {
             }
         }
 
-        if( options.outputFormat.name() == "xml" ) {
-            outputFile.println('<?xml version="1.0" encoding="UTF-8"?>')
-            outputFile.println('<text>\n')
+        boolean parallel = false
+        int cores = Runtime.getRuntime().availableProcessors()
+        if( cores > 2 && ! options.singleThread ) {
+            System.err.println ("Found ${cores} cores, using parallel threads")
+            parallel = true
         }
-        else if( options.outputFormat.name() == 'json' ) {
-            outputFile.println('{')
-            outputFile.println('  "sentences": [')
+                    
+        if ( ! options.noTag ) {
+            if( options.outputFormat.name() == "xml" ) {
+                outputFile.println('<?xml version="1.0" encoding="UTF-8"?>')
+                outputFile.println('<text>\n')
+            }
+            else if( options.outputFormat.name() == 'json' ) {
+                outputFile.println('{')
+                outputFile.println('  "sentences": [')
+            }
         }
 
 		long tm1 = System.currentTimeMillis()
-		int cores = Runtime.getRuntime().availableProcessors()
-		if( cores > 2 && ! options.singleThread ) {
-			System.err.println ("Found ${cores} cores, using parallel threads")
+		if( parallel ) {
 			processFileParallel(inputFile, outputFile, closure, (int)(cores), resultClosure)
 		}
 		else {
@@ -73,12 +80,14 @@ class TextUtils {
 			System.err.println "Time: " + (tm2-tm1) + " ms"
 		}
 
-        if( options.outputFormat.name() == 'xml' ) {
-            outputFile.println('\n</text>')
-        }
-        else if( options.outputFormat.name() == 'json' ) {
-            outputFile.println('\n  ]')
-            outputFile.println('}')
+        if ( ! options.noTag ) {
+            if( options.outputFormat.name() == 'xml' ) {
+                outputFile.println('\n</text>')
+            }
+            else if( options.outputFormat.name() == 'json' ) {
+                outputFile.println('\n  ]')
+                outputFile.println('}')
+            }
         }
 
         return outputFile

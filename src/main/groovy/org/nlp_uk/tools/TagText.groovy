@@ -3,8 +3,8 @@
 package org.nlp_uk.tools
 
 @GrabConfig(systemClassLoader=true)
-//@Grab(group='org.languagetool', module='language-uk', version='5.5')
-@Grab(group='org.languagetool', module='language-uk', version='5.6-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='5.5')
+//@Grab(group='org.languagetool', module='language-uk', version='5.6-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
@@ -19,6 +19,7 @@ import groovy.util.Eval
 import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
+import picocli.CommandLine.Parameters
 
 
 class TagText {
@@ -37,7 +38,8 @@ class TagText {
     static final Pattern PUNCT_PATTERN = Pattern.compile(/[,.:;!?\/()\[\]{}«»„“"'…\u2013\u2014\u201D\u201C•■♦-]+/)
     static final Pattern SYMBOL_PATTERN = Pattern.compile(/[%&@$*+=<>\u00A0-\u00BF\u2000-\u20CF\u2100-\u218F\u2200-\u22FF]+/)
     static final Pattern UNKNOWN_PATTERN = Pattern.compile(/(.*-)?[а-яіїєґА-ЯІЇЄҐ]+(-.*)?/)
-//    static final Pattern UNCLASS_PATTERN = Pattern.compile(/\p{IsLatin}[\p{IsLatin}\p{IsDigit}-]*|[0-9]+-?[а-яіїєґА-ЯІЇЄҐ]+|[а-яіїєґА-ЯІЇЄҐ]+-?[0-9]+/)
+    static final Pattern NON_UK_PATTERN = Pattern.compile(/[ыэъёЫЭЪЁ]|[иИ]{2}/)
+    static final Pattern UNCLASS_PATTERN = Pattern.compile(/\p{IsLatin}[\p{IsLatin}\p{IsDigit}-]*|[0-9]+-?[а-яіїєґА-ЯІЇЄҐ]+|[а-яіїєґА-ЯІЇЄҐ]+-?[0-9]+/)
     static final Pattern XML_TAG_PATTERN = Pattern.compile(/<\/?[a-zA-Z_0-9]+>/)
 
     def language = new Ukrainian() {
@@ -58,20 +60,6 @@ class TagText {
 	
 	Stats stats = new Stats()
 
-
-    void setOptions(TagOptions options) {
-        this.options = options
-        options.adjust()
-
-        if( options.semanticTags ) {
-			if( options.outputFormat == OutputFormat.txt ) {
-				System.err.println ("Semantic tagging only available in xml/json output")
-				System.exit 1
-			}
-
-            loadSemTags()
-        }
-    }
 
 
     @CompileStatic
@@ -218,7 +206,11 @@ class TagText {
                     tokenReadingsT << new TTR(tokens: [['value': theToken, lemma: cleanToken, tags: 'symb']])
                     return
                 }
-                else if( UNKNOWN_PATTERN.matcher(theToken).matches() ) {
+                else if( XML_TAG_PATTERN.matcher(theToken).matches() ) {
+                    tokenReadingsT << new TTR(tokens: [[value: theToken, lemma: cleanToken, tags: 'xmltag']])
+                    return
+                }
+                else if( UNKNOWN_PATTERN.matcher(theToken).matches() && ! NON_UK_PATTERN.matcher(theToken).find() ) {
                     if( isZheleh(options) ) {
                         tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
                         hasTag = hasPosTag(tokenReadings)
@@ -229,10 +221,6 @@ class TagText {
                         tokenReadingsT << new TTR(tokens: [['value': theToken, lemma: lemma, tags: 'unknown']])
                         return
                     }
-                }
-                else if( XML_TAG_PATTERN.matcher(theToken).matches() ) {
-                    tokenReadingsT << new TTR(tokens: [[value: theToken, lemma: cleanToken, tags: 'xmltag']])
-                    return
                 }
                 else { // if( UNCLASS_PATTERN.matcher(theToken).matches() ) {
                     tokenReadingsT << new TTR(tokens: [['value': theToken, lemma: cleanToken, tags: 'unclass']])
@@ -591,19 +579,20 @@ class TagText {
 
     	
     static class TagOptions {
-//        @Parameters(arity="1", paramLabel="input", description="The file(s) whose checksum to calculate.")
-        @Option(names = ["-i", "--input"], arity="1", description = "Input file")
+        @Option(names = ["-i", "--input"], arity="1", description = "Input file. Default: stdin")
         String input
-        @Option(names = ["-o", "--output"], arity="1", description = "Output file (default: <input file> - .txt + .tagged.txt/.xml)")
+        @Parameters(index = "0", description = "Input file. Default: stdin", arity="0..1")
+        String inputFile
+        @Option(names = ["-o", "--output"], arity="1", description = "Output file (default: <input file base name> + .tagged.txt/.xml/.json) or stdout if input is stdin")
         String output
-        @Option(names = ["-l", "--tokenPerLine"], description = "One token per line")
+        @Option(names = ["-l", "--tokenPerLine"], description = "One token per line (for .txt output only)")
         boolean tokenPerLine
 //        @Option(names = ["-f", "--firstLemmaOnly"], description = "print only first lemma with first set of tags"
 //            + " (note: this mode is not recommended as first lemma/tag is almost random, this may be improved later with statistical analysis)")
         boolean firstLemmaOnly
         @Option(names = ["-x", "--xmlOutput"], description = "Output in xml format")
         boolean xmlOutput
-        @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt}")
+        @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt}", defaultValue = "xml")
         OutputFormat outputFormat
         @Option(names = ["-s", "--homonymStats"], description = "Collect homohym statistics")
         boolean homonymStats
@@ -665,18 +654,27 @@ class TagText {
             commandLine.usage(System.out)
             System.exit 1
         }
-        
+
+        return options
+    }
+
+    
+    void setOptions(TagOptions options) {
         options.adjust()
-        
+
         if( ! options.input ) {
-            options.input = "-"
+            if( options.inputFile ) {
+                options.input = options.inputFile
+            }
+            else {
+                options.input = "-"
+            }
         }
         if( ! options.output ) {
             def fileExt = "." + options.outputFormat // ? ".xml" : ".txt"
-            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tagged" + fileExt
+            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, ".tagged${fileExt}")
             options.output = outfile
         }
-
 
         if( ! options.quiet ) {
             if( isZheleh(options) ) {
@@ -687,10 +685,22 @@ class TagText {
             }
         }
 
-        return options
+        if( options.semanticTags ) {
+            if( options.outputFormat == OutputFormat.txt ) {
+                System.err.println ("Semantic tagging only available in xml/json output")
+                System.exit 1
+            }
+
+            loadSemTags()
+        }
+
+        this.options = options
     }
 
-	
+    
+    static final Pattern CYR_LETTER = Pattern.compile(/[а-яіїєґА-ЯІЇЄҐ]/)    
+    static final Pattern NON_UK_LETTER = Pattern.compile(/[ыэъёЫЭЪЁ]|ие|ИЕ|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/)    
+    
     @CompileStatic
 	class Stats {
 		Map<String, Integer> homonymFreqMap = [:].withDefault { 0 }
@@ -714,7 +724,7 @@ class TagText {
             lemmaAmbigs.addAll(stats.lemmaAmbigs)
 		    knownCnt += stats.knownCnt
 		}
-		
+
         @CompileStatic
 		def collectUnknown(List<AnalyzedSentence> analyzedSentences) {
 			for (AnalyzedSentence analyzedSentence : analyzedSentences) {
@@ -724,20 +734,20 @@ class TagText {
                 def tokensNoSpace = analyzedSentence.getTokensWithoutWhitespace()[1..-1]
                 if( options.filterUnknown ) {
 					def unknownBad = tokensNoSpace.any { AnalyzedTokenReadings tokenReadings ->
-						tokenReadings.getCleanToken() =~ /[ыэъё]|и[еи]/
+						tokenReadings.getCleanToken().indexOf('еи') > 0
 					}
 					if( unknownBad )
 						continue
 				}
 
 				tokensNoSpace.each { AnalyzedTokenReadings tokenReadings ->
-                    String posTag = tokenReadings.getAnalyzedToken(0).getPOSTag()
-					if( isTagEmpty(posTag) ) {
-                        String token = tokenReadings.getCleanToken()
-                        if( token =~ /[а-яіїєґА-ЯІЇЄҐ]/
-                            && ! (token =~ /[ыэъё]|ие|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
-						unknownMap[token] += 1
-					}
+                        String posTag = tokenReadings.getAnalyzedToken(0).getPOSTag()
+        				if( isTagEmpty(posTag) ) {
+                            String token = tokenReadings.getCleanToken()
+                            if( CYR_LETTER.matcher(token).find()
+                                && ! NON_UK_LETTER.matcher(token).find() ) {
+        					unknownMap[token] += 1
+        				}
 					}
 				}
 

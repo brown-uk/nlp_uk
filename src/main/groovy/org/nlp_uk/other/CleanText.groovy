@@ -18,7 +18,7 @@ import static org.nlp_uk.other.CleanText.MarkOption.none
 @GrabConfig(systemClassLoader=true)
 @Grab(group='org.languagetool', module='language-uk', version='5.5')
 //@Grab(group='org.languagetool', module='language-uk', version='5.6-SNAPSHOT')
-@Grab(group='org.languagetool', module='language-ru', version='5.4')
+@Grab(group='org.languagetool', module='language-ru', version='5.5')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
@@ -142,6 +142,7 @@ class CleanText {
         }
     }
 
+    @CompileStatic
     void debug(str) {
         if( options.debug ) {
             println "\tDEBUG: $str"
@@ -411,7 +412,7 @@ class CleanText {
 			}
 			else {
 				println "\tCopying file as is"
-				outFile.bytes = file.bytes
+				outFile.setBytes(file.getBytes())
 			}
 
             if( options.parallel ) {
@@ -423,14 +424,17 @@ class CleanText {
 		println "\nDone"
     }
 
-
+    private final Pattern SOFT_HYPHEN_PATTERN1 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’]\]\)]?)\u00AD+(\n[ \t]*)([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’-]+)([,;.!?])?/)
+    private final Pattern SOFT_HYPHEN_PATTERN2 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’:. ])\u00AD+([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’ -])/)
+    
+    @CompileStatic
     String removeSoftHyphens(String text) {
         if( text.contains("\u00AD") ) {
             println "\tremoving soft hyphens: "
 //            text = text.replaceAll(/[ \t]*\u00AD[ \t]*([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, '$1$2')
 //            text = text.replaceAll(/\u00AD(?!\n {10,}[А-ЯІЇЄҐ])(\n?[ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, '$2$3$1')
-            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’](\]\)]?)\u00AD+(\n[ \t]*)([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’-]+)([,;.!?])?/, '$1$3$4$2')
-            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’:. ])\u00AD+([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’ -])/, '$1$2')
+            text = SOFT_HYPHEN_PATTERN1.matcher(text).replaceAll('$1$3$4$2')
+            text = SOFT_HYPHEN_PATTERN2.matcher(text).replaceAll('$1$2')
 //            text = text.replaceAll(/(?i)([А-ЯІЇЄҐ:. ])\u00AD+([А-ЯІЇЄҐ'ʼ’ -])/, '$1$2')
 //            text = text.replaceAll(/([А-ЯІЇЄҐA-Z])\u00AD(\n[ \t]*)([А-ЯІЇЄҐA-Z'ʼ’-]+)([,;.!?])?/, '$1$3$4$2')
            // text = text.replace('\u00AD', '-')
@@ -702,14 +706,11 @@ class CleanText {
     }
 	
 
-
 	void checkForSpacing(text, file) {
-		
 		def m = text =~ /([а-яіїєґА-ЯІЇЄҐ] ){5,}/
 		if( m.find() ) {
 			println "\tWARNING: Possible spacing in words, e.g \"" + m[0][0] + "\""
 		}
-		
 	}
 
 
@@ -762,7 +763,8 @@ class CleanText {
         return true
     }
 
-    boolean checkEmptyLines(text) {
+    @CompileStatic
+    boolean checkEmptyLines(String text) {
         if( text.count("\n\n") > 5 ) {
             if ( text.length() > 100*1024 ) {
                 text = text.take(100*1024)
@@ -880,9 +882,10 @@ class CleanText {
         }
     }
 
+    @CompileStatic
     boolean knownWordRu(String word) {
         try {
-            return ! ruTagger.getAnalyzedTokens(word)[0].hasNoTag()
+            return ! ruTagger.tag(Arrays.asList(word))[0][0].hasNoTag()
         }
         catch (Exception e) {
             System.err.println("Failed on word: " + word)
@@ -890,6 +893,7 @@ class CleanText {
         }
     }
 
+    @CompileStatic
     String removeMix(String text) {
         int count1 = 0
         int count2 = 0
@@ -940,13 +944,13 @@ class CleanText {
         // 2nd tier - try all Cyrillic
         // if we convert all Latin to Cyrillic and find it in the dictionary use conversion
 
-        text = text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-ZáÁéÉíÍḯḮóÓúýÝ-]+/, { it ->
+        text = text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-ZáÁéÉíÍḯḮóÓúýÝ-]+/, { String it ->
 
             if( it =~ /[а-яіїєґА-ЯІЇЄҐ]['’ʼ]?[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/
             || it =~ /[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]['’ʼ]?[а-яіїєґА-ЯІЇЄҐ]/ ) {
                 //            println "Found mix in: $it, known to LT: " + knownWord(it)
                 if( ! knownWord(it) ) {
-                    def fixed = it.replaceAll(/[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/, { lat -> latToCyrMap[lat] })
+                    def fixed = it.replaceAll(/[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/, { String lat -> latToCyrMap[lat] })
                     def fixedCleaned = fixed.replace('\u0301', '')
                     //                println "\tfixed $fixed known to LT: " + knownWord(fixedCleaned)
                     if( knownWord(fixedCleaned) ) {
