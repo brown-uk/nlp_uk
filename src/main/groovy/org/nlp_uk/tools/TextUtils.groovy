@@ -53,7 +53,9 @@ class TextUtils {
         boolean parallel = false
         int cores = Runtime.getRuntime().availableProcessors()
         if( cores > 2 && ! options.singleThread ) {
-            System.err.println ("Found ${cores} cores, using parallel threads")
+            if( ! options.quiet ) {
+                System.err.println ("Found ${cores} cores, using parallel threads")
+            }
             parallel = true
         }
                     

@@ -99,9 +99,9 @@ class TagText {
                     field.setAccessible(true)
                     AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
 
-                    def tokenReagings = tagAsObject(tokens)
+                    def taggedObjects = tagAsObject(tokens)
 
-                    StringBuilder x = outputSentenceXml(tokenReagings)
+                    StringBuilder x = outputSentenceXml(taggedObjects)
                     sb.append(x).append("\n");
 
                     //				sb.append(writer.toString()).append("\n");
@@ -140,18 +140,18 @@ class TagText {
                         else {
                             sentenceLine = sentenceLine.replaceAll(/ *(<S>|\[<\/S>\]) */, '')
                         }
-
-                        if( options.showDisambig ) {
-                            sentenceLine = analyzedSentence.tokens.each {
-                                AnalyzedTokenReadings it ->
-                                if( it.getHistoricalAnnotations() ) {
-                                    println it.getHistoricalAnnotations()
-                                }
-                            }
-                        }
                     }
 
                     sb.append(sentenceLine) //.append("\n");
+                }
+
+                if( options.showDisambig ) {
+                    analyzedSentence.tokens.each { AnalyzedTokenReadings it ->
+                        def historicalAnnotations = it.getHistoricalAnnotations()
+                        if( historicalAnnotations && ! historicalAnnotations.contains("add_paragaph_end") ) {
+                            println "* " + historicalAnnotations.trim()
+                        }
+                    }
                 }
             }
         }
@@ -512,7 +512,9 @@ class TagText {
         if( semanticTags.size() > 0 )
             return
 
-        System.err.println ("Using semantic tagging")
+        if( ! options.quiet ) {
+            System.err.println ("Using semantic tagging")
+        }
 
 		// def base = System.getProperty("user.home") + "/work/ukr/spelling/dict_uk/data/sem"
 		String base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
@@ -525,6 +527,7 @@ class TagText {
 			System.err.println("Loading semantic tags from $base")
 		}
 
+        long tm1 = System.currentTimeMillis()
         int semtagCount = 0
 		["noun", "adj", "adv", "verb", "numr"].each { cat ->
 			String text = base.startsWith("http")
@@ -568,7 +571,10 @@ class TagText {
 			}
 		}
 
-        System.err.println("Loaded $semtagCount semantic tags for ${semanticTags.size()} lemmas")
+        if( ! options.quiet ) {
+            long tm2 = System.currentTimeMillis()
+            System.err.println("Loaded $semtagCount semantic tags for ${semanticTags.size()} lemmas in ${tm2-tm1} ms")
+        }
 	}
 
     @CompileStatic
@@ -675,7 +681,9 @@ class TagText {
             def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, ".tagged${fileExt}")
             options.output = outfile
         }
-
+        
+        this.options = options
+        
         if( ! options.quiet ) {
             if( isZheleh(options) ) {
                 System.err.println ("Using adjustments for Zhelekhivka")
@@ -693,8 +701,6 @@ class TagText {
 
             loadSemTags()
         }
-
-        this.options = options
     }
 
     
