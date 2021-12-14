@@ -53,17 +53,17 @@ class TagTextTest {
 		def expected =
 """<sentence>
   <tokenReading>
-    <token value='Слово' lemma='слово' tags='noun:inanim:n:v_naz' />
-    <token value='Слово' lemma='слово' tags='noun:inanim:n:v_zna' />
+    <token value="Слово" lemma="слово" tags="noun:inanim:n:v_naz" />
+    <token value="Слово" lemma="слово" tags="noun:inanim:n:v_zna" />
   </tokenReading>
   <tokenReading>
-    <token value='1,5' lemma='1,5' tags='number' />
+    <token value="1,5" lemma="1,5" tags="number" />
   </tokenReading>
   <tokenReading>
-    <token value='раза' lemma='раз' tags='noun:inanim:m:v_rod' />
+    <token value="раза" lemma="раз" tags="noun:inanim:m:v_rod" />
   </tokenReading>
   <tokenReading>
-    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
+    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
   </tokenReading>
 </sentence>
 """
@@ -80,19 +80,19 @@ class TagTextTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value='На' lemma='на' tags='prep' />
+    <token value="На" lemma="на" tags="prep" />
   </tokenReading>
   <tokenReading>
-    <token value='Україна' lemma='Україна' tags='noun:inanim:f:v_naz:prop:geo' />
+    <token value="Україна" lemma="Україна" tags="noun:inanim:f:v_naz:prop:geo" />
   </tokenReading>
   <tokenReading>
-    <token value='—' lemma='—' tags='punct' whitespaceBefore='true' />
+    <token value="—" lemma="—" tags="punct" whitespaceBefore="true" />
   </tokenReading>
   <tokenReading>
-    <token value='Іспанія' lemma='Іспанія' tags='noun:inanim:f:v_naz:prop:geo' />
+    <token value="Іспанія" lemma="Іспанія" tags="noun:inanim:f:v_naz:prop:geo" />
   </tokenReading>
   <tokenReading>
-    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
+    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
   </tokenReading>
 </sentence>
 """
@@ -108,7 +108,7 @@ class TagTextTest {
 		def expected =
 """<sentence>
   <tokenReading>
-    <token value='Crow' lemma='Crow' tags='unclass' />
+    <token value="Crow" lemma="Crow" tags="unclass" />
   </tokenReading>
 </sentence>
 """
@@ -123,10 +123,10 @@ class TagTextTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value=',' lemma=',' tags='punct' whitespaceBefore='false' />
+    <token value="," lemma="," tags="punct" whitespaceBefore="false" />
   </tokenReading>
   <tokenReading>
-    <token value='€' lemma='€' tags='symb' />
+    <token value="€" lemma="€" tags="symb" />
   </tokenReading>
 </sentence>
 """
@@ -141,11 +141,11 @@ class TagTextTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value='від' lemma='від' tags='prep' />
+    <token value="від" lemma="від" tags="prep" />
   </tokenReading>
   <tokenReading>
-    <token value='малку' lemma='малку' tags='noninfl' />
-    <token value='малку' lemma='малка' tags='noun:inanim:f:v_zna' />
+    <token value="малку" lemma="малку" tags="noninfl" />
+    <token value="малку" lemma="малка" tags="noun:inanim:f:v_zna" />
   </tokenReading>
 </sentence>
 """
@@ -160,7 +160,7 @@ class TagTextTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value='житєє' lemma='' tags='unknown' />
+    <token value="житєє" lemma="" tags="unknown" />
   </tokenReading>
 </sentence>
 """
@@ -171,7 +171,7 @@ class TagTextTest {
         def expected2 =
 """<sentence>
   <tokenReading>
-    <token value='житєє' lemma='житєє' tags='unknown' />
+    <token value="житєє" lemma="житєє" tags="unknown" />
   </tokenReading>
 </sentence>
 """
@@ -186,26 +186,26 @@ class TagTextTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value='миготїнь' lemma='миготіння' tags='noun:inanim:p:v_rod' />
+    <token value="миготїнь" lemma="миготіння" tags="noun:inanim:p:v_rod" />
   </tokenReading>
   <tokenReading>
-    <token value='купаєть' lemma='купатися' tags='verb:rev:imperf:pres:s:3' />
+    <token value="купаєть" lemma="купатися" tags="verb:rev:imperf:pres:s:3" />
   </tokenReading>
   <tokenReading>
-    <token value='ся' lemma='ся' tags='part:arch' />
-    <token value='ся' lemma='сей' tags='adj:f:v_naz:&amp;pron:dem:arch' />
+    <token value="ся" lemma="ся" tags="part:arch" />
+    <token value="ся" lemma="сей" tags="adj:f:v_naz:&amp;pron:dem:arch" />
   </tokenReading>
   <tokenReading>
-    <token value='житє' lemma='житє' tags='noun:inanim:n:v_naz:alt' />
-    <token value='житє' lemma='житє' tags='noun:inanim:n:v_zna:alt' />
+    <token value="житє" lemma="житє" tags="noun:inanim:n:v_naz:alt" />
+    <token value="житє" lemma="житє" tags="noun:inanim:n:v_zna:alt" />
   </tokenReading>
   <tokenReading>
-    <token value='і' lemma='і' tags='conj:coord' />
-    <token value='і' lemma='і' tags='part' />
+    <token value="і" lemma="і" tags="conj:coord" />
+    <token value="і" lemma="і" tags="part" />
   </tokenReading>
   <tokenReading>
-    <token value='смерть' lemma='смерть' tags='noun:inanim:f:v_naz' />
-    <token value='смерть' lemma='смерть' tags='noun:inanim:f:v_zna' />
+    <token value="смерть" lemma="смерть" tags="noun:inanim:f:v_naz" />
+    <token value="смерть" lemma="смерть" tags="noun:inanim:f:v_zna" />
   </tokenReading>
 </sentence>
 """
@@ -213,30 +213,30 @@ class TagTextTest {
     }
 
 
-	@Disabled
-	@Test
-	public void testIgnoreLang() {
-		tagText.setOptions(new TagOptions(ignoreOtherLanguages: true, xmlOutput: true))
-
-		TagResult tagged = tagText.tagText("<span lang='ru'>Слво.</span>")
-		assertEquals "<foreign>Слво.</foreign>\n\n", tagged
-
-		def expected=
-"""<sentence>
-  <tokenReading>
-    <token value='Газета' lemma='газета' tags='noun:inanim:f:v_naz' />
-  </tokenReading>
-  <foreign>Дело</foreign>
-  <tokenReading>
-    <token value='.' tags='punct' whitespaceBefore='false' />
-  </tokenReading>
-</sentence>
-
-"""
-		
-		tagged = tagText.tagText("Газета <span lang='ru'>Дело</span>.")
-		assertEquals expected, tagged.tagged
-	}
+//	@Disabled
+//	@Test
+//	public void testIgnoreLang() {
+//		tagText.setOptions(new TagOptions(ignoreOtherLanguages: true, xmlOutput: true))
+//
+//		TagResult tagged = tagText.tagText("<span lang=\"ru\"">Слво.</span>")
+//		assertEquals "<foreign>Слво.</foreign>\n\n", tagged
+//
+//		def expected=
+//"""<sentence>
+//  <tokenReading>
+//    <token value="Газета" lemma="газета" tags="noun:inanim:f:v_naz" />
+//  </tokenReading>
+//  <foreign>Дело</foreign>
+//  <tokenReading>
+//    <token value="." tags="punct" whitespaceBefore="false" />
+//  </tokenReading>
+//</sentence>
+//
+//"""
+//		
+//		tagged = tagText.tagText("Газета <span lang=\"ru\">Дело</span>.")
+//		assertEquals expected, tagged.tagged
+//	}
 
 	
 	@Test
@@ -244,41 +244,41 @@ class TagTextTest {
 		def expected=
 """<sentence>
   <tokenReading>
-    <token value='Слово' lemma='слово' tags='noun:inanim:n:v_naz' semtags='1:conc:speech:2:abst:speech:3:conc:text' />
-    <token value='Слово' lemma='слово' tags='noun:inanim:n:v_zna' semtags='1:conc:speech:2:abst:speech:3:conc:text' />
+    <token value="Слово" lemma="слово" tags="noun:inanim:n:v_naz" semtags="1:conc:speech:2:abst:speech:3:conc:text" />
+    <token value="Слово" lemma="слово" tags="noun:inanim:n:v_zna" semtags="1:conc:speech:2:abst:speech:3:conc:text" />
   </tokenReading>
   <tokenReading>
-    <token value='усе' lemma='усе' tags='adv' semtags='1:dur:max' />
-    <token value='усе' lemma='усе' tags='conj:coord' />
-    <token value='усе' lemma='усе' tags='noun:inanim:n:v_naz:&amp;pron:gen' semtags='1:quantif' />
-    <token value='усе' lemma='усе' tags='noun:inanim:n:v_zna:&amp;pron:gen' semtags='1:quantif' />
-    <token value='усе' lemma='усе' tags='part' />
-    <token value='усе' lemma='увесь' tags='adj:n:v_naz:&amp;pron:gen' semtags='1:quantif' />
-    <token value='усе' lemma='увесь' tags='adj:n:v_zna:&amp;pron:gen' semtags='1:quantif' />
+    <token value="усе" lemma="усе" tags="adv" semtags="1:dur:max" />
+    <token value="усе" lemma="усе" tags="conj:coord" />
+    <token value="усе" lemma="усе" tags="noun:inanim:n:v_naz:&amp;pron:gen" semtags="1:quantif" />
+    <token value="усе" lemma="усе" tags="noun:inanim:n:v_zna:&amp;pron:gen" semtags="1:quantif" />
+    <token value="усе" lemma="усе" tags="part" />
+    <token value="усе" lemma="увесь" tags="adj:n:v_naz:&amp;pron:gen" semtags="1:quantif" />
+    <token value="усе" lemma="увесь" tags="adj:n:v_zna:&amp;pron:gen" semtags="1:quantif" />
   </tokenReading>
   <tokenReading>
-    <token value='голова' lemma='голова' tags='noun:anim:f:v_naz' semtags='1:conc:hum&amp;hierar' />
-    <token value='голова' lemma='голова' tags='noun:anim:m:v_naz' semtags='1:conc:hum&amp;hierar' />
-    <token value='голова' lemma='голова' tags='noun:inanim:f:v_naz' semtags='1:conc:body:part:2:abst:ment:3:abst:unit' />
+    <token value="голова" lemma="голова" tags="noun:anim:f:v_naz" semtags="1:conc:hum&amp;hierar" />
+    <token value="голова" lemma="голова" tags="noun:anim:m:v_naz" semtags="1:conc:hum&amp;hierar" />
+    <token value="голова" lemma="голова" tags="noun:inanim:f:v_naz" semtags="1:conc:body:part:2:abst:ment:3:abst:unit" />
   </tokenReading>
   <tokenReading>
-    <token value='аахенська' lemma='аахенський' tags='adj:f:v_kly' semtags='1:abst' />
-    <token value='аахенська' lemma='аахенський' tags='adj:f:v_naz' semtags='1:abst' />
+    <token value="аахенська" lemma="аахенський" tags="adj:f:v_kly" semtags="1:abst" />
+    <token value="аахенська" lemma="аахенський" tags="adj:f:v_naz" semtags="1:abst" />
   </tokenReading>
   <tokenReading>
-    <token value='Вашингтон' lemma='Вашингтон' tags='noun:anim:m:v_naz:prop:lname' semtags='1:conc:hum' />
-    <token value='Вашингтон' lemma='Вашингтон' tags='noun:inanim:m:v_naz:prop:geo:xp1' semtags='1:conc:loc' />
-    <token value='Вашингтон' lemma='Вашингтон' tags='noun:inanim:m:v_naz:prop:geo:xp2' semtags='1:conc:loc' />
-    <token value='Вашингтон' lemma='Вашингтон' tags='noun:inanim:m:v_zna:prop:geo:xp1' semtags='1:conc:loc' />
-    <token value='Вашингтон' lemma='Вашингтон' tags='noun:inanim:m:v_zna:prop:geo:xp2' semtags='1:conc:loc' />
+    <token value="Вашингтон" lemma="Вашингтон" tags="noun:anim:m:v_naz:prop:lname" semtags="1:conc:hum" />
+    <token value="Вашингтон" lemma="Вашингтон" tags="noun:inanim:m:v_naz:prop:geo:xp1" semtags="1:conc:loc" />
+    <token value="Вашингтон" lemma="Вашингтон" tags="noun:inanim:m:v_naz:prop:geo:xp2" semtags="1:conc:loc" />
+    <token value="Вашингтон" lemma="Вашингтон" tags="noun:inanim:m:v_zna:prop:geo:xp1" semtags="1:conc:loc" />
+    <token value="Вашингтон" lemma="Вашингтон" tags="noun:inanim:m:v_zna:prop:geo:xp2" semtags="1:conc:loc" />
   </tokenReading>
   <tokenReading>
-    <token value='акту' lemma='акт' tags='noun:inanim:m:v_dav:xp1' semtags='1:conc:text' />
-    <token value='акту' lemma='акт' tags='noun:inanim:m:v_dav:xp2' semtags='1:abst:part:2:abst:quantum' />
-    <token value='акту' lemma='акт' tags='noun:inanim:m:v_rod:xp2' semtags='1:abst:part:2:abst:quantum' />
+    <token value="акту" lemma="акт" tags="noun:inanim:m:v_dav:xp1" semtags="1:conc:text" />
+    <token value="акту" lemma="акт" tags="noun:inanim:m:v_dav:xp2" semtags="1:abst:part:2:abst:quantum" />
+    <token value="акту" lemma="акт" tags="noun:inanim:m:v_rod:xp2" semtags="1:abst:part:2:abst:quantum" />
   </tokenReading>
   <tokenReading>
-    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
+    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
   </tokenReading>
 </sentence>
 """
@@ -331,39 +331,39 @@ class TagTextTest {
 
 <sentence>
   <tokenReading>
-    <token value='Слово' lemma='слово' tags='noun:inanim:n:v_naz' />
-    <token value='Слово' lemma='слово' tags='noun:inanim:n:v_zna' />
+    <token value="Слово" lemma="слово" tags="noun:inanim:n:v_naz" />
+    <token value="Слово" lemma="слово" tags="noun:inanim:n:v_zna" />
   </tokenReading>
   <tokenReading>
-    <token value='X' lemma='X' tags='number:latin' />
+    <token value="X" lemma="X" tags="number:latin" />
   </tokenReading>
   <tokenReading>
-    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
-  </tokenReading>
-</sentence>
-
-<sentence>
-  <tokenReading>
-    <token value='Діло' lemma='діло' tags='noun:inanim:n:v_naz' />
-    <token value='Діло' lemma='діло' tags='noun:inanim:n:v_zna' />
-  </tokenReading>
-  <tokenReading>
-    <token value='&apos;' lemma='&apos;' tags='punct' whitespaceBefore='false' />
-  </tokenReading>
-  <tokenReading>
-    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
+    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
   </tokenReading>
 </sentence>
 
 <sentence>
   <tokenReading>
-    <token value='Мабуть' lemma='мабуть' tags='adv:&amp;insert' />
+    <token value="Діло" lemma="діло" tags="noun:inanim:n:v_naz" />
+    <token value="Діло" lemma="діло" tags="noun:inanim:n:v_zna" />
   </tokenReading>
   <tokenReading>
-    <token value='кх' lemma='' tags='unknown' />
+    <token value="'" lemma="'" tags="punct" whitespaceBefore="false" />
   </tokenReading>
   <tokenReading>
-    <token value='.' lemma='.' tags='punct' whitespaceBefore='false' />
+    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
+  </tokenReading>
+</sentence>
+
+<sentence>
+  <tokenReading>
+    <token value="Мабуть" lemma="мабуть" tags="adv:&amp;insert" />
+  </tokenReading>
+  <tokenReading>
+    <token value="кх" lemma="" tags="unknown" />
+  </tokenReading>
+  <tokenReading>
+    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
   </tokenReading>
 </sentence>
 
@@ -477,6 +477,126 @@ class TagTextTest {
 		assertEquals expected, outFile.getText("UTF-8")
 	}
 
+    @Test
+    public void testDisambigStats() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, disambiguateByStats: true))
+
+        TagResult tagged = tagText.tagText("а")
+
+        def expected =
+"""<sentence>
+  <tokenReading>
+    <token value="а" lemma="а" tags="conj:coord" />
+    <token value="а" lemma="а" tags="part" />
+    <token value="а" lemma="а" tags="intj" />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
+
+        TagResult tagged2 = tagText.tagText("Тому")
+        
+                def expected2 =
+"""<sentence>
+  <tokenReading>
+    <token value="Тому" lemma="тому" tags="adv" />
+    <token value="Тому" lemma="тому" tags="conj:subord" />
+    <token value="Тому" lemma="той" tags="adj:m:v_dav:&amp;pron:dem" />
+    <token value="Тому" lemma="Тома" tags="noun:anim:m:v_zna:prop:fname" />
+    <token value="Тому" lemma="Том" tags="noun:anim:m:v_dav:prop:fname" />
+    <token value="Тому" lemma="те" tags="noun:inanim:n:v_dav:&amp;pron:dem" />
+    <token value="Тому" lemma="той" tags="adj:n:v_dav:&amp;pron:dem" />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected2, tagged2.tagged
+        
+    }
+
+    
+    @Test
+    public void testDisambigStatsSingleTokenFormat() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, disambiguateByStats: true, singleTokenFormat: true))
+
+        TagResult tagged = tagText.tagText("а")
+
+        def expected =
+"""<sentence>
+  <token value="а" lemma="а" tags="conj:coord" q="0.993">
+    <alts>
+      <token value="а" lemma="а" tags="part" q="0.006" />
+      <token value="а" lemma="а" tags="intj" q="0" />
+    </alts>
+  </token>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
+    }
+    
+
+    @Test
+    public void testFirstToken() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, singleTokenFormat: true))
+
+        TagResult tagged = tagText.tagText("а")
+
+        def expected =
+"""<sentence>
+  <token value="а" lemma="а" tags="conj:coord">
+    <alts>
+      <token value="а" lemma="а" tags="intj" />
+      <token value="а" lemma="а" tags="part" />
+    </alts>
+  </token>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
+    @Test
+    public void testDisambigStatsFirstTokenOnly() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, disambiguateByStats: true, singleTokenOnly: true))
+
+        TagResult tagged = tagText.tagText("відлетіла")
+
+        def expected =
+"""<sentence>
+  <token value="відлетіла" lemma="відлетіти" tags="verb:perf:past:f" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+        
+        def expected2 =
+"""<sentence>
+  <token value="маркітні" lemma="маркітний" tags="adj:p:v_naz" />
+</sentence>
+<paragraph/>
+"""
+        tagged = tagText.tagText("маркітні")
+
+        assertEquals expected2, tagged.tagged
+
+        def expected3 =
+"""<sentence>
+  <token value="Заняття" lemma="заняття" tags="noun:inanim:n:v_naz:xp1" />
+</sentence>
+<paragraph/>
+"""
+        tagged = tagText.tagText("Заняття")
+
+        assertEquals expected3, tagged.tagged
+
+        def expected4 =
+"""<sentence>
+  <token value="Чорні" lemma="чорний" tags="adj:p:v_naz:compb" />
+</sentence>
+<paragraph/>
+"""
+        tagged = tagText.tagText("Чорні")
+
+        assertEquals expected4, tagged.tagged
+    }
 }
 
 

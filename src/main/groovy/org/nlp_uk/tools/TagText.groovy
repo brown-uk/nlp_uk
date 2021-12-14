@@ -3,8 +3,8 @@
 package org.nlp_uk.tools
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.6')
-//@Grab(group='org.languagetool', module='language-uk', version='5.7-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='5.6')
+@Grab(group='org.languagetool', module='language-uk', version='5.6-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
@@ -12,11 +12,14 @@ import java.util.regex.Pattern
 import java.util.stream.Collectors
 import org.languagetool.*
 import org.languagetool.language.*
-
+import org.nlp_uk.bruk.ContextToken
+import org.nlp_uk.bruk.WordContext
+import org.nlp_uk.bruk.WordReading
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
 import groovy.util.Eval
 import picocli.CommandLine
+
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
 import picocli.CommandLine.Parameters
@@ -34,14 +37,15 @@ class TagText {
 
     // easy way to include a class without forcing classpath to be set
     def textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
-
+    
     static final Pattern PUNCT_PATTERN = Pattern.compile(/[,.:;!?\/()\[\]{}«»„“"'…\u2013\u2014\u201D\u201C•■♦-]+/)
     static final Pattern SYMBOL_PATTERN = Pattern.compile(/[%&@$*+=<>\u00A0-\u00BF\u2000-\u20CF\u2100-\u218F\u2200-\u22FF]+/)
     static final Pattern UNKNOWN_PATTERN = Pattern.compile(/(.*-)?[а-яіїєґА-ЯІЇЄҐ]+(-.*)?/)
     static final Pattern NON_UK_PATTERN = Pattern.compile(/[ыэъёЫЭЪЁ]|[иИ]{2}/)
     static final Pattern UNCLASS_PATTERN = Pattern.compile(/\p{IsLatin}[\p{IsLatin}\p{IsDigit}-]*|[0-9]+-?[а-яіїєґА-ЯІЇЄҐ]+|[а-яіїєґА-ЯІЇЄҐ]+-?[0-9]+/)
     static final Pattern XML_TAG_PATTERN = Pattern.compile(/<\/?[a-zA-Z_0-9]+>/)
-
+    static final Pattern UPPERCASED_PATTERN = Pattern.compile(/[А-ЯІЇЄҐ][а-яіїєґ'-]+/)
+    
     def language = new Ukrainian() {
         @Override
         protected synchronized List<?> getPatternRules() { return [] }
@@ -51,7 +55,10 @@ class TagText {
 
     TagOptions options
 	Map<String, Map<String,List<String>>> semanticTags = new HashMap<>()
-
+    Map<String, Map<WordReading, Integer>> disambigStatsF = new HashMap<>()
+    Map<String, Integer> disambigStatsT = new HashMap<>().withDefault { 0 }
+    //    Map<String, Map<WordContext, Integer>> disambigStats = new HashMap<>()
+    
 	@Canonical
 	static class TagResult {
 		String tagged
@@ -102,7 +109,13 @@ class TagText {
                     def taggedObjects = tagAsObject(tokens)
 
                     StringBuilder x = outputSentenceXml(taggedObjects)
-                    sb.append(x).append("\n");
+                    sb.append(x).append("\n")
+                    
+                    if( options.singleTokenFormat ) {
+                        if( tokens[-1].hasPosTag(JLanguageTool.PARAGRAPH_END_TAGNAME) ) {
+                            sb.append("<paragraph/>\n")
+                        }
+                    }
 
                     //				sb.append(writer.toString()).append("\n");
                     //                writer.getBuffer().setLength(0)
@@ -119,27 +132,13 @@ class TagText {
                 }
                 else {
                     String sentenceLine
-                    // TODO: use frequencies
-                    if( options.firstLemmaOnly ) {
-                        sentenceLine = analyzedSentence.tokens.collect {
-                            AnalyzedTokenReadings it ->
-                            it.isSentenceStart()
-                            ? ''
-                            : it.isWhitespace()
-                            ? ( "\n".equals(it.getToken()) ? '' : it.getToken() )
-                            : it.getToken() + "[" + it.getReadings().get(0).getLemma() + "/" + it.getReadings().get(0).getPOSTag() + "]"
-                        }
-                        .join('') //(' --- ')
+                    sentenceLine = analyzedSentence.toString()
+                    sentenceLine.replaceAll(/,[^\/].*?\/<.*?>/, '')
+                    if( options.tokenPerLine ) {
+                        sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
                     }
                     else {
-                        sentenceLine = analyzedSentence.toString()
-                        sentenceLine.replaceAll(/,[^\/].*?\/<.*?>/, '')
-                        if( options.tokenPerLine ) {
-                            sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
-                        }
-                        else {
-                            sentenceLine = sentenceLine.replaceAll(/ *(<S>|\[<\/S>\]) */, '')
-                        }
+                        sentenceLine = sentenceLine.replaceAll(/ *(<S>|\[<\/S>\]) */, '')
                     }
 
                     sb.append(sentenceLine) //.append("\n");
@@ -234,47 +233,134 @@ class TagText {
             
             List<AnalyzedToken> readings = new ArrayList<>(tokenReadings.getReadings())
             readings.removeIf{ it -> it.getPOSTag() != null && it.getPOSTag().endsWith("_END") }
-
-            readings.each { AnalyzedToken tkn ->
+            
+            readings = readings.findAll { AnalyzedToken tkn ->
                 String posTag = tkn.getPOSTag()
-                if( posTag != null && posTag.startsWith("<") )
-                      return
-                
-                String semTags = null
-                if( options.semanticTags && tkn.getLemma() != null && posTag != null ) {
-                    def lemma = tkn.getLemma() 
-                    String posTagKey = posTag.replaceFirst(/:.*/, '')
-                    String key = "$lemma $posTagKey"
+                posTag != null && ! posTag.startsWith("<")
+            }
 
-                    def potentialSemTags = semanticTags.get(key)
-//                    println ":: potentialSemTags: $potentialSemTags for $lemma $posTag"
-                    if( potentialSemTags ) {
-                        Map<String, List<String>> potentialSemTags2 = semanticTags.get(key)
-                        List<String> potentialSemTags3 = null
-                        if( potentialSemTags2 ) {
-                            potentialSemTags2 = potentialSemTags2.findAll { k,v -> !k || posTag.contains(k) }
-//                            println ":: filteredSemTags2: $potentialSemTags2"
-                            List<String> values = (java.util.List<java.lang.String>) potentialSemTags2.values().flatten()
-                            potentialSemTags3 = values.findAll { filterSemtag(lemma, posTag, it) }
-//                            println ":: filteredSemTags3: $potentialSemTags3"
+            List<Integer> rates = orderByStats(readings, cleanToken)
 
-                            semTags = potentialSemTags3 ? potentialSemTags3.join(';') : null
+            if( options.singleTokenFormat ) {
+                def tagTokens = readings.collect { AnalyzedToken tkn ->
+                    getTagTokens(tkn)
+                }
+                def firstToken = tagTokens[0]
+                if( ! options.singleTokenOnly && tagTokens.size() > 1 ) {
+                    firstToken['alts'] = tagTokens[1..-1]
+                    
+                    if( rates ) {
+                        Integer sum = (Integer) rates.sum()
+//                        if( ! sum ) println ":: sum==0 for $cleanToken"
+                        tagTokens.eachWithIndex { t, idx2 ->
+                            t['q'] = sum ? ((rates[idx2]*1000).intdiv(sum)).div(1000) : 0
                         }
                     }
                 }
-
-                String lemma = tkn.getLemma() ?: ''
-                def token = semTags \
-                        ? ['value': tkn.getToken(), 'lemma': lemma, 'tags': posTag, 'semtags': semTags]
-                        : ['value': tkn.getToken(), 'lemma': lemma, 'tags': posTag]
-                
-                item.tokens.add(token) 
+                item.tokens = [ firstToken ]
+            }
+            else {
+                item.tokens = readings.collect { AnalyzedToken tkn ->
+                    getTagTokens(tkn)
+                }
             }
             
             tokenReadingsT << item
         }
             
         tokenReadingsT
+    }
+
+    private rate(List tkns) {
+        if( disambigStatsF.containsKey(tkns[0].value) ) {
+          tkns.each { tkn ->
+                Map<WordReading, Integer> stats = disambigStatsF[tkn.value]
+                tkn['q'] = getRate(r1, stats)
+            }
+        }
+        else {
+          tkns.each { tkn ->
+                tkn['q'] = disambigStatsT[tkn.postag]
+            }
+        }
+    }
+    
+    @CompileStatic
+    private getTagTokens(AnalyzedToken tkn) {
+        String posTag = tkn.getPOSTag()
+        String semTags = getSemTags(tkn, posTag)
+
+        String lemma = tkn.getLemma() ?: ''
+        def token = semTags \
+                        ? ['value': tkn.getToken(), 'lemma': lemma, 'tags': posTag, 'semtags': semTags]
+                : ['value': tkn.getToken(), 'lemma': lemma, 'tags': posTag]
+    }
+
+    @CompileStatic
+    private List<Integer> orderByStats(List<AnalyzedToken> readings, String cleanToken) {
+        if( options.disambiguateByStats && readings.size() > 1 ) {
+            if( ! disambigStatsF.containsKey(cleanToken) ) {
+                // if no stats and there's no prop readings try lowercase
+                if( UPPERCASED_PATTERN.matcher(cleanToken).matches() 
+                        /* && ! readings.find{ r -> r.getPOSTag().contains(":prop") } */ ) {
+                    cleanToken = cleanToken.toLowerCase()
+                }
+            }
+            
+            if( disambigStatsF.containsKey(cleanToken) ) {
+                Map<WordReading, Integer> stats = disambigStatsF[cleanToken]
+                readings.sort { r1, r2 -> 
+                    int cmp = getRate(r2, stats).compareTo(getRate(r1, stats))
+                    cmp ?: getPostagRate(r2.getPOSTag()).compareTo(getPostagRate(r1.getPOSTag()))  
+                }
+                readings.collect { r -> getRate(r, stats) }
+            }
+            else { 
+                readings.sort { r1, r2 -> getPostagRate(r2.getPOSTag()).compareTo(getPostagRate(r1.getPOSTag())) }
+                readings.collect { r -> getPostagRate(r.getPOSTag()) }
+            }
+        }
+    }
+
+    @CompileStatic
+    private int getRate(AnalyzedToken at, Map<WordReading, Integer> stats) {
+        int total = 0
+        stats.each { WordReading k, Integer v ->
+            if( k.lemma == at.getLemma() && k.postag == at.getPOSTag() ) {
+                total += v
+            }
+        }
+//        println ":: $at = $total"
+        return total
+    }
+
+    @CompileStatic
+    private int getPostagRate(String postag) {
+        postag = postag.replaceAll(/:xp[1-9]/, '')
+//        println ":: $postag: ${disambigStatsT[postag]}"
+        return disambigStatsT[postag]
+    }
+
+    @CompileStatic
+    private String getSemTags(AnalyzedToken tkn, String posTag) {
+        if( options.semanticTags && tkn.getLemma() != null && posTag != null ) {
+            def lemma = tkn.getLemma()
+            String posTagKey = posTag.replaceFirst(/:.*/, '')
+            String key = "$lemma $posTagKey"
+
+            def potentialSemTags = semanticTags.get(key)
+            if( potentialSemTags ) {
+                Map<String, List<String>> potentialSemTags2 = semanticTags.get(key)
+                List<String> potentialSemTags3 = null
+                if( potentialSemTags2 ) {
+                    potentialSemTags2 = potentialSemTags2.findAll { k,v -> !k || posTag.contains(k) }
+                    List<String> values = (java.util.List<java.lang.String>) potentialSemTags2.values().flatten()
+                    potentialSemTags3 = values.findAll { filterSemtag(lemma, posTag, it) }
+                    return potentialSemTags3 ? potentialSemTags3.join(';') : null
+                }
+            }
+        }
+        return null
     }
 
     @CompileStatic
@@ -304,7 +390,7 @@ class TagText {
     }
 
 
-    private StringBuilder outputSentenceXml(tokenReadingsList) {
+    private StringBuilder outputSentenceXml(taggedObjects) {
 //        builder.'sentence'() {
 //            tokenReadings.each { tr -> tr
 //                'tokenReading'() {
@@ -316,32 +402,58 @@ class TagText {
 //        }
         
         // XmlBuilder is nice but using strings gives almost 20% speedup on large files
-        StringBuilder sb = new StringBuilder()
+        StringBuilder sb = new StringBuilder(1024)
         sb.append("<sentence>\n");
-        tokenReadingsList.each { tr -> tr
-            sb.append("  <tokenReading>\n");
-            tr.tokens.each { t -> 
-                sb.append("    <token value='").append(quoteXml(t.value)).append("'")
-                if( t.lemma != null ) {
-                    sb.append(" lemma='").append(quoteXml(t.lemma)).append("'")
-                }
-                if( t.tags ) {
-                    sb.append(" tags='").append(quoteXml(t.tags)).append("'")
-                    if( t.tags == "punct" ) {
-                        sb.append(" whitespaceBefore='").append(t.whitespaceBefore).append("'")
-                    }
-                }
-                if( t.semtags ) {
-                    sb.append(" semtags='").append(quoteXml(t.semtags)).append("'")
-                }
-                sb.append(" />\n")
+        taggedObjects.each { tr -> tr
+            if( ! options.singleTokenFormat ) {
+                sb.append("  <tokenReading>\n")
             }
-            sb.append("  </tokenReading>\n");
+            tr.tokens.each { t -> 
+                appendToken(t, sb)
+            }
+            if( ! options.singleTokenFormat ) {
+                sb.append("  </tokenReading>\n")
+            }
         }
         sb.append("</sentence>");
         return sb
     }
 
+    private void appendToken(t, StringBuilder sb) {
+        String indent = options.singleTokenFormat ? "  " : "    "
+        sb.append(indent).append("<token value=\"").append(quoteXml(t.value, false)).append("\"")
+        if( t.lemma != null ) {
+            sb.append(" lemma=\"").append(quoteXml(t.lemma, false)).append("\"")
+        }
+        if( t.tags ) {
+            sb.append(" tags=\"").append(quoteXml(t.tags, false)).append("\"")
+
+            if( ! options.singleTokenFormat ) {
+                if( t.tags == "punct" ) {
+                    sb.append(" whitespaceBefore=\"").append(t.whitespaceBefore).append("\"")
+                }
+            }
+        }
+        if( t.semtags ) {
+            sb.append(" semtags=\"").append(quoteXml(t.semtags, false)).append("\"")
+        }
+        if( t.q != null ) {
+            sb.append(" q=\"").append(t.q).append("\"")
+        }
+
+        if( t.alts ) {
+            sb.append(">\n    <alts>\n")
+            t.alts.each { ti ->
+                sb.append("    ")
+                appendToken(ti, sb)
+            }
+            sb.append("    </alts>\n").append(indent).append("</token>\n")
+        }
+        else {
+            sb.append(" />\n")
+        }
+    }
+    
     private StringBuilder outputSentenceJson(tokenReadingsList) {
 //        builder {
 //            tokenReadings tokenReadingsList.collect { tr ->
@@ -359,7 +471,7 @@ class TagText {
 //        return jsonOut
 
         // JsonBuilder is nice but using strings gives almost 40% speedup on large files
-        StringBuilder sb = new StringBuilder()
+        StringBuilder sb = new StringBuilder(1024)
         sb.append("    {\n");
         sb.append("      \"tokenReadings\": [\n");
         tokenReadingsList.eachWithIndex { tr, trIdx -> tr
@@ -405,10 +517,14 @@ class TagText {
         s.replace('"', '\\"')
     }
     @CompileStatic
-    static String quoteXml(String s) {
+    static String quoteXml(String s, boolean withApostrophe) {
 //        XmlUtil.escapeXml(s)
         // again - much faster on our own
-        s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('\'', "&apos;").replace('"', "&quot;")
+        s = s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+        if( withApostrophe ) {
+            s = s.replace('\'', "&apos;")
+        }
+        s
     }
 
     @CompileStatic
@@ -512,10 +628,6 @@ class TagText {
         if( semanticTags.size() > 0 )
             return
 
-        if( ! options.quiet ) {
-            System.err.println ("Using semantic tagging")
-        }
-
 		// def base = System.getProperty("user.home") + "/work/ukr/spelling/dict_uk/data/sem"
 		String base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
 		def semDir = new File("sem")
@@ -578,6 +690,40 @@ class TagText {
 	}
 
     @CompileStatic
+    def loadDisambigStats() {
+        if( disambigStatsF.size() > 0 )
+            return
+
+        long tm1 = System.currentTimeMillis()
+        
+        def statDir = new File(new File((String)SCRIPT_DIR + "/../../../../../.."), "stats")
+        assert statDir.isDirectory(), "Disambiguation stats not found in ${statDir.name}"
+        new File(statDir, "lemma_freqs_hom.txt").eachLine { String line ->
+            if( line.startsWith(' ') )
+                return
+
+            def p = line.split(/\s*,\s*/)
+            String word=p[0], lemma=p[1], postag=p[2], cnt=p[3]
+            disambigStatsF.computeIfAbsent(word, {s -> new HashMap<>()}).put(new WordReading(lemma, postag), cnt as int)
+            postag = postag.replaceAll(/:xp[1-9]/, '')
+            disambigStatsT[postag] += cnt as int
+            
+//            String word=p[0], ctxWord=p[2], ctxLemma=p[3], ctxTag=p[4], postag=p[5], lemma=p[6]
+//            if( ctxWord.indexOf('^') >= 0 ) ctxWord = ctxWord.replace('^', ',')
+//            if( ctxLemma.indexOf('^') >= 0 ) ctxLemma = ctxLemma.replace('^', ',')
+//            int pos = p[1] as int
+//            int freq = p[7] as int
+//            ContextToken ctxToken = new ContextToken(ctxWord, ctxLemma, ctxTag)
+//            WordContext wordContext = new WordContext(contextToken: ctxToken, offset: pos as int, postag: postag, lemma: lemma)
+//            disambigStats.computeIfAbsent(word, {s -> new HashMap<>()}).put(wordContext, freq as int)
+        }
+
+        long tm2 = System.currentTimeMillis()
+        System.err.println("Loaded ${disambigStatsF.size()} disambiguation stats, ${disambigStatsT.size()} tags in ${tm2-tm1} ms")
+    }
+
+    
+    @CompileStatic
     static boolean isTagEmpty(String posTag) {
         posTag == null || posTag.endsWith("_END")
     }
@@ -587,15 +733,12 @@ class TagText {
     static class TagOptions {
         @Option(names = ["-i", "--input"], arity="1", description = "Input file. Default: stdin")
         String input
-        @Parameters(index = "0", description = "Input file. Default: stdin", arity="0..1")
-        String inputFile
+        @Parameters(index = "0", description = "Input files. Default: stdin", arity="0..1000")
+        List<String> inputFiles
         @Option(names = ["-o", "--output"], arity="1", description = "Output file (default: <input file base name> + .tagged.txt/.xml/.json) or stdout if input is stdin")
         String output
         @Option(names = ["-l", "--tokenPerLine"], description = "One token per line (for .txt output only)")
         boolean tokenPerLine
-//        @Option(names = ["-f", "--firstLemmaOnly"], description = "print only first lemma with first set of tags"
-//            + " (note: this mode is not recommended as first lemma/tag is almost random, this may be improved later with statistical analysis)")
-        boolean firstLemmaOnly
         @Option(names = ["-x", "--xmlOutput"], description = "Output in xml format")
         boolean xmlOutput
         @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt}", defaultValue = "xml")
@@ -628,6 +771,12 @@ class TagText {
         boolean showDisambig
         @Option(names = ["--setLemmaForUnknown"], description = "Fill lemma for unknown words (default: empty lemma)")
         boolean setLemmaForUnknown
+        @Option(names = ["-g", "--disambiguate-by-stats"], description = "Use statistics for disambiguation")
+        boolean disambiguateByStats
+        @Option(names = ["-t", "--tokenFormat"], description = "Use <token> format (instead of <tokenReading>)")
+        boolean singleTokenFormat
+        @Option(names = ["-t1", "--singleTokenOnly"], description = "Use single token format")
+        boolean singleTokenOnly
 
         void adjust() {
             if( ! outputFormat ) {
@@ -637,6 +786,9 @@ class TagText {
                 else {
                     outputFormat = OutputFormat.xml
                 }
+            }
+            if( singleTokenOnly ) {
+                singleTokenFormat = true
             }
             if( ! quiet ) {
                 println "Output format: " + outputFormat
@@ -668,20 +820,8 @@ class TagText {
     void setOptions(TagOptions options) {
         options.adjust()
 
-        if( ! options.input ) {
-            if( options.inputFile ) {
-                options.input = options.inputFile
-            }
-            else {
-                options.input = "-"
-            }
-        }
-        if( ! options.output ) {
-            def fileExt = "." + options.outputFormat // ? ".xml" : ".txt"
-            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, ".tagged${fileExt}")
-            options.output = outfile
-        }
-        
+        setInputOutput(options)
+                
         this.options = options
         
         if( ! options.quiet ) {
@@ -701,8 +841,30 @@ class TagText {
 
             loadSemTags()
         }
+
+        if( options.disambiguateByStats ) {
+            if( options.outputFormat == OutputFormat.txt ) {
+                System.err.println ("Semantic tagging only available in xml/json output")
+                System.exit 1
+            }
+
+            loadDisambigStats()
+        }
     }
 
+    void setInputOutput(TagOptions options) {
+        
+        if( ! options.input ) {
+            options.input = "-"
+        }
+        if( ! options.output ) {
+            def fileExt = "." + options.outputFormat // ? ".xml" : ".txt"
+            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, ".tagged${fileExt}")
+            options.output = outfile
+        }
+
+    }
+    
     
     static final Pattern CYR_LETTER = Pattern.compile(/[а-яіїєґА-ЯІЇЄҐ]/)    
     static final Pattern NON_UK_LETTER = Pattern.compile(/[ыэъёЫЭЪЁ]|ие|ИЕ|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/)    
@@ -941,16 +1103,25 @@ class TagText {
     static void main(String[] args) {
 
         def nlpUk = new TagText()
-
+        
         def options = parseOptions(args)
 
         nlpUk.setOptions(options)
 
-//        nlpUk.adjustRules()
-
-        nlpUk.process()
-
-        nlpUk.postProcess()
+        // TODO: quick hack to support multiple files
+        if( options.inputFiles && options.inputFiles != ["-"] ) {
+            options.inputFiles.forEach{ filename ->
+                options.output = ""
+                options.input = filename
+                nlpUk.setInputOutput(options)
+                nlpUk.process()
+                nlpUk.postProcess()
+            }
+        }
+        else {
+            nlpUk.process()
+            nlpUk.postProcess()
+        }
     }
 
 }
