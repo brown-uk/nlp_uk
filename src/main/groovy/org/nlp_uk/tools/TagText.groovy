@@ -56,6 +56,7 @@ class TagText {
     TagOptions options
 	Map<String, Map<String,List<String>>> semanticTags = new HashMap<>()
     Map<String, Map<WordReading, Integer>> disambigStatsF = new HashMap<>()
+    Map<String, Map<WordReading, Map<WordContext, Integer>>> disambigStatsC = new HashMap<>()
     Map<String, Integer> disambigStatsT = new HashMap<>().withDefault { 0 }
     //    Map<String, Map<WordContext, Integer>> disambigStats = new HashMap<>()
     
@@ -184,9 +185,10 @@ class TagText {
     
     @CompileStatic
     private List<TTR> tagAsObject(AnalyzedTokenReadings[] tokens) {
+        tokens = tokens[1..-1] // remove SENT_START
         List<TTR> tokenReadingsT = []
 
-        tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
+        tokens.eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
             String theToken = tokenReadings.getToken()
             String cleanToken = tokenReadings.getCleanToken()
             
@@ -239,7 +241,7 @@ class TagText {
                 posTag != null && ! posTag.startsWith("<")
             }
 
-            List<Integer> rates = orderByStats(readings, cleanToken)
+            List<Integer> rates = orderByStats(readings, cleanToken, tokens, idx)
 
             if( options.singleTokenFormat ) {
                 def tagTokens = readings.collect { AnalyzedToken tkn ->
@@ -271,19 +273,19 @@ class TagText {
         tokenReadingsT
     }
 
-    private rate(List tkns) {
-        if( disambigStatsF.containsKey(tkns[0].value) ) {
-          tkns.each { tkn ->
-                Map<WordReading, Integer> stats = disambigStatsF[tkn.value]
-                tkn['q'] = getRate(r1, stats)
-            }
-        }
-        else {
-          tkns.each { tkn ->
-                tkn['q'] = disambigStatsT[tkn.postag]
-            }
-        }
-    }
+//    private rate(List tkns) {
+//        if( disambigStatsF.containsKey(tkns[0].value) ) {
+//          tkns.each { tkn ->
+//                Map<WordReading, Integer> stats = disambigStatsF[tkn.value]
+//                tkn['q'] = getRate(r1, stats)
+//            }
+//        }
+//        else {
+//          tkns.each { tkn ->
+//                tkn['q'] = disambigStatsT[tkn.postag]
+//            }
+//        }
+//    }
     
     @CompileStatic
     private getTagTokens(AnalyzedToken tkn) {
@@ -296,9 +298,12 @@ class TagText {
                 : ['value': tkn.getToken(), 'lemma': lemma, 'tags': posTag]
     }
 
+    private static final boolean dbg = false
+    
     @CompileStatic
-    private List<Integer> orderByStats(List<AnalyzedToken> readings, String cleanToken) {
+    private List<Integer> orderByStats(List<AnalyzedToken> readings, String cleanToken, AnalyzedTokenReadings[] tokens, int idx) {
         if( options.disambiguateByStats && readings.size() > 1 ) {
+
             if( ! disambigStatsF.containsKey(cleanToken) ) {
                 // if no stats and there's no prop readings try lowercase
                 if( UPPERCASED_PATTERN.matcher(cleanToken).matches() 
@@ -308,14 +313,20 @@ class TagText {
             }
             
             if( disambigStatsF.containsKey(cleanToken) ) {
-                Map<WordReading, Integer> stats = disambigStatsF[cleanToken]
+                stats.inStats ++
+                
+                Map<WordReading, Integer> statsF = disambigStatsF[cleanToken]
+                Map<WordReading, Map<WordContext, Integer>> statsC = disambigStatsC[cleanToken]
+
                 readings.sort { r1, r2 -> 
-                    int cmp = getRate(r2, stats).compareTo(getRate(r1, stats))
+                    int cmp = getRate(r2, statsF, statsC, tokens, idx, false).compareTo(getRate(r1, statsF, statsC, tokens, idx, false))
                     cmp ?: getPostagRate(r2.getPOSTag()).compareTo(getPostagRate(r1.getPOSTag()))  
                 }
-                readings.collect { r -> getRate(r, stats) }
+                readings.collect { r -> getRate(r, statsF, statsC, tokens, idx, dbg) }
             }
             else { 
+                stats.offStats ++
+                
                 readings.sort { r1, r2 -> getPostagRate(r2.getPOSTag()).compareTo(getPostagRate(r1.getPOSTag())) }
                 readings.collect { r -> getPostagRate(r.getPOSTag()) }
             }
@@ -323,20 +334,86 @@ class TagText {
     }
 
     @CompileStatic
-    private int getRate(AnalyzedToken at, Map<WordReading, Integer> stats) {
+    private static WordContext createWordContext(AnalyzedTokenReadings[] tokens, int idx, int pos) {
+        ContextToken contextToken = idx + pos < 0 
+            ? new ContextToken('', '', 'BEG')
+            : idx + pos >= tokens.length 
+                ? new ContextToken('', '', 'END')
+                : new ContextToken(tokens[idx+pos].getCleanToken(), '', '')  
+        new WordContext(contextToken: contextToken, offset: pos)
+    }
+    
+    @CompileStatic
+    private int getRate(AnalyzedToken at, Map<WordReading, Integer> statsF, Map<WordReading, Map<WordContext, Integer>> statsC, AnalyzedTokenReadings[] tokens, int idx, boolean dbg) {
+        if( dbg )
+            println ":: $at, idx: $idx"
+
         int total = 0
-        stats.each { WordReading k, Integer v ->
-            if( k.lemma == at.getLemma() && k.postag == at.getPOSTag() ) {
-                total += v
+        
+        WordReading wordReading = new WordReading(lemma: at.getLemma(), postag: at.getPOSTag())
+        Integer vF = statsF[wordReading]
+        
+        if( vF ) { 
+
+            if( false ) {
+            Map<WordContext, Integer> ctx = statsC[wordReading]
+            WordContext wordContext = createWordContext(tokens, idx, -1)
+            
+            if( dbg )
+                println "  wr: $wordReading, v: $vF"
+
+            def fitCtx = ctx.findAll { WordContext wc, Integer v2 ->
+                wc.offset == wordContext.offset \
+                    && wc.contextToken.word == wordContext.contextToken.word
             }
+            if( fitCtx ) {
+                if( dbg )
+                    println "  $fitCtx"
+                vF = vF * 2
+            }
+            }
+
+            total = vF
         }
-//        println ":: $at = $total"
+
+//        statsF.each { WordReading wr, Integer v ->
+//
+//            Map<WordContext, Integer> ctx = statsC[wr]
+//            WordContext wordContext = createWordContext(tokens, idx, -1)
+//
+//            if( dbg )
+//                println "  wr: $wr, v: $v"
+//
+//            boolean found = false
+//            def fitCtx = ctx.findAll { WordContext wc, Integer v2 -> 
+//                wc.offset == wordContext.offset \
+//                    && wc.contextToken.word == wordContext.contextToken.word
+//            }
+//            if( fitCtx ) {
+//                if( dbg )
+//                    println "  $fitCtx"
+//                v = v * 2
+//            }
+//             
+//            if( wr.lemma == at.getLemma() && wr.postag == at.getPOSTag() ) {
+//                total += v
+//                if (dbg) println " =x= "
+//            }
+//        }
+
+        if( dbg )        
+        println ":: $total"
         return total
     }
 
     @CompileStatic
+    private static String normalizePostagForRate(String postag) {
+        postag.replaceAll(/:xp[1-9]/, '')
+    }
+    
+    @CompileStatic
     private int getPostagRate(String postag) {
-        postag = postag.replaceAll(/:xp[1-9]/, '')
+        postag = normalizePostagForRate(postag)
 //        println ":: $postag: ${disambigStatsT[postag]}"
         return disambigStatsT[postag]
     }
@@ -542,7 +619,7 @@ class TagText {
     @CompileStatic
 	AnalyzedTokenReadings adjustTokensWithZheleh(AnalyzedTokenReadings tokenReadings, AnalyzedTokenReadings[] tokens, int idx) {
 		AnalyzedToken origAnalyzedToken = tokenReadings.getReadings().get(0)
-		boolean syaIsNext = idx < tokens.size()-2 && tokens[idx+2].getToken() == 'ся'
+		boolean syaIsNext = idx < tokens.size()-1 && tokens[idx+1].getToken() == 'ся'
 
 		if( ( tokenReadings.isPosTagUnknown() || syaIsNext )
 			&& origAnalyzedToken.token =~ /[а-яіїєґА-ЯІЇЄҐ]/ ) {
@@ -578,27 +655,9 @@ class TagText {
     }
 
 
-//    def adjustRules() {
-//        if( options.disabledRules ) {
-//            if( ! options.quiet ) {
-//                System.err.println("Disabled rules: $options.disabledRules")
-//            }
-//
-//            def allRules = nlpUk.langTool.language.disambiguator.disambiguator.disambiguationRules
-//            def rulesToDisable = options.disabledRules.split(",")
-//
-//            def rulesNotFound = rulesToDisable - allRules.collect { it.id }
-//            if( rulesNotFound ) {
-//                System.err.println("WARNING: rules not found for ids: " + rulesNotFound.join(", "))
-//            }
-//
-//            allRules.removeAll {
-//                it.id in rulesToDisable
-//            }
-//        }
-//    }
-
     def process() {
+        stats = new Stats()
+        
         def outputFile = textUtils.processByParagraph(options, { buffer ->
             return tagText(buffer)
         },
@@ -620,6 +679,10 @@ class TagText {
         }
         if( options.lemmaStats ) {
             stats.printLemmaFrequencyStats()
+        }
+        
+        if( options.disambiguateByStats ) {
+            println "inStats: ${stats.inStats}, offStats: ${stats.offStats}"
         }
     }
 
@@ -698,24 +761,41 @@ class TagText {
         
         def statDir = new File(new File((String)SCRIPT_DIR + "/../../../../../.."), "stats")
         assert statDir.isDirectory(), "Disambiguation stats not found in ${statDir.name}"
-        new File(statDir, "lemma_freqs_hom.txt").eachLine { String line ->
-            if( line.startsWith(' ') )
-                return
+        
+        String word
+        WordReading wordReading
 
+        new File(statDir, "lemma_freqs_hom.txt").eachLine { String line ->
             def p = line.split(/\s*,\s*/)
-            String word=p[0], lemma=p[1], postag=p[2], cnt=p[3]
-            disambigStatsF.computeIfAbsent(word, {s -> new HashMap<>()}).put(new WordReading(lemma, postag), cnt as int)
-            postag = postag.replaceAll(/:xp[1-9]/, '')
-            disambigStatsT[postag] += cnt as int
+
+            if( line.startsWith(' ') ) {
+                int pos = p[1] as int
+                String ctxWord=p[2], ctxLemma=p[3], ctxPostag=p[4]
+                int ctxCnt=p[5] as int
+
+                if( ctxWord.indexOf('^') >= 0 ) ctxWord = ctxWord.replace('^', ',')
+                if( ctxLemma.indexOf('^') >= 0 ) ctxLemma = ctxLemma.replace('^', ',')
+                
+                ContextToken contextToken = new ContextToken(ctxWord, ctxLemma, ctxPostag)
+                WordContext wordContext = new WordContext(contextToken: contextToken, offset: pos)
+                
+                disambigStatsC.computeIfAbsent(word, {s -> new HashMap<>()})
+                    .computeIfAbsent(wordReading, {x -> new HashMap<>()})
+                    .put(wordContext, ctxCnt as int)
+    
+                return
+            }
+
+            word=p[0]
+            String lemma=p[1], postag=p[2], cnt=p[3]
+
+            wordReading = new WordReading(lemma:lemma, postag:postag)
+
+            disambigStatsF.computeIfAbsent(word, {s -> new HashMap<>()})
+                .put(wordReading, cnt as int)
             
-//            String word=p[0], ctxWord=p[2], ctxLemma=p[3], ctxTag=p[4], postag=p[5], lemma=p[6]
-//            if( ctxWord.indexOf('^') >= 0 ) ctxWord = ctxWord.replace('^', ',')
-//            if( ctxLemma.indexOf('^') >= 0 ) ctxLemma = ctxLemma.replace('^', ',')
-//            int pos = p[1] as int
-//            int freq = p[7] as int
-//            ContextToken ctxToken = new ContextToken(ctxWord, ctxLemma, ctxTag)
-//            WordContext wordContext = new WordContext(contextToken: ctxToken, offset: pos as int, postag: postag, lemma: lemma)
-//            disambigStats.computeIfAbsent(word, {s -> new HashMap<>()}).put(wordContext, freq as int)
+            postag = normalizePostagForRate(postag)
+            disambigStatsT[postag] += cnt as int
         }
 
         long tm2 = System.currentTimeMillis()
@@ -881,6 +961,9 @@ class TagText {
 		Map<String, Integer> knownMap = [:].withDefault { 0 }
 		int knownCnt = 0
 
+        int inStats = 0
+        int offStats = 0
+        
 		synchronized void add(Stats stats) {
 			stats.homonymFreqMap.each { k,v -> homonymFreqMap[k] += v }
 			stats.homonymTokenMap.each { k,v -> homonymTokenMap[k].addAll(v) }
@@ -891,6 +974,9 @@ class TagText {
             stats.lemmaFrequencyPostagsMap.each { k,v -> lemmaFrequencyPostagsMap[k] += v }
             lemmaAmbigs.addAll(stats.lemmaAmbigs)
 		    knownCnt += stats.knownCnt
+            
+            inStats += stats.inStats
+            offStats += stats.offStats
 		}
 
         @CompileStatic

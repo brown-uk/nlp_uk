@@ -16,7 +16,7 @@ import org.nlp_uk.tools.TagText.TagResult
 class TagTextTest {
 	def options = new TagOptions()
 
-	TagText tagText = new TagText()
+	static TagText tagText = new TagText()
 	
 	@BeforeEach
 	void before() {
@@ -529,10 +529,66 @@ class TagTextTest {
     </alts>
   </token>
 </sentence>
+<paragraph/>
 """
         assertEquals expected, tagged.tagged
+
+        TagResult tagged2 = tagText.tagText("А")
+
+        def expected2 =
+"""<sentence>
+  <token value="А" lemma="а" tags="conj:coord" q="0.758">
+    <alts>
+      <token value="А" lemma="а" tags="part" q="0.239" />
+      <token value="А" lemma="а" tags="intj" q="0.002" />
+    </alts>
+  </token>
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected2, tagged2.tagged
     }
+
     
+    @Test
+    public void testDisambigStatsSingleTokenFormatWithCtx() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, disambiguateByStats: true, singleTokenFormat: true))
+
+//        TagResult tagged = tagText.tagText("на нього")
+
+        def expected =
+"""<sentence>
+  <token value="на" lemma="на" tags="prep" />
+  <token value="нього" lemma="він" tags="noun:unanim:m:v_rod:&amp;pron:pers:3" q="0.56">
+    <alts>
+      <token value="нього" lemma="він" tags="noun:unanim:m:v_zna:&amp;pron:pers:3" q="0.256" />
+      <token value="нього" lemma="воно" tags="noun:unanim:n:v_rod:&amp;pron:pers:3" q="0.14" />
+      <token value="нього" lemma="воно" tags="noun:unanim:n:v_zna:&amp;pron:pers:3" q="0.042" />
+    </alts>
+  </token>
+</sentence>
+<paragraph/>
+"""
+//        assertEquals expected, tagged.tagged
+        
+        TagResult tagged2 = tagText.tagText("в окремих")
+        
+        def expected2 =
+"""<sentence>
+  <token value="в" lemma="в" tags="prep" />
+  <token value="окремих" lemma="окремий" tags="adj:p:v_rod" q="0.695">
+    <alts>
+      <token value="окремих" lemma="окремий" tags="adj:p:v_mis" q="0.304" />
+      <token value="окремих" lemma="окремий" tags="adj:p:v_zna:ranim" q="0" />
+    </alts>
+  </token>
+</sentence>
+<paragraph/>
+"""
+                assertEquals expected2, tagged2.tagged
+        
+    }
+        
 
     @Test
     public void testFirstToken() {
@@ -549,6 +605,7 @@ class TagTextTest {
     </alts>
   </token>
 </sentence>
+<paragraph/>
 """
         assertEquals expected, tagged.tagged
     }
