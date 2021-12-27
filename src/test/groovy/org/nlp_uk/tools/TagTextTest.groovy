@@ -554,7 +554,7 @@ class TagTextTest {
     public void testDisambigStatsSingleTokenFormatWithCtx() {
         tagText.setOptions(new TagOptions(xmlOutput: true, disambiguateByStats: true, singleTokenFormat: true))
 
-//        TagResult tagged = tagText.tagText("на нього")
+        TagResult tagged = tagText.tagText("на нього")
 
         def expected =
 """<sentence>
@@ -569,24 +569,44 @@ class TagTextTest {
 </sentence>
 <paragraph/>
 """
-//        assertEquals expected, tagged.tagged
+        assertEquals expected, tagged.tagged
+        assertEquals 1, tagged.stats.inStats
         
-        TagResult tagged2 = tagText.tagText("в окремих")
+        TagResult tagged2 = tagText.tagText("в книгомережі")
         
         def expected2 =
 """<sentence>
   <token value="в" lemma="в" tags="prep" />
-  <token value="окремих" lemma="окремий" tags="adj:p:v_rod" q="0.695">
+  <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_mis" q="0.32">
     <alts>
-      <token value="окремих" lemma="окремий" tags="adj:p:v_mis" q="0.304" />
-      <token value="окремих" lemma="окремий" tags="adj:p:v_zna:ranim" q="0" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_rod" q="0.294" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:p:v_zna" q="0.217" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:p:v_naz" q="0.166" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_dav" q="0" />
     </alts>
   </token>
 </sentence>
 <paragraph/>
 """
-                assertEquals expected2, tagged2.tagged
+            assertEquals expected2, tagged2.tagged
+            assertEquals 1, tagged2.stats.offStats
+
+        TagResult tagged3 = tagText.tagText("в окремім")
         
+        def expected3 =
+"""<sentence>
+  <token value="в" lemma="в" tags="prep" />
+  <token value="окремім" lemma="окремий" tags="adj:m:v_mis" q="0">
+    <alts>
+      <token value="окремім" lemma="окреме" tags="noun:inanim:n:v_mis" q="0" />
+      <token value="окремім" lemma="окремий" tags="adj:n:v_mis" q="0" />
+    </alts>
+  </token>
+</sentence>
+<paragraph/>
+"""
+            assertEquals expected3, tagged3.tagged
+            assertEquals 1, tagged3.stats.offStats
     }
         
 
