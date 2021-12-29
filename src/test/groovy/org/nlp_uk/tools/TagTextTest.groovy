@@ -547,7 +547,24 @@ class TagTextTest {
 <paragraph/>
 """
         assertEquals expected2, tagged2.tagged
-    }
+
+        
+        TagResult tagged4 = tagText.tagText("шаблоні")
+        
+        def expected4 =
+"""<sentence>
+  <token value="шаблоні" lemma="шаблон" tags="noun:inanim:m:v_mis:xp2" q="0.5">
+    <alts>
+      <token value="шаблоні" lemma="шаблон" tags="noun:inanim:m:v_mis:xp1" q="0.499" />
+    </alts>
+  </token>
+</sentence>
+<paragraph/>
+"""
+            assertEquals expected4, tagged4.tagged
+            assertEquals 1, tagged4.stats.offStats
+
+     }
 
     
     @Test
@@ -571,7 +588,8 @@ class TagTextTest {
 """
         assertEquals expected, tagged.tagged
         assertEquals 1, tagged.stats.inStats
-        
+
+                
         TagResult tagged2 = tagText.tagText("в книгомережі")
         
         def expected2 =
