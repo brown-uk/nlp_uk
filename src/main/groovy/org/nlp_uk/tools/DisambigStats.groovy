@@ -20,7 +20,7 @@ public class DisambigStats {
     private static final Pattern UPPERCASED_PATTERN = Pattern.compile(/[А-ЯІЇЄҐ][а-яіїєґ'-]+/)
     
     private static final boolean USE_WORD_ENDING = false
-    private static final boolean dbg = false
+    private static final boolean dbg = true
     
     TagOptions options
     
@@ -120,7 +120,9 @@ public class DisambigStats {
     }
     
     @CompileStatic
-    private int getRate(AnalyzedToken at, String cleanToken, Map<WordReading, Integer> statsForWordReading, Map<WordReading, Map<WordContext, Integer>> statsC, AnalyzedTokenReadings[] tokens, int idx, boolean dbg) {
+    private int getRate(AnalyzedToken at, String cleanToken, Map<WordReading, Integer> statsForWordReading, Map<WordReading, Map<WordContext, Integer>> statsC, 
+            AnalyzedTokenReadings[] tokens, int idx, boolean dbg) {
+
         debug(dbg, ":: $at, idx: $idx")
 
         int total = 0
@@ -130,23 +132,8 @@ public class DisambigStats {
         
         if( vF ) { 
 
-            if( options.statsByContext ) {
-                Map<WordContext, Integer> ctx = statsC[wordReading]
-                WordContext wordContext = createWordContext(tokens, idx, -1)
-
-                debug(dbg, "  wr: $wordReading, v: $vF")
-
-                def fitCtx = ctx.findAll { WordContext wc, Integer v2 ->
-                    wc.offset == wordContext.offset \
-                    && wc.contextToken.word == wordContext.contextToken.word
-                }
-                if( fitCtx ) {
-                    if( dbg )
-                        println "  $fitCtx"
-                    vF = vF * 3
-                }
-            }
-
+            vF = adjustByContext(vF, wordReading, statsC, tokens, idx)
+            
             total = vF
         }
         else if( ! statsForWordReading ) {
@@ -178,6 +165,37 @@ public class DisambigStats {
     }
     
     @CompileStatic
+    private int adjustByContext(Integer vF, WordReading wordReading, Map<WordReading, Map<WordContext, Integer>> statsC, AnalyzedTokenReadings[] tokens, int idx) {
+        if( options.statsByContext ) {
+            Map<WordContext, Integer> ctx = statsC[wordReading]
+            WordContext wordContext = createWordContext(tokens, idx, -1)
+
+            debug(dbg, "  wr: $wordReading, v: $vF")
+
+            Integer fitCnt = (Integer)ctx.findAll { WordContext wc, Integer v2 ->
+                wc.offset == wordContext.offset \
+                && wc.contextToken.word == wordContext.contextToken.word
+            }
+            .collect {
+                WordContext wc, Integer v2 -> v2
+            }
+            .sum()
+
+            if( fitCnt ) {
+                Integer allCnt = (Integer)ctx
+                .collect {
+                    WordContext wc, Integer v2 -> v2
+                }
+                .sum()
+                
+                debug( dbg, "==  $fitCnt / $allCnt")
+                vF = (vF * 3 * 100 * fitCnt).intdiv(allCnt) 
+            }
+        }
+        vF
+    }
+    
+    @CompileStatic
     private int getPostagRate(AnalyzedToken reading, AnalyzedTokenReadings[] tokens, int idx, boolean withXp, boolean dbg) {
         String postag = reading.getPOSTag()
         String normPostag = normalizePostagForRate(postag)
@@ -185,19 +203,31 @@ public class DisambigStats {
         debug(dbg, ":: norm tag: $normPostag, rate: $rate")
         
         if( rate ) {
-            if( false && options.statsByContext ) {
+            if( options.statsByContext ) {
                 Map<WordContext, MutableInt> ctx = statsByTagContext[normPostag]
                 WordContext wordContext = createWordContext(tokens, idx, -1)
 
                 debug(dbg, "  postag: $normPostag, v: $rate")
 
-                def fitCtx = ctx.findAll { WordContext wc, MutableInt v2 ->
+                Integer fitCnt = (Integer)ctx.findAll { WordContext wc, MutableInt v2 ->
                     wc.offset == wordContext.offset \
                     && wc.contextToken.word == wordContext.contextToken.word
                 }
-                if( fitCtx ) {
-                    debug(dbg, "  $fitCtx")
-                    rate = rate * 3
+                .collect {
+                    WordContext wc, MutableInt v2 -> v2
+                }
+                .sum()
+
+                 if( fitCnt ) {
+                    Integer allCnt = (Integer)ctx
+                    .collect {
+                        WordContext wc, MutableInt v2 -> v2
+                    }
+                    .sum()
+
+                    debug( dbg, "==  $fitCnt / $allCnt")
+                    rate = (rate * 3 * 100 * fitCnt).intdiv(allCnt) 
+//                    rate = rate * 3
                 }
             }
         }
@@ -209,7 +239,6 @@ public class DisambigStats {
                 rate += (mi.getValue() * 3).intdiv(2)
             }
         }
-
         
         return rate
     }
@@ -287,8 +316,8 @@ public class DisambigStats {
         long tm2 = System.currentTimeMillis()
         System.err.println("Loaded ${statsByWord.size()} disambiguation stats, ${statsByTag.size()} tags, ${statsByWordEnding.size()} endings, ${statsForLemmaXp.size()} xps in ${tm2-tm1} ms")
         
-//        System.err.println(statsByWordEnding['ики'])
-//        System.err.println(statsByWordEnding['ори'])
+//        System.err.println(":: " + statsByTagContext['noun:inanim:f:v_mis'].findAll{ wc, i -> wc.contextToken.word == 'в'})
+//        System.err.println(":: " + statsByTagContext['noun:inanim:f:v_rod'].findAll{ wc, i -> wc.contextToken.word == 'в'})
     }
 
     @CompileStatic
