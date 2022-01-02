@@ -13,14 +13,14 @@ import org.nlp_uk.bruk.WordContext;
 import org.nlp_uk.bruk.WordReading;
 import org.nlp_uk.tools.TagText.Stats
 import org.nlp_uk.tools.TagText.TagOptions
+import org.nlp_uk.tools.TagText.TagOptions.DisambigModule
 
 import groovy.transform.CompileStatic;
 
 public class DisambigStats {
     private static final Pattern UPPERCASED_PATTERN = Pattern.compile(/[А-ЯІЇЄҐ][а-яіїєґ'-]+/)
     
-    private static final boolean USE_WORD_ENDING = false
-    private static final boolean dbg = true
+    static boolean dbg = false
     
     TagOptions options
     
@@ -85,7 +85,7 @@ public class DisambigStats {
             
             readings.sort { r1, r2 ->
                 int cmp
-                if( USE_WORD_ENDING ) {
+                if( DisambigModule.wordEnding in options.disambiguate ) {
                     int rate2 = getRate(r2, cleanToken, null, null, tokens, idx, false)
                     int rate1 = getRate(r1, cleanToken, null, null, tokens, idx, false)
                     if( rate1 == 0 && rate2 == 0 ) offTags = true
@@ -116,7 +116,7 @@ public class DisambigStats {
             : idx + pos >= tokens.length 
                 ? new ContextToken('', '', 'END')
                 : new ContextToken(tokens[idx+pos].getCleanToken(), '', '')  
-        new WordContext(contextToken: contextToken, offset: pos)
+        new WordContext(contextToken, pos)
     }
     
     @CompileStatic
@@ -127,7 +127,7 @@ public class DisambigStats {
 
         int total = 0
         
-        WordReading wordReading = new WordReading(lemma: at.getLemma(), postag: at.getPOSTag())
+        WordReading wordReading = new WordReading(at.getLemma(), at.getPOSTag())
         Integer vF = statsForWordReading ? statsForWordReading[wordReading] : 0
         
         if( vF ) { 
@@ -142,7 +142,7 @@ public class DisambigStats {
             debug(dbg, ":: using word ending $wordEnding")
             Map<WordReading, MutableInt> statsForWordEnding = statsByWordEnding[wordEnding]
             if( statsForWordEnding ) {
-                WordReading wordReading2 = new WordReading(lemma: '', postag: normalizePostagForRate(postag))
+                WordReading wordReading2 = new WordReading('', normalizePostagForRate(postag))
                 def st = statsForWordEnding[wordReading2]
                 if( st ) {
                     vF = st.intValue()
@@ -161,12 +161,12 @@ public class DisambigStats {
 
     @CompileStatic
     private static String normalizePostagForRate(String postag) {
-        postag.replaceAll(/:xp[1-9]/, '')
+        postag.replaceAll(/:(xp[1-9]|ua_[0-9]{4})/, '')
     }
     
     @CompileStatic
     private int adjustByContext(Integer vF, WordReading wordReading, Map<WordReading, Map<WordContext, Integer>> statsC, AnalyzedTokenReadings[] tokens, int idx) {
-        if( options.statsByContext ) {
+        if( DisambigModule.context in options.disambiguate ) {
             Map<WordContext, Integer> ctx = statsC[wordReading]
             WordContext wordContext = createWordContext(tokens, idx, -1)
 
@@ -200,35 +200,49 @@ public class DisambigStats {
         String postag = reading.getPOSTag()
         String normPostag = normalizePostagForRate(postag)
         int rate = statsByTag[normPostag]
+        
+        if( ! rate ) {
+//            println "INFO: no stats for tag: $normPostag"
+            
+//            normPostag = normPostag.replaceAll(/:(nv|alt|&adjp:(pasv|actv):(im)?perf|comp.)/, '')
+            rate = statsByTag[normPostag]
+        }
+        if( ! rate ) {
+//            println "WARN: no stats for tag: $normPostag"
+            return 0
+        }
+
         debug(dbg, ":: norm tag: $normPostag, rate: $rate")
         
-        if( rate ) {
-            if( options.statsByContext ) {
-                Map<WordContext, MutableInt> ctx = statsByTagContext[normPostag]
-                WordContext wordContext = createWordContext(tokens, idx, -1)
+        if( DisambigModule.context in options.disambiguate ) {
+            Map<WordContext, MutableInt> ctx = statsByTagContext[normPostag]
+            WordContext wordContext = createWordContext(tokens, idx, -1)
 
-                debug(dbg, "  postag: $normPostag, v: $rate")
+            if( reading.getToken() == "досліджуваного" ) {
+                println "  postag: $normPostag, v: $rate"
+            }
+            
+            debug(dbg, "  postag: $normPostag, v: $rate")
 
-                Integer fitCnt = (Integer)ctx.findAll { WordContext wc, MutableInt v2 ->
-                    wc.offset == wordContext.offset \
-                    && wc.contextToken.word == wordContext.contextToken.word
-                }
+            Integer fitCnt = (Integer)ctx.findAll { WordContext wc, MutableInt v2 ->
+                wc.offset == wordContext.offset \
+                && wc.contextToken.word == wordContext.contextToken.word
+            }
+            .collect {
+                WordContext wc, MutableInt v2 -> v2
+            }
+            .sum()
+
+             if( fitCnt ) {
+                Integer allCnt = (Integer)ctx
                 .collect {
                     WordContext wc, MutableInt v2 -> v2
                 }
                 .sum()
 
-                 if( fitCnt ) {
-                    Integer allCnt = (Integer)ctx
-                    .collect {
-                        WordContext wc, MutableInt v2 -> v2
-                    }
-                    .sum()
-
-                    debug( dbg, "==  $fitCnt / $allCnt")
-                    rate = (rate * 3 * 100 * fitCnt).intdiv(allCnt) 
+                debug( dbg, "==  $fitCnt / $allCnt")
+                rate = (rate * 3 * 100 * fitCnt).intdiv(allCnt) 
 //                    rate = rate * 3
-                }
             }
         }
         
@@ -259,15 +273,15 @@ public class DisambigStats {
         String postagNorm
 
         new File(statDir, "lemma_freqs_hom.txt").eachLine { String line ->
-            def p = line.split(/\s*,\s*/)
+            def p = line.split(/\h+/)
 
-            if( ! line.startsWith(' ') ) {
+            if( ! line.startsWith('\t') ) {
     
                 word = p[0]
                 String lemma = p[1], postag = p[2]
                 int cnt = p[3] as int
     
-                wordReading = new WordReading(lemma:lemma, postag:postag)
+                wordReading = new WordReading(lemma, postag)
     
                 statsByWord.computeIfAbsent(word, {s -> new HashMap<>()})
                     .put(wordReading, cnt as int)
@@ -280,10 +294,10 @@ public class DisambigStats {
                     statsForLemmaXp.computeIfAbsent("${lemma}_${xp}".toString(), {s -> new MutableInt()}).add(cnt)
                 }
 
-                if( USE_WORD_ENDING ) {
+                if( true || DisambigModule.wordEnding in options.disambiguate ) {
                     String wordEnding = wordEnding(word, postagNorm)
                     if( wordEnding ) {
-                        WordReading wordReading2 = new WordReading(lemma:'', postag:postagNorm)
+                        WordReading wordReading2 = new WordReading('', postagNorm)
                         statsByWordEnding.computeIfAbsent(wordEnding, {s -> new HashMap<>()})
                             .computeIfAbsent(wordReading2, {s -> new MutableInt()}).add(cnt)
 //                        if( wordEnding == "ежі" )
@@ -294,15 +308,16 @@ public class DisambigStats {
                 return
             }
 
+//            println "= $line"
             int pos = p[1] as int
             String ctxWord=p[2], ctxLemma=p[3], ctxPostag=p[4]
             int ctxCnt=p[5] as int
 
-            if( ctxWord.indexOf('^') >= 0 ) ctxWord = ctxWord.replace('^', ',')
-            if( ctxLemma.indexOf('^') >= 0 ) ctxLemma = ctxLemma.replace('^', ',')
+            ctxWord = ContextToken.unsafeguard(ctxWord)
+            ctxLemma = ContextToken.unsafeguard(ctxLemma)
             
             ContextToken contextToken = new ContextToken(ctxWord, ctxLemma, ctxPostag)
-            WordContext wordContext = new WordContext(contextToken: contextToken, offset: pos)
+            WordContext wordContext = new WordContext(contextToken, pos)
             
             statsByWordContext.computeIfAbsent(word, {s -> new HashMap<>()})
                 .computeIfAbsent(wordReading, {x -> new HashMap<>()})
@@ -315,6 +330,25 @@ public class DisambigStats {
 
         long tm2 = System.currentTimeMillis()
         System.err.println("Loaded ${statsByWord.size()} disambiguation stats, ${statsByTag.size()} tags, ${statsByWordEnding.size()} endings, ${statsForLemmaXp.size()} xps in ${tm2-tm1} ms")
+        
+        if( dbg ) {
+            File tff = new File("tag_freqs.txt")
+            tff.text = ''
+            statsByTag
+                    .sort{ a, b -> a.key.compareTo(b.key) }
+                    .each { k,v ->
+                        tff << "$k\t$v\n"
+                        tff << "\t" << statsByTagContext[k].collect { k2, v2 -> k2.toString() }.join("\n\t") << "\n"
+                    }
+            tff = new File("tag_ending_freqs.txt")
+            tff.text = ''
+            statsByWordEnding
+                    .sort{ a, b -> a.key.compareTo(b.key) }
+                    .each { k,v ->
+                        String vvv = v.collect { k2,v2 -> "$k2\t$v2" }.join("\n\t")
+                        tff << "$k\n\t$vvv\n"
+                    }
+        }
         
 //        System.err.println(":: " + statsByTagContext['noun:inanim:f:v_mis'].findAll{ wc, i -> wc.contextToken.word == 'в'})
 //        System.err.println(":: " + statsByTagContext['noun:inanim:f:v_rod'].findAll{ wc, i -> wc.contextToken.word == 'в'})

@@ -111,7 +111,7 @@ class TagText {
                     StringBuilder x = outputSentenceXml(taggedObjects)
                     sb.append(x).append("\n")
                     
-                    if( options.singleTokenFormat ) {
+                    if( options.tokenFormat ) {
                         if( tokens[-1].hasPosTag(JLanguageTool.PARAGRAPH_END_TAGNAME) ) {
                             sb.append("<paragraph/>\n")
                         }
@@ -236,11 +236,11 @@ class TagText {
             }
 
             List<Integer> rates = null
-            if( options.disambiguateByStats && readings.size() > 1 ) {
+            if( options.disambiguate && readings.size() > 1 ) {
                 rates = disambigStats.orderByStats(readings, cleanToken, tokens, idx, stats)
             }
 
-            if( options.singleTokenFormat ) {
+            if( options.tokenFormat ) {
                 def tagTokens = readings.collect { AnalyzedToken tkn ->
                     getTagTokens(tkn)
                 }
@@ -345,13 +345,13 @@ class TagText {
         StringBuilder sb = new StringBuilder(1024)
         sb.append("<sentence>\n");
         taggedObjects.each { tr -> tr
-            if( ! options.singleTokenFormat ) {
+            if( ! options.tokenFormat ) {
                 sb.append("  <tokenReading>\n")
             }
             tr.tokens.each { t -> 
                 appendToken(t, sb)
             }
-            if( ! options.singleTokenFormat ) {
+            if( ! options.tokenFormat ) {
                 sb.append("  </tokenReading>\n")
             }
         }
@@ -360,7 +360,7 @@ class TagText {
     }
 
     private void appendToken(t, StringBuilder sb) {
-        String indent = options.singleTokenFormat ? "  " : "    "
+        String indent = options.tokenFormat ? "  " : "    "
         sb.append(indent).append("<token value=\"").append(quoteXml(t.value, false)).append("\"")
         if( t.lemma != null ) {
             sb.append(" lemma=\"").append(quoteXml(t.lemma, false)).append("\"")
@@ -368,7 +368,7 @@ class TagText {
         if( t.tags ) {
             sb.append(" tags=\"").append(quoteXml(t.tags, false)).append("\"")
 
-            if( ! options.singleTokenFormat ) {
+            if( ! options.tokenFormat ) {
                 if( t.tags == "punct" ) {
                     sb.append(" whitespaceBefore=\"").append(t.whitespaceBefore).append("\"")
                 }
@@ -544,7 +544,7 @@ class TagText {
             stats.printLemmaFrequencyStats()
         }
         
-        if( options.disambiguateByStats ) {
+        if( options.disambiguate ) {
             println "inStats: ${stats.inStats}, offStats: ${stats.offStats}, offTags: ${stats.offTags}"
         }
     }
@@ -664,15 +664,19 @@ class TagText {
         boolean showDisambig
         @Option(names = ["--setLemmaForUnknown"], description = "Fill lemma for unknown words (default: empty lemma)")
         boolean setLemmaForUnknown
-        @Option(names = ["-g", "--disambiguate-by-stats"], description = "Use statistics for disambiguation")
-        boolean disambiguateByStats
-        @Option(names = ["--disambiguate-by-context"], description = "Use statistics for disambiguation")
-        boolean statsByContext
+        @Option(names = ["-g", "--disambiguate"], description = "Use disambiguation modules", arity="0..10")
+        public List<DisambigModule> disambiguate
         @Option(names = ["-t", "--tokenFormat"], description = "Use <token> format (instead of <tokenReading>)")
-        boolean singleTokenFormat
-        @Option(names = ["-t1", "--singleTokenOnly"], description = "Use single token format")
+        boolean tokenFormat
+        @Option(names = ["-t1", "--singleTokenOnly"], description = "Print only one token")
         boolean singleTokenOnly
 
+        public enum DisambigModule {
+            frequency,
+            wordEnding,
+            context
+        }
+        
         void adjust() {
             if( ! outputFormat ) {
                 if( xmlOutput ) {
@@ -683,10 +687,19 @@ class TagText {
                 }
             }
             if( singleTokenOnly ) {
-                singleTokenFormat = true
+                tokenFormat = true
             }
+
+            if( disambiguate == null ) {
+                disambiguate = []
+            }
+            else if( ! (DisambigModule.frequency in disambiguate) ) {
+                disambiguate << DisambigModule.frequency
+            }
+
             if( ! quiet ) {
                 println "Output format: " + outputFormat
+                println "Disambig: " + disambiguate
             }
         }
     }
@@ -737,7 +750,8 @@ class TagText {
             loadSemTags()
         }
 
-        if( options.disambiguateByStats ) {
+        disambigStats.options = options
+        if( options.disambiguate ) {
             if( options.outputFormat == OutputFormat.txt ) {
                 System.err.println ("Semantic tagging only available in xml/json output")
                 System.exit 1
@@ -746,7 +760,6 @@ class TagText {
             disambigStats.loadDisambigStats()
         }
         
-        disambigStats.options = options
     }
 
     void setInputOutput(TagOptions options) {
@@ -767,7 +780,7 @@ class TagText {
     static final Pattern NON_UK_LETTER = Pattern.compile(/[ыэъёЫЭЪЁ]|ие|ИЕ|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/)    
     
     @CompileStatic
-	class Stats {
+	public class Stats {
 		Map<String, Integer> homonymFreqMap = [:].withDefault { 0 }
 		Map<String, Set<String>> homonymTokenMap = [:].withDefault{ new LinkedHashSet<>() }
 		Map<String, Integer> unknownMap = [:].withDefault { 0 }
@@ -778,9 +791,9 @@ class TagText {
 		Map<String, Integer> knownMap = [:].withDefault { 0 }
 		int knownCnt = 0
 
-        int inStats = 0
-        int offStats = 0
-        int offTags = 0
+        public int inStats = 0
+        public int offStats = 0
+        public int offTags = 0
         
 		synchronized void add(Stats stats) {
 			stats.homonymFreqMap.each { k,v -> homonymFreqMap[k] += v }
