@@ -131,6 +131,18 @@ class TagTextTest {
 </sentence>
 """
         assertEquals expected, tagged.tagged
+    
+
+        TagResult tagged2 = tagText.tagText("13-17°")
+        def expected2 =
+"""<sentence>
+  <tokenReading>
+    <token value="13-17°" lemma="13-17°" tags="number" />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected2, tagged2.tagged
+
     }
 
     @Test

@@ -155,9 +155,9 @@ class TagTextDisambigTest {
       <token value="стан" lemma="стан" tags="noun:inanim:m:v_zna:xp1" q="0" />
     </alts>
   </token>
-  <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_rod:&amp;adjp:pasv:imperf" q="0.571">
+  <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_rod:&amp;adjp:pasv:imperf" q="0.611">
     <alts>
-      <token value="досліджуваного" lemma="досліджуваний" tags="adj:n:v_rod:&amp;adjp:pasv:imperf" q="0.428" />
+      <token value="досліджуваного" lemma="досліджуваний" tags="adj:n:v_rod:&amp;adjp:pasv:imperf" q="0.388" />
       <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_zna:ranim:&amp;adjp:pasv:imperf" q="0" />
     </alts>
   </token>
@@ -192,10 +192,10 @@ class TagTextDisambigTest {
         def expected3 =
 """<sentence>
   <token value="в" lemma="в" tags="prep" />
-  <token value="окремім" lemma="окремий" tags="adj:m:v_mis" q="0.49">
+  <token value="окремім" lemma="окремий" tags="adj:m:v_mis" q="0.568">
     <alts>
-      <token value="окремім" lemma="окреме" tags="noun:inanim:n:v_mis" q="0.3" />
-      <token value="окремім" lemma="окремий" tags="adj:n:v_mis" q="0.209" />
+      <token value="окремім" lemma="окремий" tags="adj:n:v_mis" q="0.251" />
+      <token value="окремім" lemma="окреме" tags="noun:inanim:n:v_mis" q="0.18" />
     </alts>
   </token>
 </sentence>

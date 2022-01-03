@@ -100,11 +100,11 @@ test {
 
 task run(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
-    main = "ua.net.nlp_uk.ubertext.MongoDriver"
+    main = "org.nlp_uk.tools.TagText"
 
     jvmArgs '-Dgroovy.grape.enable=false'
 
-  //  args "--properties", propFile
+    args "-i text.txt -g -t".split()
 }
 
 

@@ -26,10 +26,10 @@ public class DisambigStats {
     
     Map<String, Map<WordReading, Integer>> statsByWord = new HashMap<>()
     Map<String, Map<WordReading, Map<WordContext, Integer>>> statsByWordContext = new HashMap<>()
-    Map<String, Map<WordReading, MutableInt>> statsByWordEnding = new HashMap<>()
+    Map<String, Map<WordReading, Integer>> statsByWordEnding = new HashMap<>()
     Map<String, Map<WordReading, Map<WordContext, Integer>>> statsByWordEndingContext = new HashMap<>()
     Map<String, Integer> statsByTag = new HashMap<>().withDefault { 0 }
-    Map<String, Map<WordContext, MutableInt>> statsByTagContext = new HashMap<>()
+    Map<String, Map<WordContext, Integer>> statsByTagContext = new HashMap<>()
     Map<String, MutableInt> statsForLemmaXp = new HashMap<>()
     
     @groovy.transform.SourceURI
@@ -140,7 +140,7 @@ public class DisambigStats {
             String postag = at.getPOSTag()
             String wordEnding = wordEnding(cleanToken, postag)
             debug(dbg, ":: using word ending $wordEnding")
-            Map<WordReading, MutableInt> statsForWordEnding = statsByWordEnding[wordEnding]
+            Map<WordReading, Integer> statsForWordEnding = statsByWordEnding[wordEnding]
             if( statsForWordEnding ) {
                 WordReading wordReading2 = new WordReading('', normalizePostagForRate(postag))
                 def st = statsForWordEnding[wordReading2]
@@ -161,16 +161,17 @@ public class DisambigStats {
 
     @CompileStatic
     private static String normalizePostagForRate(String postag) {
-        postag.replaceAll(/:(xp[1-9]|ua_[0-9]{4})/, '')
+//        postag.replaceAll(/:(xp[1-9]|ua_[0-9]{4})/, '')
+        postag.replaceAll(/:(xp[1-9]|ua_[0-9]{4}|comp.|&predic|&insert|coll|rare)/, '')
     }
     
     @CompileStatic
-    private int adjustByContext(Integer vF, WordReading wordReading, Map<WordReading, Map<WordContext, Integer>> statsC, AnalyzedTokenReadings[] tokens, int idx) {
+    private <T> int adjustByContext(Integer rate, T key, Map<T, Map<WordContext, Integer>> statsC, AnalyzedTokenReadings[] tokens, int idx) {
         if( DisambigModule.context in options.disambiguate ) {
-            Map<WordContext, Integer> ctx = statsC[wordReading]
+            Map<WordContext, Integer> ctx = statsC[key]
             WordContext wordContext = createWordContext(tokens, idx, -1)
 
-            debug(dbg, "  wr: $wordReading, v: $vF")
+            debug(dbg, "  key: $key, rate: $rate")
 
             Integer fitCnt = (Integer)ctx.findAll { WordContext wc, Integer v2 ->
                 wc.offset == wordContext.offset \
@@ -189,10 +190,10 @@ public class DisambigStats {
                 .sum()
                 
                 debug( dbg, "==  $fitCnt / $allCnt")
-                vF = (vF * 3 * 100 * fitCnt).intdiv(allCnt) 
+                rate = (rate * 3 * 100 * fitCnt).intdiv(allCnt) 
             }
         }
-        vF
+        rate
     }
     
     @CompileStatic
@@ -201,50 +202,49 @@ public class DisambigStats {
         String normPostag = normalizePostagForRate(postag)
         int rate = statsByTag[normPostag]
         
-        if( ! rate ) {
+//        if( ! rate ) {
 //            println "INFO: no stats for tag: $normPostag"
-            
 //            normPostag = normPostag.replaceAll(/:(nv|alt|&adjp:(pasv|actv):(im)?perf|comp.)/, '')
-            rate = statsByTag[normPostag]
-        }
+//            rate = statsByTag[normPostag]
+//        }
         if( ! rate ) {
 //            println "WARN: no stats for tag: $normPostag"
             return 0
         }
 
         debug(dbg, ":: norm tag: $normPostag, rate: $rate")
-        
-        if( DisambigModule.context in options.disambiguate ) {
-            Map<WordContext, MutableInt> ctx = statsByTagContext[normPostag]
-            WordContext wordContext = createWordContext(tokens, idx, -1)
 
-            if( reading.getToken() == "досліджуваного" ) {
-                println "  postag: $normPostag, v: $rate"
-            }
-            
-            debug(dbg, "  postag: $normPostag, v: $rate")
-
-            Integer fitCnt = (Integer)ctx.findAll { WordContext wc, MutableInt v2 ->
-                wc.offset == wordContext.offset \
-                && wc.contextToken.word == wordContext.contextToken.word
-            }
-            .collect {
-                WordContext wc, MutableInt v2 -> v2
-            }
-            .sum()
-
-             if( fitCnt ) {
-                Integer allCnt = (Integer)ctx
-                .collect {
-                    WordContext wc, MutableInt v2 -> v2
-                }
-                .sum()
-
-                debug( dbg, "==  $fitCnt / $allCnt")
-                rate = (rate * 3 * 100 * fitCnt).intdiv(allCnt) 
-//                    rate = rate * 3
-            }
+        if( rate ) {
+            rate = adjustByContext(rate, normPostag, statsByTagContext, tokens, idx)
         }
+
+//        if( DisambigModule.context in options.disambiguate ) {
+//            Map<WordContext, Integer> ctx = statsByTagContext[normPostag]
+//            WordContext wordContext = createWordContext(tokens, idx, -1)
+//
+//            debug(dbg, "  postag: $normPostag, v: $rate")
+//
+//            Integer fitCnt = (Integer)ctx.findAll { WordContext wc, Integer v2 ->
+//                wc.offset == wordContext.offset \
+//                && wc.contextToken.word == wordContext.contextToken.word
+//            }
+//            .collect {
+//                WordContext wc, Integer v2 -> v2
+//            }
+//            .sum()
+//
+//             if( fitCnt ) {
+//                Integer allCnt = (Integer)ctx
+//                .collect {
+//                    WordContext wc, Integer v2 -> v2
+//                }
+//                .sum()
+//
+//                debug( dbg, "==  $fitCnt / $allCnt")
+//                rate = (rate * 3 * 100 * fitCnt).intdiv(allCnt) 
+////                    rate = rate * 3
+//            }
+//        }
         
         if( postag.contains(":xp") ) {
             String xp = (postag =~ /xp[0-9]/)[0]
@@ -298,8 +298,11 @@ public class DisambigStats {
                     String wordEnding = wordEnding(word, postagNorm)
                     if( wordEnding ) {
                         WordReading wordReading2 = new WordReading('', postagNorm)
-                        statsByWordEnding.computeIfAbsent(wordEnding, {s -> new HashMap<>()})
-                            .computeIfAbsent(wordReading2, {s -> new MutableInt()}).add(cnt)
+                        def map = statsByWordEnding.computeIfAbsent(wordEnding, {s -> new HashMap<>()})
+                        Integer cnt_ = map[wordReading2] ?: 0
+                        cnt_ += cnt
+                        map[wordReading2] = cnt_
+//                            .computeIfAbsent(wordReading2, {s -> new MutableInt()}).add(cnt)
 //                        if( wordEnding == "ежі" )
 //                            println ":: ежі / $wordReading2 = " + statsByWordEnding[wordEnding][wordReading2]
                     }
@@ -323,8 +326,11 @@ public class DisambigStats {
                 .computeIfAbsent(wordReading, {x -> new HashMap<>()})
                 .put(wordContext, ctxCnt)
 
-            statsByTagContext.computeIfAbsent(postagNorm, {s -> new HashMap<>()})
-                .computeIfAbsent(wordContext, {s -> new MutableInt()}).add(ctxCnt)
+            def map = statsByTagContext.computeIfAbsent(postagNorm, {s -> new HashMap<>()})
+            Integer cnt = map[wordContext] ?: 0
+            cnt += ctxCnt
+            map[wordContext] = cnt
+//                .computeIfAbsent(wordContext, {s -> new Integer()}) += ctxCnt
 
         }
 
@@ -357,7 +363,8 @@ public class DisambigStats {
     @CompileStatic
     static String wordEnding(String word, String postag) {
         int endLength = 3
-        if( word.length() >= endLength + 1 ) {
+        if( ! word.endsWith('.') && word.length() >= endLength + 1 
+                && ! (word =~ /[А-ЯІЇЄҐ]$/) ) {
             String wordEnding = word
             if( postag.startsWith("verb:rev") ) { 
                 wordEnding = wordEnding[0..-3] 
