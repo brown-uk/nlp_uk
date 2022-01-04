@@ -8,7 +8,7 @@
 
 package org.nlp_uk.other
 
-@Grab(group='org.languagetool', module='language-uk', version='5.4')
+@Grab(group='org.languagetool', module='language-uk', version='5.6')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 
 import org.codehaus.groovy.util.StringUtil;
