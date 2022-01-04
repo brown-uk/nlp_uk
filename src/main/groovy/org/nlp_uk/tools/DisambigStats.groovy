@@ -53,9 +53,9 @@ public class DisambigStats {
     List<Integer> orderByStats(List<AnalyzedToken> readings, String cleanToken, AnalyzedTokenReadings[] tokens, int idx, Stats stats) {
 
         if( ! statsByWord.containsKey(cleanToken) ) {
-            // if no stats and there's no prop readings try lowercase
+            // if no stats and there's no-prop readings try lowercase
             if( UPPERCASED_PATTERN.matcher(cleanToken).matches() 
-                    /* && ! readings.find{ r -> r.getPOSTag().contains(":prop") } */ ) {
+                    && readings.size() > readings.count{ r -> r.getPOSTag() == null || r.getPOSTag().contains(":prop") }  ) {
                 cleanToken = cleanToken.toLowerCase()
             }
         }
