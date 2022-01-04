@@ -175,7 +175,8 @@ public class DisambigStats {
 
             Integer fitCnt = (Integer)ctx.findAll { WordContext wc, Integer v2 ->
                 wc.offset == wordContext.offset \
-                && wc.contextToken.word == wordContext.contextToken.word
+                && (wc.contextToken.word == wordContext.contextToken.word
+                    || wc.contextToken.postag == wordContext.contextToken.postag)
             }
             .collect {
                 WordContext wc, Integer v2 -> v2
@@ -184,10 +185,10 @@ public class DisambigStats {
 
             if( fitCnt ) {
                 Integer allCnt = (Integer)ctx
-                .collect {
-                    WordContext wc, Integer v2 -> v2
-                }
-                .sum()
+                    .collect {
+                        WordContext wc, Integer v2 -> v2
+                    }
+                    .sum()
                 
                 debug( dbg, "==  $fitCnt / $allCnt")
                 rate = (rate * 3 * 100 * fitCnt).intdiv(allCnt) 
@@ -204,7 +205,7 @@ public class DisambigStats {
         
 //        if( ! rate ) {
 //            println "INFO: no stats for tag: $normPostag"
-//            normPostag = normPostag.replaceAll(/:(nv|alt|&adjp:(pasv|actv):(im)?perf|comp.)/, '')
+//            normPostag = normPostag.replaceAll(/:(nv|alt|&adjp:.*?:[^:]*/, '')
 //            rate = statsByTag[normPostag]
 //        }
         if( ! rate ) {
@@ -218,34 +219,6 @@ public class DisambigStats {
             rate = adjustByContext(rate, normPostag, statsByTagContext, tokens, idx)
         }
 
-//        if( DisambigModule.context in options.disambiguate ) {
-//            Map<WordContext, Integer> ctx = statsByTagContext[normPostag]
-//            WordContext wordContext = createWordContext(tokens, idx, -1)
-//
-//            debug(dbg, "  postag: $normPostag, v: $rate")
-//
-//            Integer fitCnt = (Integer)ctx.findAll { WordContext wc, Integer v2 ->
-//                wc.offset == wordContext.offset \
-//                && wc.contextToken.word == wordContext.contextToken.word
-//            }
-//            .collect {
-//                WordContext wc, Integer v2 -> v2
-//            }
-//            .sum()
-//
-//             if( fitCnt ) {
-//                Integer allCnt = (Integer)ctx
-//                .collect {
-//                    WordContext wc, Integer v2 -> v2
-//                }
-//                .sum()
-//
-//                debug( dbg, "==  $fitCnt / $allCnt")
-//                rate = (rate * 3 * 100 * fitCnt).intdiv(allCnt) 
-////                    rate = rate * 3
-//            }
-//        }
-        
         if( postag.contains(":xp") ) {
             String xp = (postag =~ /xp[0-9]/)[0]
             MutableInt mi = statsForLemmaXp.get("${reading.getLemma()}_${xp}".toString())

@@ -272,7 +272,7 @@ class TagTextDisambigTest {
     }
 
     @Test
-    public void testFirstTokenOnlyByTag() {
+    public void testFirstTokenOnlyByTagWE() {
         tagText.setOptions(new TagOptions(xmlOutput: true, singleTokenOnly: true, disambiguate: [DisambigModule.frequency, DisambigModule.wordEnding]))
 
         TagResult tagged = tagText.tagText("стильні")
@@ -280,6 +280,27 @@ class TagTextDisambigTest {
         def expected =
 """<sentence>
   <token value="стильні" lemma="стильний" tags="adj:p:v_naz:compb" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
+    @Test
+    public void testFirstTokenOnlyByTagCtx() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.frequency, DisambigModule.context]))
+
+        TagResult tagged = tagText.tagText("в чорно-біле")
+
+        def expected =
+"""<sentence>
+  <token value="в" lemma="в" tags="prep" />
+  <token value="чорно-біле" lemma="чорно-білий" tags="adj:n:v_naz" q="1">
+    <alts>
+      <token value="чорно-біле" lemma="чорно-білий" tags="adj:n:v_zna" q="0" />
+      <token value="чорно-біле" lemma="чорно-білий" tags="adj:n:v_kly" q="0" />
+    </alts>
+  </token>
 </sentence>
 <paragraph/>
 """
