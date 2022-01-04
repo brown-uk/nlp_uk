@@ -3,8 +3,8 @@
 package org.nlp_uk.tools
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.4')
-//@Grab(group='org.languagetool', module='language-uk', version='5.4-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='5.6')
+//@Grab(group='org.languagetool', module='language-uk', version='5.7-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
