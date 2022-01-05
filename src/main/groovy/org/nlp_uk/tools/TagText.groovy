@@ -8,6 +8,7 @@ package org.nlp_uk.tools
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
+import java.math.RoundingMode
 import java.util.regex.Pattern
 import java.util.stream.Collectors
 import org.apache.commons.lang3.mutable.MutableInt
@@ -19,8 +20,8 @@ import org.nlp_uk.bruk.WordReading
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
 import groovy.util.Eval
-import picocli.CommandLine
 
+import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
 import picocli.CommandLine.Parameters
@@ -242,15 +243,19 @@ class TagText {
                         def gv = "$g:v_$v"
                         if( v == "zna" && g in ["m", "p"] ) {
                             gv += ":rinanim"
-                            readings.add(new AnalyzedToken('їх', 'їх', "adj:$gv:nv:&pron:pos:bad"))
+                            readings.add(new AnalyzedToken(tokenReadings.getToken(), 'їх', "adj:$gv:nv:&pron:pos:bad"))
                             gv = "$g:v_$v:ranim"
                         }
-                        readings.add(new AnalyzedToken('їх', 'їх', "adj:$gv:nv:&pron:pos:bad"))
+                        readings.add(new AnalyzedToken(tokenReadings.getToken(), 'їх', "adj:$gv:nv:&pron:pos:bad"))
                     }
                 }
             }
-
-            List<Integer> rates = null
+            else if( cleanToken.toLowerCase() == "де" ) {
+                readings.add(new AnalyzedToken(tokenReadings.getToken(), 'де', "part:pers"))
+                readings.add(new AnalyzedToken(tokenReadings.getToken(), 'де', "conj:subord"))
+            }
+                
+            List<BigDecimal> rates = null
             if( options.disambiguate && readings.size() > 1 ) {
                 rates = disambigStats.orderByStats(readings, cleanToken, tokens, idx, stats)
             }
@@ -264,9 +269,10 @@ class TagText {
                     firstToken['alts'] = tagTokens[1..-1]
                     
                     if( rates ) {
-                        Integer sum = (Integer) rates.sum()
+                        BigDecimal sum = (BigDecimal) rates.sum()
                         tagTokens.eachWithIndex { t, idx2 ->
-                            t['q'] = sum ? ((rates[idx2]*1000).intdiv(sum)).div(1000) : 0
+                            BigDecimal q = rates[idx2].setScale(3, , RoundingMode.CEILING) / sum
+                            t['q'] = q.round(3)
                         }
                     }
                 }
@@ -560,7 +566,7 @@ class TagText {
         }
         
         if( options.disambiguate ) {
-            println "inStats: ${stats.inStats}, offStats: ${stats.offStats}, offTags: ${stats.offTags}"
+            disambigStats.printStats(stats.disambigMap)
         }
     }
 
@@ -806,9 +812,7 @@ class TagText {
 		Map<String, Integer> knownMap = [:].withDefault { 0 }
 		int knownCnt = 0
 
-        public int inStats = 0
-        public int offStats = 0
-        public int offTags = 0
+        Map<String, Integer> disambigMap = [:].withDefault { 0 }
         
 		synchronized void add(Stats stats) {
 			stats.homonymFreqMap.each { k,v -> homonymFreqMap[k] += v }
@@ -821,9 +825,7 @@ class TagText {
             lemmaAmbigs.addAll(stats.lemmaAmbigs)
 		    knownCnt += stats.knownCnt
             
-            inStats += stats.inStats
-            offStats += stats.offStats
-            offTags += stats.offTags
+            stats.disambigMap.each { k,v -> disambigMap[k] += v }
 		}
 
         @CompileStatic

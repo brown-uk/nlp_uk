@@ -71,10 +71,10 @@ class TagTextDisambigTest {
 
         def expected =
 """<sentence>
-  <token value="а" lemma="а" tags="conj:coord" q="0.993">
+  <token value="а" lemma="а" tags="conj:coord" q="0.994">
     <alts>
       <token value="а" lemma="а" tags="part" q="0.006" />
-      <token value="а" lemma="а" tags="intj" q="0" />
+      <token value="а" lemma="а" tags="intj" q="0.000" />
     </alts>
   </token>
 </sentence>
@@ -88,7 +88,7 @@ class TagTextDisambigTest {
 """<sentence>
   <token value="А" lemma="а" tags="conj:coord" q="0.758">
     <alts>
-      <token value="А" lemma="а" tags="part" q="0.239" />
+      <token value="А" lemma="а" tags="part" q="0.240" />
       <token value="А" lemma="а" tags="intj" q="0.002" />
     </alts>
   </token>
@@ -102,16 +102,16 @@ class TagTextDisambigTest {
         
         def expected4 =
 """<sentence>
-  <token value="шаблоні" lemma="шаблон" tags="noun:inanim:m:v_mis:xp2" q="0.5">
+  <token value="шаблоні" lemma="шаблон" tags="noun:inanim:m:v_mis:xp2" q="0.500">
     <alts>
-      <token value="шаблоні" lemma="шаблон" tags="noun:inanim:m:v_mis:xp1" q="0.499" />
+      <token value="шаблоні" lemma="шаблон" tags="noun:inanim:m:v_mis:xp1" q="0.500" />
     </alts>
   </token>
 </sentence>
 <paragraph/>
 """
             assertEquals expected4, tagged4.tagged
-            assertEquals 1, tagged4.stats.offStats
+            assertEquals 1, tagged4.stats.disambigMap['noWord']
 
      }
 
@@ -125,10 +125,10 @@ class TagTextDisambigTest {
         def expected =
 """<sentence>
   <token value="на" lemma="на" tags="prep" />
-  <token value="нього" lemma="він" tags="noun:unanim:m:v_zna:&amp;pron:pers:3" q="0.812">
+  <token value="нього" lemma="він" tags="noun:unanim:m:v_zna:&amp;pron:pers:3" q="0.813">
     <alts>
       <token value="нього" lemma="воно" tags="noun:unanim:n:v_zna:&amp;pron:pers:3" q="0.171" />
-      <token value="нього" lemma="він" tags="noun:unanim:m:v_rod:&amp;pron:pers:3" q="0.012" />
+      <token value="нього" lemma="він" tags="noun:unanim:m:v_rod:&amp;pron:pers:3" q="0.013" />
       <token value="нього" lemma="воно" tags="noun:unanim:n:v_rod:&amp;pron:pers:3" q="0.003" />
     </alts>
   </token>
@@ -136,7 +136,7 @@ class TagTextDisambigTest {
 <paragraph/>
 """
         assertEquals expected, tagged.tagged
-        assertEquals 1, tagged.stats.inStats
+        assertEquals 1, tagged.stats.disambigMap['word']
     }
     
     @Test
@@ -148,24 +148,24 @@ class TagTextDisambigTest {
         
         def expected0 =
 """<sentence>
-  <token value="стан" lemma="стан" tags="noun:inanim:m:v_zna:xp2" q="0.678">
+  <token value="стан" lemma="стан" tags="noun:inanim:m:v_zna:xp2" q="0.670">
     <alts>
-      <token value="стан" lemma="стан" tags="noun:inanim:m:v_naz:xp2" q="0.321" />
-      <token value="стан" lemma="стан" tags="noun:inanim:m:v_naz:xp1" q="0" />
-      <token value="стан" lemma="стан" tags="noun:inanim:m:v_zna:xp1" q="0" />
+      <token value="стан" lemma="стан" tags="noun:inanim:m:v_naz:xp2" q="0.318" />
+      <token value="стан" lemma="стан" tags="noun:inanim:m:v_naz:xp1" q="0.004" />
+      <token value="стан" lemma="стан" tags="noun:inanim:m:v_zna:xp1" q="0.007" />
     </alts>
   </token>
   <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_rod:&amp;adjp:pasv:imperf" q="0.611">
     <alts>
-      <token value="досліджуваного" lemma="досліджуваний" tags="adj:n:v_rod:&amp;adjp:pasv:imperf" q="0.388" />
-      <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_zna:ranim:&amp;adjp:pasv:imperf" q="0" />
+      <token value="досліджуваного" lemma="досліджуваний" tags="adj:n:v_rod:&amp;adjp:pasv:imperf" q="0.389" />
+      <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_zna:ranim:&amp;adjp:pasv:imperf" q="0.000" />
     </alts>
   </token>
 </sentence>
 <paragraph/>
 """
             assertEquals expected0, tagged0.tagged
-            assertEquals 1, tagged0.stats.offStats
+            assertEquals 1, tagged0.stats.disambigMap['noWord']
 
         // by tag stats
         TagResult tagged2 = tagText.tagText("в книгомережі")
@@ -173,19 +173,19 @@ class TagTextDisambigTest {
         def expected2 =
 """<sentence>
   <token value="в" lemma="в" tags="prep" />
-  <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_mis" q="0.78">
+  <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_mis" q="0.225">
     <alts>
-      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:p:v_zna" q="0.156" />
-      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_dav" q="0.032" />
-      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:p:v_naz" q="0.024" />
-      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_rod" q="0.005" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:p:v_zna" q="0.153" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_dav" q="0.297" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:p:v_naz" q="0.117" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_rod" q="0.207" />
     </alts>
   </token>
 </sentence>
 <paragraph/>
 """
             assertEquals expected2, tagged2.tagged
-            assertEquals 1, tagged2.stats.offStats
+            assertEquals 1, tagged2.stats.disambigMap['noWord']
 
         TagResult tagged3 = tagText.tagText("в окремім")
         
@@ -195,14 +195,14 @@ class TagTextDisambigTest {
   <token value="окремім" lemma="окремий" tags="adj:m:v_mis" q="0.568">
     <alts>
       <token value="окремім" lemma="окремий" tags="adj:n:v_mis" q="0.251" />
-      <token value="окремім" lemma="окреме" tags="noun:inanim:n:v_mis" q="0.18" />
+      <token value="окремім" lemma="окреме" tags="noun:inanim:n:v_mis" q="0.180" />
     </alts>
   </token>
 </sentence>
 <paragraph/>
 """
             assertEquals expected3, tagged3.tagged
-            assertEquals 1, tagged3.stats.offStats
+            assertEquals 1, tagged3.stats.disambigMap['noWord']
     }
         
 
@@ -295,10 +295,10 @@ class TagTextDisambigTest {
         def expected =
 """<sentence>
   <token value="в" lemma="в" tags="prep" />
-  <token value="чорно-біле" lemma="чорно-білий" tags="adj:n:v_naz" q="1">
+  <token value="чорно-біле" lemma="чорно-білий" tags="adj:n:v_naz" q="0.982">
     <alts>
-      <token value="чорно-біле" lemma="чорно-білий" tags="adj:n:v_zna" q="0" />
-      <token value="чорно-біле" lemma="чорно-білий" tags="adj:n:v_kly" q="0" />
+      <token value="чорно-біле" lemma="чорно-білий" tags="adj:n:v_zna" q="0.018" />
+      <token value="чорно-біле" lemma="чорно-білий" tags="adj:n:v_kly" q="0.000" />
     </alts>
   </token>
 </sentence>
