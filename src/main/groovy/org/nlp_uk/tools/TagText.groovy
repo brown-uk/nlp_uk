@@ -4,7 +4,7 @@ package org.nlp_uk.tools
 
 @GrabConfig(systemClassLoader=true)
 //@Grab(group='org.languagetool', module='language-uk', version='5.6')
-@Grab(group='org.languagetool', module='language-uk', version='5.6-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='5.7-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
@@ -141,7 +141,7 @@ class TagText {
                     sb.append(sentenceLine) //.append("\n");
                 }
 
-                if( options.showDisambig ) {
+                if( options.showDisambigRules ) {
                     analyzedSentence.tokens.each { AnalyzedTokenReadings it ->
                         def historicalAnnotations = it.getHistoricalAnnotations()
                         if( historicalAnnotations && ! historicalAnnotations.contains("add_paragaph_end") ) {
@@ -261,19 +261,15 @@ class TagText {
             }
 
             if( options.tokenFormat ) {
-                def tagTokens = readings.collect { AnalyzedToken tkn ->
+                List<Object> tagTokens = readings.collect { AnalyzedToken tkn ->
                     getTagTokens(tkn)
                 }
-                def firstToken = tagTokens[0]
+                Object firstToken = tagTokens[0]
                 if( ! options.singleTokenOnly && tagTokens.size() > 1 ) {
                     firstToken['alts'] = tagTokens[1..-1]
                     
                     if( rates ) {
-                        BigDecimal sum = (BigDecimal) rates.sum()
-                        tagTokens.eachWithIndex { t, idx2 ->
-                            BigDecimal q = rates[idx2].setScale(3, , RoundingMode.CEILING) / sum
-                            t['q'] = q.round(3)
-                        }
+                        addRates(tagTokens, rates)
                     }
                 }
                 item.tokens = [ firstToken ]
@@ -290,6 +286,15 @@ class TagText {
         tokenReadingsT
     }
 
+    @CompileStatic
+    static void addRates(List<Object> tagTokens, List<BigDecimal> rates) {
+        BigDecimal sum = (BigDecimal) rates.sum()
+        tagTokens.eachWithIndex { Object t, int idx2 ->
+            BigDecimal q = rates[idx2] / sum
+            t['q'] = q.round(3)
+        }
+    }
+    
     
     @CompileStatic
     private getTagTokens(AnalyzedToken tkn) {
@@ -647,50 +652,56 @@ class TagText {
     static class TagOptions {
         @Option(names = ["-i", "--input"], arity="1", description = "Input file. Default: stdin")
         String input
-        @Parameters(index = "0", description = "Input files. Default: stdin", arity="0..1000")
+        @Parameters(index = "0", description = "Input files. Default: stdin", arity="0")
         List<String> inputFiles
         @Option(names = ["-o", "--output"], arity="1", description = "Output file (default: <input file base name> + .tagged.txt/.xml/.json) or stdout if input is stdin")
         String output
-        @Option(names = ["-l", "--tokenPerLine"], description = "One token per line (for .txt output only)")
-        boolean tokenPerLine
-        @Option(names = ["-x", "--xmlOutput"], description = "Output in xml format")
+        @Option(names = ["-x", "--xmlOutput"], description = "Output in xml format (deprecated: use --outputFormat)")
         boolean xmlOutput
         @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt}", defaultValue = "xml")
         OutputFormat outputFormat
-        @Option(names = ["-s", "--homonymStats"], description = "Collect homohym statistics")
+
+        @Option(names = ["-sh", "--homonymStats"], description = "Collect homohym statistics")
         boolean homonymStats
-        @Option(names = ["-u", "--unknownStats"], description = "Collect unknown words statistics")
+        @Option(names = ["-su", "--unknownStats"], description = "Collect unknown words statistics")
         boolean unknownStats
-        @Option(names = ["-b", "--filterUnknown"], description = "Filter out unknown words with non-Ukrainian character combinations")
+        @Option(names = ["-sfu", "--filterUnknown"], description = "Filter out unknown words with non-Ukrainian character combinations")
         boolean filterUnknown
-        @Option(names = ["-w", "--frequencyStats"], description = "Collect word frequency")
+        @Option(names = ["-sf", "--frequencyStats"], description = "Collect word frequency")
         boolean frequencyStats
-        @Option(names = ["-z", "--lemmaStats"], description = "Collect lemma frequency")
+        @Option(names = ["-sl", "--lemmaStats"], description = "Collect lemma frequency")
         boolean lemmaStats
+
         @Option(names = ["-e", "--semanticTags"], description = "Add semantic tags")
         boolean semanticTags
+        @Option(names = ["-l", "--tokenPerLine"], description = "One token per line (for .txt output only)")
+        boolean tokenPerLine
         @Option(names = ["-k", "--noTag"], description = "Do not write tagged text (only perform stats)")
         boolean noTag
+        @Option(names = ["--setLemmaForUnknown"], description = "Fill lemma for unknown words (default: empty lemma)")
+        boolean setLemmaForUnknown
+
         @Option(names = ["-m", "--modules"], arity="1", description = "Comma-separated list of modules, supported modules: [zheleh]")
         List<String> modules
+        
         @Option(names = ["--singleThread"], description = "Always use single thread (default is to use multithreading if > 2 cpus are found)")
         boolean singleThread
         @Option(names = ["-q", "--quiet"], description = "Less output")
         boolean quiet
         @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
         boolean helpRequested
-//        @Option(names = ["--disableDisambigRules"], arity="1", required = false, description = "Comma-separated list of ids of disambigation rules to disable")
-//        boolean disabledRules
-        @Option(names = ["-d", "--showDisambig"], description = "Show disambiguation rules applied")
-        boolean showDisambig
-        @Option(names = ["--setLemmaForUnknown"], description = "Fill lemma for unknown words (default: empty lemma)")
-        boolean setLemmaForUnknown
-        @Option(names = ["-g", "--disambiguate"], description = "Use disambiguation modules", arity="0..10")
-        public List<DisambigModule> disambiguate
+
         @Option(names = ["-t", "--tokenFormat"], description = "Use <token> format (instead of <tokenReading>)")
         boolean tokenFormat
         @Option(names = ["-t1", "--singleTokenOnly"], description = "Print only one token")
         boolean singleTokenOnly
+
+        @Option(names = ["-d", "--showDisambigRules"], description = "Show disambiguation rules applied")
+        boolean showDisambigRules
+        @Option(names = ["-g", "--disambiguate"], description = "Use disambiguation modules: [frequency, wordEnding, context]", arity="0", defaultValue="frequency")
+        public List<DisambigModule> disambiguate
+        @Option(names = ["-gr", "--disambiguationRate"], description = "Show a disambiguated token ratings")
+        boolean showDisambigRate
 
         public enum DisambigModule {
             frequency,
@@ -711,8 +722,14 @@ class TagText {
                 tokenFormat = true
             }
 
+
             if( disambiguate == null ) {
-                disambiguate = []
+                if( showDisambigRate ) {
+                    disambiguate = [DisambigModule.frequency]
+                }
+                else {
+                    disambiguate = [] 
+                }
             }
             else if( ! (DisambigModule.frequency in disambiguate) ) {
                 disambiguate << DisambigModule.frequency

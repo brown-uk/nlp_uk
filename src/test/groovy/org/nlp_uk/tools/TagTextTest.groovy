@@ -38,8 +38,7 @@ class TagTextTest {
     public void testOmitMultiwordTag() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt))
         TagResult tagged = tagText.tagText("Де можна")
-        // def orig = "Де[де/adv:&pron:int:rel,де/noninfl:foreign,де/part,де можна/<adv>] можна[можна/noninfl:&predic,</S>де можна/<adv>,<P/>]"
-        def expected = "Де[де/adv:&pron:int:rel,де/noninfl:foreign,де/part] можна[можна/noninfl:&predic,</S><P/>]"
+        def expected = "Де[де/adv:&pron:int:rel,де/conj:subord,де/part,де/part:pers] можна[можна/noninfl:&predic,</S><P/>]"
         assertEquals expected, tagged.tagged
     }
 
@@ -101,7 +100,7 @@ class TagTextTest {
 
 	
 	@Test
-	public void testForeign() {
+	public void testUnclass() {
 		tagText.setOptions(new TagOptions(xmlOutput: true))
 
 		TagResult tagged = tagText.tagText("Crow")
@@ -137,7 +136,10 @@ class TagTextTest {
         def expected2 =
 """<sentence>
   <tokenReading>
-    <token value="13-17°" lemma="13-17°" tags="number" />
+    <token value="13-17" lemma="13-17" tags="number" />
+  </tokenReading>
+  <tokenReading>
+    <token value="°" lemma="°" tags="symb" />
   </tokenReading>
 </sentence>
 """

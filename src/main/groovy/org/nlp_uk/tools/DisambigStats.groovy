@@ -113,23 +113,30 @@ public class DisambigStats {
             cmp  
         }
         
+        debug("== done ordering ==")
+        
         if( offTags ) stats.disambigMap['tag'] ++
         
-        readings.collect { r -> 
-            BigDecimal rate = 0
-            if( statsForWord != null ) {
-                rate += getRate(r, cleanToken, statsForWord, statsForWordCtx, tokens, idx, dbg)
+        if( options.showDisambigRate ) {
+            readings.collect { r ->
+                BigDecimal rate = 0
+                if( statsForWord != null ) {
+                    rate += getRate(r, cleanToken, statsForWord, statsForWordCtx, tokens, idx, dbg)
+                }
+                assert rate >= 0
+                if( DisambigModule.wordEnding in options.disambiguate ) {
+                    BigDecimal re = getRateByEnding(r, cleanToken, statsForWord, statsForWordCtx, tokens, idx, dbg) / 100.0
+                    rate += re
+                }
+
+                assert rate >= 0
+                if( ! rate ) {
+                    rate += getPostagRate(r, tokens, idx, true, dbg) / 10000.0
+                }
+                assert rate >= 0
+
+                rate
             }
-            assert rate >= 0
-            BigDecimal re = getRateByEnding(r, cleanToken, statsForWord, statsForWordCtx, tokens, idx, dbg) / 100.0
-            rate += re
-            assert rate >= 0
-            if( ! re ) {
-                rate += getPostagRate(r, tokens, idx, true, dbg) / 10000.0
-            }
-            assert rate >= 0
-            
-            rate
         }
         
     }
@@ -137,8 +144,6 @@ public class DisambigStats {
     @CompileStatic
     private BigDecimal getRate(AnalyzedToken at, String cleanToken, Map<WordReading, Integer> statsForWordReading, Map<WordReading, Map<WordContext, Integer>> statsC, 
             AnalyzedTokenReadings[] tokens, int idx, boolean dbg) {
-
-        debug(dbg, ":: $at, idx: $idx")
 
         WordReading wordReading = new WordReading(at.getLemma(), at.getPOSTag())
         Integer r = statsForWordReading[wordReading]
@@ -148,7 +153,7 @@ public class DisambigStats {
             rate = adjustByContext(rate, wordReading, statsC, tokens, idx)
         }
         
-        debug(dbg, ":: $rate")
+        debug(dbg, "::rate: $at, idx: $idx : $rate")
         return rate ?: 0
     }
 
@@ -179,8 +184,6 @@ public class DisambigStats {
             Map<WordContext, Integer> ctx = statsC[key]
             WordContext wordContext = createWordContext(tokens, idx, -1)
 
-            debug(dbg, "  key: $key, rate: $rate")
-
             Integer fitCnt = (Integer)ctx.findAll { WordContext wc, Integer v2 ->
                 wc.offset == wordContext.offset \
                 && (wc.contextToken.word == wordContext.contextToken.word
@@ -188,6 +191,8 @@ public class DisambigStats {
             }
             .collect {
                 WordContext wc, Integer v2 -> v2
+//                    wc.contextToken.postag.startsWith("prep") ? v2 * 2 : v2
+                
             }
             .sum()
 
@@ -198,8 +203,11 @@ public class DisambigStats {
                     }
                     .sum()
                 
-                debug( dbg, "==  $fitCnt / $allCnt")
-                rate = (rate * 3 * 100 * fitCnt) / allCnt
+//                rate = (rate * 3 * 100 * fitCnt) / allCnt
+                BigDecimal adjust = 100 * BigDecimal.valueOf(fitCnt) / allCnt
+                BigDecimal oldRate = rate
+                rate += rate * adjust 
+                debug(dbg, "ctxRate: key: $key, $fitCnt / $allCnt -> old rate: $oldRate, new rate: $rate")
             }
         }
         rate
@@ -221,7 +229,7 @@ public class DisambigStats {
             return 0
         }
 
-        debug(dbg, ":: norm tag: $normPostag, rate: $rate")
+        debug(dbg, "norm tag: $normPostag, rate: $rate")
 
         if( rate ) {
             rate = adjustByContext(rate, normPostag, statsByTagContext, tokens, idx)
@@ -245,13 +253,13 @@ public class DisambigStats {
     }
     
     @CompileStatic
-    private static WordContext createWordContext(AnalyzedTokenReadings[] tokens, int idx, int pos) {
-        ContextToken contextToken = idx + pos < 0
+    private static WordContext createWordContext(AnalyzedTokenReadings[] tokens, int idx, int offset) {
+        ContextToken contextToken = idx + offset < 0
             ? new ContextToken('', '', 'BEG')
-            : idx + pos >= tokens.length
+            : idx + offset >= tokens.length
                 ? new ContextToken('', '', 'END')
-                : new ContextToken(tokens[idx+pos].getCleanToken(), '', '')
-        new WordContext(contextToken, pos)
+                : new ContextToken(tokens[idx+offset].getCleanToken(), '', '')
+        new WordContext(contextToken, offset)
     }
 
     
