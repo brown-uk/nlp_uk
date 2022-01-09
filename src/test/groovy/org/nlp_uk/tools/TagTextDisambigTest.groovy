@@ -312,7 +312,7 @@ class TagTextDisambigTest {
 
         def expected =
 """<sentence>
-  <token value="стильні" lemma="стильний" tags="adj:p:v_zna:rinanim:compb" />
+  <token value="стильні" lemma="стильний" tags="adj:p:v_zna:rinanim:compb" q="0.557" />
 </sentence>
 <paragraph/>
 """

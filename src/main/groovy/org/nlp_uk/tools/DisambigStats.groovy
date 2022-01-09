@@ -138,7 +138,6 @@ public class DisambigStats {
                 rate
             }
         }
-        
     }
     
     @CompileStatic
@@ -246,10 +245,11 @@ public class DisambigStats {
         return rate
     }
 
+    private static final Pattern POSTAG_NORM_PATTERN = ~ /:(xp[1-9]|ua_[0-9]{4}|comp.|&predic|&insert|coll|rare|vulg)/
+    
     @CompileStatic
     private static String normalizePostagForRate(String postag) {
-//        postag.replaceAll(/:(xp[1-9]|ua_[0-9]{4})/, '')
-        postag.replaceAll(/:(xp[1-9]|ua_[0-9]{4}|comp.|&predic|&insert|coll|rare)/, '')
+        POSTAG_NORM_PATTERN.matcher(postag).replaceAll('')
     }
     
     @CompileStatic
@@ -383,6 +383,8 @@ public class DisambigStats {
     }
     
     void printStats(disambigMap) {
-        println "Disambig stats: ${disambigMap}"
+        BigDecimal unknown = disambigMap['noWord'] * 100 / disambigMap['total']
+        unknown = unknown.round(0)
+        println "Disambig stats: ${disambigMap}: unknown: ${unknown}%"
     }
 }

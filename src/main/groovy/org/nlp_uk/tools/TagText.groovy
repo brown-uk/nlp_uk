@@ -265,9 +265,10 @@ class TagText {
                     getTagTokens(tkn)
                 }
                 Object firstToken = tagTokens[0]
-                if( ! options.singleTokenOnly && tagTokens.size() > 1 ) {
-                    firstToken['alts'] = tagTokens[1..-1]
-                    
+                if( tagTokens.size() > 1 ) {
+                    if( ! options.singleTokenOnly ) {
+                        firstToken['alts'] = tagTokens[1..-1]
+                    }
                     if( rates ) {
                         addRates(tagTokens, rates)
                     }
@@ -275,7 +276,7 @@ class TagText {
                 item.tokens = [ firstToken ]
             }
             else {
-                item.tokens = readings.collect { AnalyzedToken tkn ->
+                item.tokens = readings.collect { AnalyzedToken tkn ->   
                     getTagTokens(tkn)
                 }
             }
@@ -290,7 +291,8 @@ class TagText {
     static void addRates(List<Object> tagTokens, List<BigDecimal> rates) {
         BigDecimal sum = (BigDecimal) rates.sum()
         tagTokens.eachWithIndex { Object t, int idx2 ->
-            BigDecimal q = rates[idx2] / sum
+//            if( ! sum ) System.err.println "sum of 0 for: $tagTokens"
+            BigDecimal q = sum ? rates[idx2] / sum : BigDecimal.ZERO
             t['q'] = q.round(3)
         }
     }
@@ -652,7 +654,7 @@ class TagText {
     static class TagOptions {
         @Option(names = ["-i", "--input"], arity="1", description = "Input file. Default: stdin")
         String input
-        @Parameters(index = "0", description = "Input files. Default: stdin", arity="0")
+        @Parameters(index = "0", description = "Input files. Default: stdin", arity="0..")
         List<String> inputFiles
         @Option(names = ["-o", "--output"], arity="1", description = "Output file (default: <input file base name> + .tagged.txt/.xml/.json) or stdout if input is stdin")
         String output
@@ -698,7 +700,7 @@ class TagText {
 
         @Option(names = ["-d", "--showDisambigRules"], description = "Show disambiguation rules applied")
         boolean showDisambigRules
-        @Option(names = ["-g", "--disambiguate"], description = "Use disambiguation modules: [frequency, wordEnding, context]", arity="0", defaultValue="frequency")
+        @Option(names = ["-g", "--disambiguate"], description = "Use disambiguation modules: [frequency, wordEnding, context]", arity="0..", defaultValue="frequency")
         public List<DisambigModule> disambiguate
         @Option(names = ["-gr", "--disambiguationRate"], description = "Show a disambiguated token ratings")
         boolean showDisambigRate
