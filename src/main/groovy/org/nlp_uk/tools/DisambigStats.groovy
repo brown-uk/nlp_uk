@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.languagetool.AnalyzedToken;
 import org.languagetool.AnalyzedTokenReadings;
+import org.languagetool.rules.uk.LemmaHelper
 import org.nlp_uk.bruk.ContextToken
 import org.nlp_uk.bruk.WordContext;
 import org.nlp_uk.bruk.WordReading;
@@ -83,7 +85,6 @@ public class DisambigStats {
                     break;
                 }
             }
-
         }
 
         boolean offTags = false        
@@ -254,11 +255,21 @@ public class DisambigStats {
     
     @CompileStatic
     private static WordContext createWordContext(AnalyzedTokenReadings[] tokens, int idx, int offset) {
-        ContextToken contextToken = idx + offset < 0
-            ? new ContextToken('', '', 'BEG')
-            : idx + offset >= tokens.length
-                ? new ContextToken('', '', 'END')
-                : new ContextToken(tokens[idx+offset].getCleanToken(), '', '')
+        ContextToken contextToken
+        if( idx + offset < 0 ) {
+            contextToken = new ContextToken('__BEG', '', 'BEG')
+        }
+        else if ( idx + offset >= tokens.length ) {
+            contextToken = new ContextToken('__END', '', 'END')
+        }
+        else {
+            def token = tokens[idx+offset]
+            boolean hasLowerCaseLemma = false // token.getReadings().find { it.getLemma() && it.getLemma() =~ /^[а-яіїєґ]/ }
+            String cleanToken = hasLowerCaseLemma ? token.getCleanToken().toLowerCase() : token.getCleanToken()
+            def normalizedTokenValue = ContextToken.normalizeContextString(cleanToken, token.getReadings()[0].getPOSTag())
+            contextToken = new ContextToken(normalizedTokenValue, '', '')
+        }
+
         new WordContext(contextToken, offset)
     }
 
@@ -313,15 +324,22 @@ public class DisambigStats {
                 return
             }
 
-//            println "= $line"
             int pos = p[1] as int
             String ctxWord=p[2], ctxLemma=p[3], ctxPostag=p[4]
             int ctxCnt=p[5] as int
 
-            ctxWord = ContextToken.unsafeguard(ctxWord)
-            ctxLemma = ContextToken.unsafeguard(ctxLemma)
-            
-            ContextToken contextToken = new ContextToken(ctxWord, ctxLemma, ctxPostag)
+            ContextToken contextToken
+            if( ctxPostag == "BEG" ) {
+                contextToken = ContextToken.BEG
+            }
+            else if( ctxPostag == "END" ) {
+                contextToken = ContextToken.END
+            }
+            else {
+                ctxWord = ContextToken.unsafeguard(ctxWord)
+                ctxLemma = ContextToken.unsafeguard(ctxLemma)
+                contextToken = new ContextToken(ctxWord, ctxLemma, ctxPostag)
+            }
             WordContext wordContext = new WordContext(contextToken, pos)
             
             statsByWordContext.computeIfAbsent(word, {s -> new HashMap<>()})
@@ -332,8 +350,6 @@ public class DisambigStats {
             Integer cnt = map[wordContext] ?: 0
             cnt += ctxCnt
             map[wordContext] = cnt
-//                .computeIfAbsent(wordContext, {s -> new Integer()}) += ctxCnt
-
         }
 
         long tm2 = System.currentTimeMillis()
@@ -383,7 +399,7 @@ public class DisambigStats {
     }
     
     void printStats(disambigMap) {
-        BigDecimal unknown = disambigMap['noWord'] * 100 / disambigMap['total']
+        BigDecimal unknown = disambigMap['total'] ? disambigMap['noWord'] * 100 / disambigMap['total'] : 0
         unknown = unknown.round(0)
         println "Disambig stats: ${disambigMap}: unknown: ${unknown}%"
     }

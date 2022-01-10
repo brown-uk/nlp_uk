@@ -236,25 +236,6 @@ class TagText {
                 posTag != null && ! posTag.startsWith("<")
             }
             
-            
-            if( cleanToken.toLowerCase() == "їх" ) {
-                ["m", "f", "n", "p"].each { g ->
-                    ["naz", "rod", "dav", "zna", "oru", "mis"].each { v ->
-                        def gv = "$g:v_$v"
-                        if( v == "zna" && g in ["m", "p"] ) {
-                            gv += ":rinanim"
-                            readings.add(new AnalyzedToken(tokenReadings.getToken(), 'їх', "adj:$gv:nv:&pron:pos:bad"))
-                            gv = "$g:v_$v:ranim"
-                        }
-                        readings.add(new AnalyzedToken(tokenReadings.getToken(), 'їх', "adj:$gv:nv:&pron:pos:bad"))
-                    }
-                }
-            }
-            else if( cleanToken.toLowerCase() == "де" ) {
-                readings.add(new AnalyzedToken(tokenReadings.getToken(), 'де', "part:pers"))
-                readings.add(new AnalyzedToken(tokenReadings.getToken(), 'де', "conj:subord"))
-            }
-                
             List<BigDecimal> rates = null
             if( options.disambiguate && readings.size() > 1 ) {
                 rates = disambigStats.orderByStats(readings, cleanToken, tokens, idx, stats)
