@@ -3,7 +3,7 @@
 package org.nlp_uk.tools
 
 import java.util.regex.Pattern
-import groovy.json.JsonOutput
+import groovy.json.JsonGenerator
 
 import org.languagetool.JLanguageTool
 @GrabConfig(systemClassLoader=true)
@@ -31,6 +31,8 @@ class TokenizeText {
     // easy way to include a class without forcing classpath to be set
     static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
+    def JSONUnicodeBuilder = new JsonGenerator.Options().disableUnicodeEscaping().build()
+
 
     Pattern WORD_PATTERN = ~/[а-яіїєґА-ЯІЇЄҐa-zA-Z0-9]/
     Pattern FOOTER_PATTERN = ~/\[[0-9]{1,3}\]/
@@ -57,7 +59,7 @@ class TokenizeText {
             case OutputFormat.txt: 
                 return tokenized.join("\n") + "\n"
             case OutputFormat.json:
-                return JsonOutput.toJson(tokenized)[1..-1]
+                return JSONUnicodeBuilder.toJson(tokenized)[1..-1]
         } 
     }
 
@@ -109,7 +111,7 @@ class TokenizeText {
                 }.join("\n") + "\n"
 
             case OutputFormat.json:
-                return JsonOutput.toJson(processedSentences)[1..-1]
+                return JSONUnicodeBuilder.toJson(processedSentences)[1..-1]
         }
     }
     
