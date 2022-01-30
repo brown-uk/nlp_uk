@@ -55,15 +55,9 @@ class TokenizeText {
 
         switch (options.outputFormat) {
             case OutputFormat.txt: 
-                def sb = new StringBuilder()
-                for (String sent: tokenized) {
-                    sb.append(sent).append("\n")
-                }
-
-                return sb.toString()
+                return tokenized.join("\n") + "\n"
             case OutputFormat.json:
-                String output = JsonOutput.toJson(tokenized)
-                return output.substring(1, output.length() - 1)
+                return JsonOutput.toJson(tokenized)[1..-1]
         } 
     }
 
@@ -115,8 +109,7 @@ class TokenizeText {
                 }.join("\n") + "\n"
 
             case OutputFormat.json:
-                String output = JsonOutput.toJson(processedSentences)
-                return output.substring(1, output.length() - 1)
+                return JsonOutput.toJson(processedSentences)[1..-1]
         }
     }
     
@@ -137,7 +130,7 @@ class TokenizeText {
         @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
         boolean helpRequested
         @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {txt (default), json}", defaultValue = "txt")
-        OutputFormat outputFormat
+        OutputFormat outputFormat = "txt"
         // just stubs
         boolean noTag
         boolean singleThread = true
