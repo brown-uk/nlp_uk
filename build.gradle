@@ -98,13 +98,14 @@ test {
 }
 
 
-task run(type: JavaExec) {
+task tagText(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     main = "org.nlp_uk.tools.TagText"
 
     jvmArgs '-Dgroovy.grape.enable=false'
 
-    args "-i text.txt -g -t".split()
+    String argParam = project.hasProperty('args') ? project['args'] : ''
+    args argParam.split()
 }
 
 
