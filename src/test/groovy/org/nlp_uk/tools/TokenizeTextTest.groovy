@@ -13,6 +13,13 @@ class TokenizeTextTest {
         def res = tokenizeText.getAnalyzed(",десь \"такі\" підходи")
         assertEquals ",десь \"такі\" підходи\n", res.tagged
     }
+    
+    @Test
+    void testWords() {
+        TokenizeText tokenizeText = new TokenizeText(new TokenizeOptions(words: true))
+        def res = tokenizeText.getAnalyzed("Автомагістраль-Південь, наш 'видатний' автобан. Став схожий на диряве корито")
+        assertEquals "Автомагістраль-Південь|,| |наш| |'|видатний|'| |автобан|.| |\nСтав| |схожий| |на| |диряве| |корито|\n", res.tagged
+    }
 
     @Test
     void testWordsOnly() {

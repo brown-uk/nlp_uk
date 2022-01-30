@@ -150,8 +150,20 @@ class CleanTextTest {
 
 <span lang="ru">---</span>
 
-<span lang="ru">---</span>'''
+<span lang="ru">---</span>
 
-        assertEquals expected, clean("Десь там.\n\nГде-то такой\n\nДа да \n")
+<span lang="ru">---</span>
+'''
+
+        assertEquals expected, clean("Десь там.\n\nГде-то такой\n\nДа да \n\n<span lang=\"ru\">---</span>\n")
+    }
+
+    @Test
+    public void testSplitHttp() {
+        
+        String expected=
+'''фото з http://www.rvps.kiev.ua/'''
+
+        assertEquals expected, clean("фото зhttp://www.rvps.kiev.ua/")
     }
 }

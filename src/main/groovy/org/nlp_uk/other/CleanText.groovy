@@ -2,9 +2,6 @@
 
 package org.nlp_uk.other
 
-
-import static org.nlp_uk.other.CleanText.MarkOption.none
-
 // This script reads all .txt files in given directory (default is "txt/") 
 // and tries to find all with acceptable criterias for Ukrainian text (e.g. > 3k Ukrainian words)
 // output files go into <dir>/good/
@@ -21,10 +18,9 @@ import static org.nlp_uk.other.CleanText.MarkOption.none
 @Grab(group='org.languagetool', module='language-ru', version='5.6')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
+//@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.9')
 
-@GrabConfig(systemClassLoader=true)
-@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.6')
-
+import static org.nlp_uk.other.CleanText.MarkOption.none
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -507,8 +503,13 @@ class CleanText {
         }
 
         // fix weird apostrophes
-        text = text.replaceAll(/([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384\u0092´`?*]([єїюя])/, /$1'$2/) // "
-
+        text = text.replaceAll(/(?iu)([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384\u0092´`?*]([єїюя])/, /$1'$2/) // "
+        text = text.replaceAll(/(?iu)[´`]([аеєиіїоуюя])/, '\u0301$1')
+//        text = text.replaceAll(/(?iu)([а-яіїєґ'\u2019\u02BC\u2013-]*)[´`]([а-яіїєґ'\u2019\u02BC\u2013-]+)/, { all, w1, w2
+//                  def fix = "$w1'$w2"
+//                knownWord(fix) ? fix : all
+//        }
+        
         text = removeSoftHyphens(text)
 
         if( text.contains('\u2028') ) {
@@ -562,10 +563,11 @@ class CleanText {
         text
     }
 
+    static final Pattern pattern = ~/(?s)<span lang="ru"( rate="[0-9.]+")?>(?!---<\/span>)(.*?)<\/span>/
+    
 	String markRussian(String text, File file, File outFile) {
-        Pattern pattern = ~/(?s)<span lang="ru"( rate="[0-9.]+")?>(.*?)<\/span>/
         
-        // clean previous marks
+        // clean previous marks unless they are cut
         text = pattern.matcher(text).replaceAll('$2')
         
         // by paragraphs now
@@ -1059,20 +1061,24 @@ class CleanText {
         return text
     }
 
+    static final Pattern MIX_1 = ~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/
+    
 //    @CompileStatic
     String fixCyrLatMix(String text, File file) {
-
-        if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
+        // фото зhttp://www
+        text = text.replaceAll(/(?iu)([а-яіїєґ])(http)/, '$1 $2')
+        
+        if( MIX_1.matcher(text).find() ) {
             KNOWN_MIXES.each { String k, String v ->
                 text = text.replace(k, v)
             }
 
-            if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
+            if( MIX_1.matcher(text).find() ) {
                 println "\tlatin/cyrillic mix"
 
                 text = removeMix(text)
 
-                if( text =~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/ ) {
+                if( MIX_1.matcher(text).find() ) {
                     println "\tWARNING: still Latin/Cyrillic mix"
                 }
             }
