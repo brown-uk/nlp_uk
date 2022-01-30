@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.nlp_uk.tools.TagText.OutputFormat
-import org.nlp_uk.tools.TagText.Stats
+import org.nlp_uk.tools.TagStats
 import org.nlp_uk.tools.TagText.TagOptions
 import org.nlp_uk.tools.TagText.TagResult
 

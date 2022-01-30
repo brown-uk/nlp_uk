@@ -1,19 +1,13 @@
 package org.nlp_uk.tools;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.languagetool.AnalyzedToken;
 import org.languagetool.AnalyzedTokenReadings;
-import org.languagetool.rules.uk.LemmaHelper
 import org.nlp_uk.bruk.ContextToken
 import org.nlp_uk.bruk.WordContext;
 import org.nlp_uk.bruk.WordReading;
-import org.nlp_uk.tools.TagText.Stats
 import org.nlp_uk.tools.TagText.TagOptions
 import org.nlp_uk.tools.TagText.TagOptions.DisambigModule
 
@@ -52,7 +46,7 @@ public class DisambigStats {
 
         
     @CompileStatic
-    List<BigDecimal> orderByStats(List<AnalyzedToken> readings, String cleanToken, AnalyzedTokenReadings[] tokens, int idx, Stats stats) {
+    List<BigDecimal> orderByStats(List<AnalyzedToken> readings, String cleanToken, AnalyzedTokenReadings[] tokens, int idx, TagStats stats) {
 
         if( ! statsByWord.containsKey(cleanToken) ) {
             // if no stats and there's no-prop readings try lowercase
