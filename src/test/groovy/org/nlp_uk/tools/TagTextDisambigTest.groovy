@@ -128,10 +128,10 @@ class TagTextDisambigTest {
         def expected =
 """<sentence>
   <token value="на" lemma="на" tags="prep" />
-  <token value="нього" lemma="він" tags="noun:unanim:m:v_zna:&amp;pron:pers:3" q="0.811">
+  <token value="нього" lemma="він" tags="noun:unanim:m:v_zna:&amp;pron:pers:3" q="0.817">
     <alts>
-      <token value="нього" lemma="воно" tags="noun:unanim:n:v_zna:&amp;pron:pers:3" q="0.147" />
-      <token value="нього" lemma="він" tags="noun:unanim:m:v_rod:&amp;pron:pers:3" q="0.035" />
+      <token value="нього" lemma="воно" tags="noun:unanim:n:v_zna:&amp;pron:pers:3" q="0.142" />
+      <token value="нього" lemma="він" tags="noun:unanim:m:v_rod:&amp;pron:pers:3" q="0.034" />
       <token value="нього" lemma="воно" tags="noun:unanim:n:v_rod:&amp;pron:pers:3" q="0.008" />
     </alts>
   </token>
@@ -154,14 +154,14 @@ class TagTextDisambigTest {
   <token value="стан" lemma="стан" tags="noun:inanim:m:v_zna:xp2" q="0.582">
     <alts>
       <token value="стан" lemma="стан" tags="noun:inanim:m:v_naz:xp2" q="0.276" />
-      <token value="стан" lemma="стан" tags="noun:inanim:m:v_naz:xp1" q="0.129" />
-      <token value="стан" lemma="стан" tags="noun:inanim:m:v_zna:xp1" q="0.014" />
+      <token value="стан" lemma="стан" tags="noun:inanim:m:v_naz:xp1" q="0.127" />
+      <token value="стан" lemma="стан" tags="noun:inanim:m:v_zna:xp1" q="0.016" />
     </alts>
   </token>
-  <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_rod:&amp;adjp:pasv:imperf" q="0.579">
+  <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_rod:&amp;adjp:pasv:imperf" q="0.474">
     <alts>
-      <token value="досліджуваного" lemma="досліджуваний" tags="adj:n:v_rod:&amp;adjp:pasv:imperf" q="0.421" />
-      <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_zna:ranim:&amp;adjp:pasv:imperf" q="0.000" />
+      <token value="досліджуваного" lemma="досліджуваний" tags="adj:n:v_rod:&amp;adjp:pasv:imperf" q="0.474" />
+      <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_zna:ranim:&amp;adjp:pasv:imperf" q="0.053" />
     </alts>
   </token>
 </sentence>
@@ -180,12 +180,12 @@ class TagTextDisambigTest {
         def expected2 =
 """<sentence>
   <token value="в" lemma="в" tags="prep" />
-  <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_mis" q="0.616">
+  <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_mis" q="0.648">
     <alts>
-      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:p:v_zna" q="0.184" />
-      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_rod" q="0.118" />
-      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:p:v_naz" q="0.056" />
-      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_dav" q="0.026" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:p:v_zna" q="0.181" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_rod" q="0.115" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:p:v_naz" q="0.054" />
+      <token value="книгомережі" lemma="книгомережа" tags="noun:inanim:f:v_dav" q="0.004" />
     </alts>
   </token>
 </sentence>
@@ -203,10 +203,10 @@ class TagTextDisambigTest {
         def expected3 =
 """<sentence>
   <token value="в" lemma="в" tags="prep" />
-  <token value="окремім" lemma="окремий" tags="adj:m:v_mis" q="0.571">
+  <token value="окремім" lemma="окремий" tags="adj:m:v_mis" q="0.548">
     <alts>
-      <token value="окремім" lemma="окремий" tags="adj:n:v_mis" q="0.246" />
-      <token value="окремім" lemma="окреме" tags="noun:inanim:n:v_mis" q="0.183" />
+      <token value="окремім" lemma="окремий" tags="adj:n:v_mis" q="0.251" />
+      <token value="окремім" lemma="окреме" tags="noun:inanim:n:v_mis" q="0.201" />
     </alts>
   </token>
 </sentence>
@@ -225,9 +225,32 @@ class TagTextDisambigTest {
         def expected =
 """<sentence>
   <token value="засобів" lemma="засіб" tags="noun:inanim:p:v_rod" />
-  <token value="і" lemma="і" tags="conj:coord" q="0.913">
+  <token value="і" lemma="і" tags="conj:coord" q="0.912">
     <alts>
-      <token value="і" lemma="і" tags="part" q="0.087" />
+      <token value="і" lemma="і" tags="part" q="0.088" />
+    </alts>
+  </token>
+  <token value="методів" lemma="метод" tags="noun:inanim:p:v_rod" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+        assertEquals 1, tagged.stats.disambigMap['word']
+    }
+    
+    @Test
+    public void testSingleTokenFormatWithCtx4() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.context], showDisambigRate: true))
+
+        // no left context word
+        TagResult tagged = tagText.tagText("ліфтів і методів")
+
+        def expected =
+"""<sentence>
+  <token value="ліфтів" lemma="ліфт" tags="noun:inanim:p:v_rod" />
+  <token value="і" lemma="і" tags="conj:coord" q="0.910">
+    <alts>
+      <token value="і" lemma="і" tags="part" q="0.090" />
     </alts>
   </token>
   <token value="методів" lemma="метод" tags="noun:inanim:p:v_rod" />

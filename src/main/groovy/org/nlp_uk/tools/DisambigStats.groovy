@@ -179,37 +179,45 @@ public class DisambigStats {
     }
 
     @CompileStatic
-    private <T> BigDecimal adjustByContext(BigDecimal rate, T key, Map<T, Map<WordContext, Integer>> statsC, AnalyzedTokenReadings[] tokens, int idx) {
-        if( DisambigModule.context in options.disambiguate ) {
-            Map<WordContext, Integer> ctx = statsC[key]
-            WordContext wordContext = createWordContext(tokens, idx, -1)
+    private <T> BigDecimal adjustByContext(BigDecimal rate, T key, Map<T, Map<WordContext, Integer>> statsCtx, AnalyzedTokenReadings[] tokens, int idx) {
+        if( ! (DisambigModule.context in options.disambiguate) )
+            return rate
+            
+        Map<WordContext, Integer> ctx = statsCtx[key]
+        Set<WordContext> wordContexts = createWordContext(tokens, idx, -1)
 
-            Integer fitCnt = (Integer)ctx.findAll { WordContext wc, Integer v2 ->
-                wc.offset == wordContext.offset \
-                && (wc.contextToken.word == wordContext.contextToken.word
-                    || wc.contextToken.postag == wordContext.contextToken.postag)
-            }
+        Integer fitCnt = (Integer)ctx
             .collect {
                 WordContext wc, Integer v2 -> v2
 //                    wc.contextToken.postag.startsWith("prep") ? v2 * 2 : v2
-                
+                boolean found = wordContexts.find { wordContext ->
+//                    if( wc.contextToken.postag 
+//                        && wc.contextToken.word != wordContext.contextToken.word 
+//                        && wc.contextToken.postag == wordContext.contextToken.postag ) {
+//                         println ":: tags match = ${wc.contextToken.postag} // ${wc.contextToken.word} "
+//                    }
+                    wc.offset == wordContext.offset \
+                    && (wc.contextToken.word == wordContext.contextToken.word)
+//                        || wc.contextToken.postag == wordContext.contextToken.postag)
+                }
+                found ? v2 : 0
             }
             .sum()
 
-            if( fitCnt ) {
-                Integer allCnt = (Integer)ctx
-                    .collect {
-                        WordContext wc, Integer v2 -> v2
-                    }
-                    .sum()
-                
+        if( fitCnt ) {
+            Integer allCnt = (Integer)ctx
+                .collect {
+                    WordContext wc, Integer v2 -> v2
+                }
+                .sum()
+            
 //                rate = (rate * 3 * 100 * fitCnt) / allCnt
-                BigDecimal adjust = 100 * BigDecimal.valueOf(fitCnt) / allCnt
-                BigDecimal oldRate = rate
-                rate += rate * adjust 
-                debug(dbg, "ctxRate: key: $key, $fitCnt / $allCnt -> old rate: $oldRate, new rate: $rate")
-            }
+            BigDecimal adjust = 100 * BigDecimal.valueOf(fitCnt) / allCnt
+            BigDecimal oldRate = rate
+            rate += rate * adjust 
+            debug(dbg, "ctxRate: key: $key, $fitCnt / $allCnt -> old rate: $oldRate, new rate: $rate")
         }
+
         rate
     }
     
@@ -254,7 +262,21 @@ public class DisambigStats {
     }
     
     @CompileStatic
-    private static WordContext createWordContext(AnalyzedTokenReadings[] tokens, int idx, int offset) {
+    static String getTag(String theToken, String tag) {
+        if( TagText.PUNCT_PATTERN.matcher(theToken).matches() ) {
+            return 'punct'
+        }
+        else if( TagText.SYMBOL_PATTERN.matcher(theToken).matches() ) {
+            return 'symb'
+        }
+        else if( TagText.XML_TAG_PATTERN.matcher(theToken).matches() ) {
+            return 'xmltag'
+        }
+        tag
+    }
+    
+    @CompileStatic
+    private static Set<WordContext> createWordContext(AnalyzedTokenReadings[] tokens, int idx, int offset) {
         ContextToken contextToken
         if( idx + offset < 0 ) {
             contextToken = new ContextToken('__BEG', '', 'BEG')
@@ -264,13 +286,15 @@ public class DisambigStats {
         }
         else {
             def token = tokens[idx+offset]
-            boolean hasLowerCaseLemma = false // token.getReadings().find { it.getLemma() && it.getLemma() =~ /^[а-яіїєґ]/ }
-            String cleanToken = hasLowerCaseLemma ? token.getCleanToken().toLowerCase() : token.getCleanToken()
-            def normalizedTokenValue = ContextToken.normalizeContextString(cleanToken, token.getReadings()[0].getPOSTag())
-            contextToken = new ContextToken(normalizedTokenValue, '', '')
+            return token.getReadings().collect { tokenReading ->
+                String postag = getTag(token.getCleanToken(), tokenReading.getPOSTag())
+                def normalizedTokenValue = ContextToken.normalizeContextString(token.getCleanToken(), tokenReading.getLemma(), postag)
+                contextToken = new ContextToken(normalizedTokenValue, '', postag)
+                new WordContext(contextToken, offset)
+            } as Set
         }
 
-        new WordContext(contextToken, offset)
+        [new WordContext(contextToken, offset)] as Set
     }
 
     
