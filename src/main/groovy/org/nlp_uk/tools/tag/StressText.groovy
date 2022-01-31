@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-package org.nlp_uk.tools
+package org.nlp_uk.tools.tag
 
 @GrabConfig(systemClassLoader=true)
 @Grab(group='org.languagetool', module='language-uk', version='5.6')
@@ -10,6 +10,7 @@ package org.nlp_uk.tools
 
 import org.languagetool.*
 import org.languagetool.language.*
+import org.nlp_uk.tools.TextUtils
 
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic

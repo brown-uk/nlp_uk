@@ -1,4 +1,4 @@
-package org.nlp_uk.tools;
+package org.nlp_uk.tools.tag;
 
 import java.util.HashMap;
 import java.util.List;

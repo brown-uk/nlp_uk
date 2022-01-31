@@ -1,4 +1,4 @@
-package org.nlp_uk.tools
+package org.nlp_uk.tools.tag
 
 import java.util.regex.Pattern
 
@@ -6,11 +6,12 @@ import org.languagetool.AnalyzedSentence
 import org.languagetool.AnalyzedToken
 import org.languagetool.AnalyzedTokenReadings
 import org.languagetool.JLanguageTool
+import org.nlp_uk.tools.TagText
 import org.nlp_uk.tools.TagText.TagOptions
 
 import groovy.transform.CompileStatic
 
-class TagStats {
+public class TagStats {
     static final Pattern CYR_LETTER = Pattern.compile(/[а-яіїєґА-ЯІЇЄҐ]/)
     static final Pattern NON_UK_LETTER = Pattern.compile(/[ыэъёЫЭЪЁ]|ие|ИЕ|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/)
 

@@ -10,6 +10,7 @@ import org.nlp_uk.bruk.WordContext;
 import org.nlp_uk.bruk.WordReading;
 import org.nlp_uk.tools.TagText.TagOptions
 import org.nlp_uk.tools.TagText.TagOptions.DisambigModule
+import org.nlp_uk.tools.tag.TagStats
 
 import groovy.transform.CompileStatic;
 

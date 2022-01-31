@@ -17,6 +17,10 @@ import org.languagetool.language.*
 import org.nlp_uk.bruk.ContextToken
 import org.nlp_uk.bruk.WordContext
 import org.nlp_uk.bruk.WordReading
+import org.nlp_uk.tools.tag.ModZheleh
+import org.nlp_uk.tools.tag.SemTags
+import org.nlp_uk.tools.tag.TagStats
+
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
 import groovy.util.Eval
@@ -65,6 +69,7 @@ class TagText {
 	TagStats stats = new TagStats()
     DisambigStats disambigStats = new DisambigStats()
     SemTags semTags = new SemTags()
+    ModZheleh modZheleh = new ModZheleh(langTool)
     
 
 
@@ -88,6 +93,7 @@ class TagText {
 
         def stats = new TagStats()
         stats.options = options
+        def outputFormats = new OutputFormats(options)
         
         def sb = new StringBuilder()
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
@@ -110,7 +116,7 @@ class TagText {
 
                     def taggedObjects = tagAsObject(tokens, stats)
 
-                    StringBuilder x = outputSentenceXml(taggedObjects)
+                    StringBuilder x = outputFormats.outputSentenceXml(taggedObjects)
                     sb.append(x).append("\n")
                     
                     if( options.tokenFormat ) {
@@ -124,7 +130,7 @@ class TagText {
 
                     def tokenReadingObj = tagAsObject(tokens, stats)
 
-                    def s = outputSentenceJson(tokenReadingObj)
+                    def s = outputFormats.outputSentenceJson(tokenReadingObj)
                     if( sb.length() > 0 ) sb.append(",\n");
                     sb.append(s)
                 }
@@ -209,7 +215,7 @@ class TagText {
                 }
                 else if( UNKNOWN_PATTERN.matcher(theToken).matches() && ! NON_UK_PATTERN.matcher(theToken).find() ) {
                     if( isZheleh(options) ) {
-                        tokenReadings = adjustTokensWithZheleh(tokenReadings, tokens, idx)
+                        tokenReadings = modZheleh.adjustTokensWithZheleh(tokenReadings, tokens, idx)
                         hasTag = hasPosTag(tokenReadings)
                     }
                     
@@ -292,191 +298,7 @@ class TagText {
     }
 
 
-
-    private StringBuilder outputSentenceXml(taggedObjects) {
-//        builder.'sentence'() {
-//            tokenReadings.each { tr -> tr
-//                'tokenReading'() {
-//                    tr.tokens.each { t -> 
-//                       'token'(t)
-//                    }
-//                } 
-//            }
-//        }
-        
-        // XmlBuilder is nice but using strings gives almost 20% speedup on large files
-        StringBuilder sb = new StringBuilder(1024)
-        sb.append("<sentence>\n");
-        taggedObjects.each { tr -> tr
-            if( ! options.tokenFormat ) {
-                sb.append("  <tokenReading>\n")
-            }
-            tr.tokens.each { t -> 
-                appendToken(t, sb)
-            }
-            if( ! options.tokenFormat ) {
-                sb.append("  </tokenReading>\n")
-            }
-        }
-        sb.append("</sentence>");
-        return sb
-    }
-
-    private void appendToken(t, StringBuilder sb) {
-        String indent = options.tokenFormat ? "  " : "    "
-        sb.append(indent).append("<token value=\"").append(quoteXml(t.value, false)).append("\"")
-        if( t.lemma != null ) {
-            sb.append(" lemma=\"").append(quoteXml(t.lemma, false)).append("\"")
-        }
-        if( t.tags ) {
-            sb.append(" tags=\"").append(quoteXml(t.tags, false)).append("\"")
-
-            if( ! options.tokenFormat ) {
-                if( t.tags == "punct" ) {
-                    sb.append(" whitespaceBefore=\"").append(t.whitespaceBefore).append("\"")
-                }
-            }
-        }
-        if( t.semtags ) {
-            sb.append(" semtags=\"").append(quoteXml(t.semtags, false)).append("\"")
-        }
-        if( t.q != null ) {
-            sb.append(" q=\"").append(t.q).append("\"")
-        }
-
-        if( t.alts ) {
-            sb.append(">\n    <alts>\n")
-            t.alts.each { ti ->
-                sb.append("    ")
-                appendToken(ti, sb)
-            }
-            sb.append("    </alts>\n").append(indent).append("</token>\n")
-        }
-        else {
-            sb.append(" />\n")
-        }
-    }
-    
-    private StringBuilder outputSentenceJson(tokenReadingsList) {
-//        builder {
-//            tokenReadings tokenReadingsList.collect { tr ->
-//                [ 
-//                    tokens: tr.tokens.collect { t ->
-//                        t
-//                    }
-//                ]
-//            }
-//        }
-//        String jsonOut = builder.toString()
-//        jsonOut = JsonOutput.prettyPrint(jsonOut)
-//        jsonOut = StringEscapeUtils.unescapeJavaScript(jsonOut)
-//        jsonOut = jsonOut.replaceAll(/(?m)^(.)/, '        $1')
-//        return jsonOut
-
-        // JsonBuilder is nice but using strings gives almost 40% speedup on large files
-        StringBuilder sb = new StringBuilder(1024)
-        sb.append("    {\n");
-        sb.append("      \"tokenReadings\": [\n");
-        tokenReadingsList.eachWithIndex { tr, trIdx -> tr
-            sb.append("        {\n");
-            sb.append("          \"tokens\": [\n");
-            
-            tr.tokens.eachWithIndex { t, tIdx -> 
-                sb.append("            { ")
-                sb.append("\"value\": \"").append(quoteJson(t.value)).append("\"")
-                if( t.lemma != null ) {
-                    sb.append(", \"lemma\": \"").append(quoteJson(t.lemma)).append("\"")
-                }
-                if( t.tags != null ) {
-                    sb.append(", \"tags\": \"").append(t.tags).append("\"")
-                    if( t.tags == "punct" ) {
-                        sb.append(", \"whitespaceBefore\": ").append(t.whitespaceBefore) //.append("")
-                    }
-                }
-                if( t.semtags ) {
-                    sb.append(", \"semtags\": \"").append(t.semtags).append("\"")
-                }
-                sb.append(" }");
-                if( tIdx < tr.tokens.size() - 1 ) {
-                    sb.append(",")
-                }
-                sb.append("\n")
-            }
-
-            sb.append("          ]");
-            sb.append("\n        }");
-            if( trIdx < tokenReadingsList.size() - 1 ) {
-                sb.append(",")
-            }
-            sb.append("\n")
-        }
-        sb.append("      ]\n");
-        sb.append("    }");
-        return sb
-    }
-    
-    @CompileStatic
-    static String quoteJson(String s) {
-        s.replace('"', '\\"')
-    }
-    @CompileStatic
-    static String quoteXml(String s, boolean withApostrophe) {
-//        XmlUtil.escapeXml(s)
-        // again - much faster on our own
-        s = s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
-        if( withApostrophe ) {
-            s = s.replace('\'', "&apos;")
-        }
-        s
-    }
-
-    @CompileStatic
-    private static String adjustZheleh(String text) {
-        // найпаскуднїшою
-        text = text.replaceAll(/(?ui)([бвгґджзклмнпрстфхцчшщ])ї/, '$1і')
-        // і у сімї
-        text = text.replaceAll(/(?ui)([бвпмфр])([юяє])/, '$1\'$2')
-        text = text.replaceAll(/(?ui)([сцз])ь([бвпмф])([ія])/, '$1$2$3')
-        // next are tagged as ":bad" in tagger
-//        text = text.replaceAll(/(?ui)ь([сц])(к)/, '$1ь$2')
-//        text = text.replaceAll(/(?ui)-(же|ж|би|б)/, ' $1')
-    }
-
-    @CompileStatic
-	AnalyzedTokenReadings adjustTokensWithZheleh(AnalyzedTokenReadings tokenReadings, AnalyzedTokenReadings[] tokens, int idx) {
-		AnalyzedToken origAnalyzedToken = tokenReadings.getReadings().get(0)
-		boolean syaIsNext = idx < tokens.size()-1 && tokens[idx+1].getToken() == 'ся'
-
-		if( ( tokenReadings.isPosTagUnknown() || syaIsNext )
-			&& origAnalyzedToken.token =~ /[а-яіїєґА-ЯІЇЄҐ]/ ) {
-
-			String adjustedToken = adjustZheleh(origAnalyzedToken.token)
-
-			if( syaIsNext ) {
-				tokenReadings = langTool.getLanguage().getTagger().tag([adjustedToken + 'ся']).get(0)
-				// println "trying verb:rev $adjustedToken " + tokenReadings.getReadings()
-			}
-
-			if( tokenReadings.isPosTagUnknown() ) {
-				tokenReadings = langTool.getLanguage().getTagger().tag([adjustedToken]).get(0)
-			}
-
-			// put back original word
-			for(int i=0; i<tokenReadings.getReadings().size(); i++) {
-				AnalyzedToken token = tokenReadings.getReadings().get(i);
-
-				String posTag = token.getPOSTag()
-
-				tokenReadings.getReadings().set(i, new AnalyzedToken(origAnalyzedToken.token, posTag, token.lemma))
-			}
-		}
-
-		return tokenReadings
-	}
-	
-	
-
-    private static boolean isZheleh(options) {
+    private static boolean isZheleh(TagOptions options) {
         return options.modules && 'zheleh' in options.modules
     }
 
@@ -594,7 +416,6 @@ class TagText {
                 tokenFormat = true
             }
 
-
             if( disambiguate == null ) {
                 if( showDisambigRate ) {
                     disambiguate = [DisambigModule.frequency]
@@ -639,10 +460,11 @@ class TagText {
         options.adjust()
 
         setInputOutput(options)
-                
+
         this.options = options
         stats.options = options
-        
+//        modZheleh.options = options
+
         if( ! options.quiet ) {
             if( isZheleh(options) ) {
                 System.err.println ("Using adjustments for Zhelekhivka")
