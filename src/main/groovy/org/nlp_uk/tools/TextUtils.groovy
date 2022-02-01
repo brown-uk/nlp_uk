@@ -110,7 +110,7 @@ class TextUtils {
             outputFile.print(analyzed.tagged)
             if( analyzed.tagged.size() > 0 ) {
                 outStarted = true
-                if( ! jsonStarted && analyzed.tagged.endsWith('}') ) {
+                if( ! jsonStarted && (analyzed.tagged.endsWith('}') || analyzed.tagged.endsWith(']')) ) {
                     jsonStarted = true
                 }
             }
