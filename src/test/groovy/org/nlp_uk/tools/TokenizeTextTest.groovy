@@ -62,7 +62,7 @@ class TokenizeTextTest {
         def object = jsonSlurper.parseText("[" + tokenizeText.getAnalyzed(",десь \"такі\" підходи").tagged + "]")
 
         // Question: should we append \n to the tokenized sentence for json as we did for txt?
-        assertEquals [",десь \"такі\" підходи"], object
+        assertEquals ([",десь \"такі\" підходи"], object)
     }
 
     @Test
@@ -75,7 +75,7 @@ class TokenizeTextTest {
 
         def object = jsonSlurper.parseText("[" + tokenizeText.getAnalyzed(",десь \"такі\" підхо\u0301ди[9]").tagged + "]")
 
-        assertEquals [["десь", "такі", "підходи"]], object
+        assertEquals ([["десь", "такі", "підходи"]], object)
     }
 
     @Test
@@ -87,10 +87,10 @@ class TokenizeTextTest {
         ))
 
         def object = jsonSlurper.parseText("[" + tokenizeText.getAnalyzed("Сідай-но").tagged + "]")
-        assertEquals [["Сідай", "-но"]], object
+        assertEquals ([["Сідай", "-но"]], object)
 
         object = jsonSlurper.parseText("[" + tokenizeText.getAnalyzed("десь\u2013таки").tagged + "]")
-        assertEquals [["десь", "-таки"]], object
+        assertEquals ([["десь", "-таки"]], object)
     }
 
     @Test
@@ -101,12 +101,12 @@ class TokenizeTextTest {
         TokenizeText tokenizeText = new TokenizeText(options)
 
         def object = jsonSlurper.parseText("[" + tokenizeText.getAnalyzed("десь \"такі\"\nпідходи").tagged + "]")
-        assertEquals ["десь \"такі\" підходи"], object
+        assertEquals (["десь \"такі\" підходи"], object)
 
         options.newLine = "<br>"
 
         object = jsonSlurper.parseText("[" + tokenizeText.getAnalyzed("десь такі\nпідходи").tagged + "]")
-        assertEquals ["десь такі<br>підходи"], object
+        assertEquals (["десь такі<br>підходи"], object)
     }
 
     @Test
@@ -117,7 +117,7 @@ class TokenizeTextTest {
 
         def object = jsonSlurper.parseText("[" + tokenizeText.getAnalyzed(
             "Автомагістраль-Південь, наш 'видатний' автобан. Став схожий на диряве корито").tagged + "]")
-        assertEquals ["Автомагістраль-Південь, наш 'видатний' автобан. ", "Став схожий на диряве корито"], object
+        assertEquals (["Автомагістраль-Південь, наш 'видатний' автобан. ", "Став схожий на диряве корито"], object)
     }
 
     @Test
@@ -130,9 +130,9 @@ class TokenizeTextTest {
 
         def object = jsonSlurper.parseText("[" + tokenizeText.getAnalyzed(
             "Автомагістраль-Південь, наш 'видатний' автобан. Став схожий на диряве корито").tagged + "]")
-        assertEquals [
+        assertEquals ([
             ["Автомагістраль-Південь", ",", " ", "наш", " ", "'", "видатний", "'", " ", "автобан", ".", " "],
-            ["Став", " ", "схожий", " ", "на", " ", "диряве", " ", "корито"]], object
+            ["Став", " ", "схожий", " ", "на", " ", "диряве", " ", "корито"]], object)
     }
 
     @Test
@@ -146,6 +146,6 @@ class TokenizeTextTest {
         def object = jsonSlurper.parseText("[" + tokenizeText.getAnalyzed(
             "ТОВ «ЛАБЄАН-хісв»").tagged + "]")
 
-        assertEquals [["ТОВ", " ", "«", "ЛАБЄАН-хісв", "»"]], object
+        assertEquals ([["ТОВ", " ", "«", "ЛАБЄАН-хісв", "»"]], object)
     }
 }
