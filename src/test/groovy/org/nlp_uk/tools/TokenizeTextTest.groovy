@@ -21,7 +21,7 @@ class TokenizeTextTest {
     void testWords() {
         TokenizeText tokenizeText = new TokenizeText(new TokenizeOptions(words: true))
         def res = tokenizeText.getAnalyzed("Автомагістраль-Південь, наш 'видатний' автобан. Став схожий на диряве корито")
-        assertEquals "Автомагістраль-Південь|,| |наш| |'|видатний|'| |автобан|.| |\nСтав| |схожий| |на| |диряве| |корито|\n", res.tagged
+        assertEquals "Автомагістраль-Південь|,| |наш| |'|видатний|'| |автобан|.| \nСтав| |схожий| |на| |диряве| |корито\n", res.tagged
     }
 
     @Test
