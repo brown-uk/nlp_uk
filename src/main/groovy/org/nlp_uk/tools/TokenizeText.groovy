@@ -59,7 +59,7 @@ class TokenizeText {
             case OutputFormat.txt: 
                 return tokenized.join("\n") + "\n"
             case OutputFormat.json:
-                return jsonUnicodeBuilder.toJson(tokenized)[1..-1]
+                return jsonUnicodeBuilder.toJson(tokenized).trim()[1..-2]
         } 
     }
 
@@ -111,7 +111,7 @@ class TokenizeText {
                 }.join("\n") + "\n"
 
             case OutputFormat.json:
-                return jsonUnicodeBuilder.toJson(processedSentences)[1..-1]
+                return jsonUnicodeBuilder.toJson(processedSentences).trim()[1..-2]
         }
     }
     
@@ -160,7 +160,7 @@ class TokenizeText {
         }
 
         if( ! options.output ) {
-            String fileExt = ".txt"
+            String fileExt = "." + options.outputFormat
             String outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tokenized" + fileExt
             options.output = outfile
         }
