@@ -3,6 +3,7 @@
 package org.nlp_uk.tools
 
 import java.util.regex.Pattern
+import groovy.json.JsonGenerator
 
 import org.languagetool.JLanguageTool
 @GrabConfig(systemClassLoader=true)
@@ -21,12 +22,16 @@ import picocli.CommandLine.ParameterException
 
 
 class TokenizeText {
+    enum OutputFormat { txt, json }
+
     @groovy.transform.SourceURI
     static SOURCE_URI
     static SCRIPT_DIR=new File(SOURCE_URI).parent
 
     // easy way to include a class without forcing classpath to be set
     static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
+
+    def jsonUnicodeBuilder = new JsonGenerator.Options().disableUnicodeEscaping().build()
 
 
     Pattern WORD_PATTERN = ~/[а-яіїєґА-ЯІЇЄҐa-zA-Z0-9]/
@@ -46,25 +51,27 @@ class TokenizeText {
     }
 
     def splitSentences(String text) {
-        List<String> tokenized = sentTokenizer.tokenize(text);
+        List<String> tokenized = sentTokenizer.tokenize(text).collect { sent ->
+            sent.replace("\n", options.newLine)
+        };
 
-        def sb = new StringBuilder()
-        for (String sent: tokenized) {
-            sb.append(sent.replace("\n", options.newLine)).append("\n")
-        }
-
-        return sb.toString()
+        switch (options.outputFormat) {
+            case OutputFormat.txt: 
+                return tokenized.join("\n") + "\n"
+            case OutputFormat.json:
+                return jsonUnicodeBuilder.toJson(tokenized)[1..-1]
+        } 
     }
 
     def getAnalyzed(String textToAnalyze) {
-        String txt
+        String processed
         if( options.words ) {
-            txt = splitWords(textToAnalyze, options.onlyWords)
+            processed = splitWords(textToAnalyze, options.onlyWords)
         }
         else {
-            txt = splitSentences(textToAnalyze)
+            processed = splitSentences(textToAnalyze)
         }
-        return ['tagged': txt]
+        return ['tagged': processed]
     }
 
     def process() {
@@ -82,35 +89,37 @@ class TokenizeText {
 
 //        ParallelEnhancer.enhanceInstance(sentences)
 
-        return sentences.collect { sent ->
+        List<List<String>> processedSentences = sentences.collect { sent ->
             def words = wordTokenizer.tokenize(sent)
 
-            def sb = new StringBuilder()
-
-            if( onlyWords ) {
+            if ( onlyWords ) {
                 words = words.collect { it.replace('\u0301', '') } 
                 words = words.findAll { WORD_PATTERN.matcher(it) }
-                words = TextUtils.adjustTokens(words, true)
-
-                sb.append(words.join(" "))
+                TextUtils.adjustTokens(words, true)
             }
             else {
-                words = TextUtils.adjustTokens(words, true)
-
-                words.each { word ->
-                    sb.append(word.replace("\n", options.newLine).replace("\t", " ")).append('|')
-                }
+                TextUtils.adjustTokens(words, true).collect { word ->
+                    word.replace("\n", options.newLine).replace("\t", " ")
+                };
             }
-            sb.toString()
-        }.join("\n") + "\n"
+        }
+
+        switch (options.outputFormat ) {
+            case OutputFormat.txt:
+                return processedSentences.collect { sent -> 
+                    sent.join(onlyWords ? " " : "|")
+                }.join("\n") + "\n"
+
+            case OutputFormat.json:
+                return jsonUnicodeBuilder.toJson(processedSentences)[1..-1]
+        }
     }
-    
     
     
     static class TokenizeOptions {
         @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
         String input
-        @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .tagged.txt/.xml)"])
+        @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .tagged.txt/.json)"])
         String output
         @Option(names = ["-w", "--words"], description = ["Tokenize into words"])
         boolean words
@@ -122,11 +131,12 @@ class TokenizeText {
         boolean quiet
         @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
         boolean helpRequested
+        @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {txt (default), json}", defaultValue = "txt")
+        OutputFormat outputFormat = "txt"
         // just stubs
         boolean noTag
         boolean singleThread = true
-        enum OutputFormat { txt }
-        OutputFormat outputFormat = OutputFormat.txt
+
         boolean splitHyphenParts = true
         
         // internal for now
