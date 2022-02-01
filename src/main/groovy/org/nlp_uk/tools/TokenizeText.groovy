@@ -31,7 +31,7 @@ class TokenizeText {
     // easy way to include a class without forcing classpath to be set
     static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
-    def JSONUnicodeBuilder = new JsonGenerator.Options().disableUnicodeEscaping().build()
+    def jsonUnicodeBuilder = new JsonGenerator.Options().disableUnicodeEscaping().build()
 
 
     Pattern WORD_PATTERN = ~/[а-яіїєґА-ЯІЇЄҐa-zA-Z0-9]/
@@ -59,7 +59,7 @@ class TokenizeText {
             case OutputFormat.txt: 
                 return tokenized.join("\n") + "\n"
             case OutputFormat.json:
-                return JSONUnicodeBuilder.toJson(tokenized)[1..-1]
+                return jsonUnicodeBuilder.toJson(tokenized)[1..-1]
         } 
     }
 
@@ -111,7 +111,7 @@ class TokenizeText {
                 }.join("\n") + "\n"
 
             case OutputFormat.json:
-                return JSONUnicodeBuilder.toJson(processedSentences)[1..-1]
+                return jsonUnicodeBuilder.toJson(processedSentences)[1..-1]
         }
     }
     
