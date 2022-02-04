@@ -34,15 +34,17 @@ import picocli.CommandLine.Parameters
 class TagText {
     enum OutputFormat { txt, xml, json }
     
-    @groovy.transform.SourceURI
-    static SOURCE_URI
-    // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
-    static SCRIPT_DIR = SOURCE_URI.scheme == "data" 
-		? new File("src/main/groovy/org/nlp_uk/tools")
-		: new File(SOURCE_URI).parent
-
-    // easy way to include a class without forcing classpath to be set
-    def textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
+//    @groovy.transform.SourceURI
+//    static SOURCE_URI
+//    // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
+//    static SCRIPT_DIR = SOURCE_URI.scheme == "data" 
+//		? new File("src/main/groovy/org/nlp_uk/tools")
+//		: new File(SOURCE_URI).parent
+//
+//    // easy way to include a class without forcing classpath to be set
+//    def textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
+    
+    def textUtils = new TextUtils()
     
     static final Pattern PUNCT_PATTERN = Pattern.compile(/[,.:;!?\/()\[\]{}«»„“"'…\u2013\u2014\u201D\u201C•■♦-]+/)
     static final Pattern SYMBOL_PATTERN = Pattern.compile(/[%&@$*+=<>\u00A0-\u00BF\u2000-\u20CF\u2100-\u218F\u2200-\u22FF]+/)
@@ -392,7 +394,7 @@ class TagText {
 
         @Option(names = ["-d", "--showDisambigRules"], description = "Show disambiguation rules applied")
         boolean showDisambigRules
-        @Option(names = ["-g", "--disambiguate"], description = "Use disambiguation modules: [frequency, wordEnding, context]", arity="0..", defaultValue="frequency")
+        @Option(names = ["-g", "--disambiguate"], description = "Use disambiguation modules: [frequency (default if the flag is used), wordEnding, context]", arity="0..")
         public List<DisambigModule> disambiguate
         @Option(names = ["-gr", "--disambiguationRate"], description = "Show a disambiguated token ratings")
         boolean showDisambigRate
