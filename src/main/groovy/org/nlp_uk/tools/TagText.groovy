@@ -17,6 +17,7 @@ import org.languagetool.language.*
 import org.nlp_uk.bruk.ContextToken
 import org.nlp_uk.bruk.WordContext
 import org.nlp_uk.bruk.WordReading
+import org.nlp_uk.tools.tag.DisambigStats
 import org.nlp_uk.tools.tag.ModZheleh
 import org.nlp_uk.tools.tag.OutputFormats
 import org.nlp_uk.tools.tag.SemTags

@@ -1,4 +1,4 @@
-package org.nlp_uk.tools;
+package org.nlp_uk.tools.tag;
 
 import java.util.regex.Pattern
 
@@ -8,9 +8,9 @@ import org.languagetool.AnalyzedTokenReadings;
 import org.nlp_uk.bruk.ContextToken
 import org.nlp_uk.bruk.WordContext;
 import org.nlp_uk.bruk.WordReading;
+import org.nlp_uk.tools.TagText
 import org.nlp_uk.tools.TagText.TagOptions
 import org.nlp_uk.tools.TagText.TagOptions.DisambigModule
-import org.nlp_uk.tools.tag.TagStats
 
 import groovy.transform.CompileStatic;
 
