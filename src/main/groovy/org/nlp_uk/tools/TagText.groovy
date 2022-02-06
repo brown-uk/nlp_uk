@@ -18,6 +18,7 @@ import org.nlp_uk.bruk.ContextToken
 import org.nlp_uk.bruk.WordContext
 import org.nlp_uk.bruk.WordReading
 import org.nlp_uk.tools.tag.ModZheleh
+import org.nlp_uk.tools.tag.OutputFormats
 import org.nlp_uk.tools.tag.SemTags
 import org.nlp_uk.tools.tag.TagStats
 
@@ -76,26 +77,13 @@ class TagText {
 
 
     @CompileStatic
-    def tagText(String text) {
+    TagResult tagText(String text) {
         List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
-		
-//		StringWriter writer
-//		GroovyObjectSupport builder
-	
-		if( options.outputFormat == OutputFormat.xml ) {
-//			writer = new StringWriter()
-//			builder = new MarkupBuilder(writer)
-		}
-        else if( options.outputFormat == OutputFormat.json ) {
-//            def gen = new JsonGenerator.Options() \
-//                .disableUnicodeEscaping()
-//                .build()
-//            builder = new JsonBuilder(gen)
-        }
 
         def stats = new TagStats()
         stats.options = options
         def outputFormats = new OutputFormats(options)
+        outputFormats.init()
         
         def sb = new StringBuilder()
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
@@ -116,14 +104,16 @@ class TagText {
                     field.setAccessible(true)
                     AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
 
-                    def taggedObjects = tagAsObject(tokens, stats)
+                    List<TTR> taggedObjects = tagAsObject(tokens, stats)
 
-                    StringBuilder x = outputFormats.outputSentenceXml(taggedObjects)
+                    CharSequence x = outputFormats.outputSentenceXml(taggedObjects)
                     sb.append(x).append("\n")
                     
                     if( options.tokenFormat ) {
                         if( tokens[-1].hasPosTag(JLanguageTool.PARAGRAPH_END_TAGNAME) ) {
-                            sb.append("<paragraph/>\n")
+                            if( options.outputFormat == OutputFormat.xml ) {
+                                sb.append("<paragraph/>\n")
+                            }
                         }
                     }
                 }
@@ -177,16 +167,30 @@ class TagText {
         return new TagResult(sb.toString(), stats)
     }
 
-    private static class TTR {
-        List<?> tokens
-    }
-
     @CompileStatic
     private static boolean hasPosTag(AnalyzedTokenReadings tokenReadings) {
         tokenReadings.getReadings().stream()
             .anyMatch{ t -> ! isTagEmpty(t.getPOSTag()) }
     }   
+
+    @CompileStatic
+    @Canonical
+    static class TaggedToken {
+        String value
+        String lemma
+        String tags
+        String semtags
+        Boolean whitespaceBefore
+        BigDecimal q
+        List<TaggedToken> alts
+    }
     
+    @CompileStatic
+    @Canonical
+    static class TTR {
+        List<TaggedToken> tokens
+    }
+
     @CompileStatic
     private List<TTR> tagAsObject(AnalyzedTokenReadings[] tokens, TagStats stats) {
         tokens = tokens[1..-1] // remove SENT_START
@@ -204,15 +208,18 @@ class TagText {
                     return
     
                 if( PUNCT_PATTERN.matcher(theToken).matches() ) {
-                    tokenReadingsT << new TTR(tokens: [[value: theToken, lemma: cleanToken, tags: 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore()]])
+                    def tkn = options.tokenFormat 
+                        ? new TaggedToken(value: theToken, lemma: cleanToken, tags: 'punct')
+                        : new TaggedToken(value: theToken, lemma: cleanToken, tags: 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore())
+                    tokenReadingsT << new TTR(tokens: [tkn])
                     return
                 }
                 else if( SYMBOL_PATTERN.matcher(theToken).matches() ) {
-                    tokenReadingsT << new TTR(tokens: [['value': theToken, lemma: cleanToken, tags: 'symb']])
+                    tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: cleanToken, tags: 'symb')])
                     return
                 }
                 else if( XML_TAG_PATTERN.matcher(theToken).matches() ) {
-                    tokenReadingsT << new TTR(tokens: [[value: theToken, lemma: cleanToken, tags: 'xmltag']])
+                    tokenReadingsT << new TTR(tokens: [new TaggedToken(value: theToken, lemma: cleanToken, tags: 'xmltag')])
                     return
                 }
                 else if( UNKNOWN_PATTERN.matcher(theToken).matches() && ! NON_UK_PATTERN.matcher(theToken).find() ) {
@@ -223,17 +230,15 @@ class TagText {
                     
                     if( ! hasTag ) {
                         def lemma = options.setLemmaForUnknown ? cleanToken : ''
-                        tokenReadingsT << new TTR(tokens: [['value': theToken, lemma: lemma, tags: 'unknown']])
+                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: lemma, tags: 'unknown')])
                         return
                     }
                 }
                 else { // if( UNCLASS_PATTERN.matcher(theToken).matches() ) {
-                    tokenReadingsT << new TTR(tokens: [['value': theToken, lemma: cleanToken, tags: 'unclass']])
+                    tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: cleanToken, tags: 'unclass')])
                     return
                 }
-
             }
-
             
             TTR item = new TTR(tokens: [])
             
@@ -251,7 +256,7 @@ class TagText {
             }
 
             if( options.tokenFormat ) {
-                List<Object> tagTokens = readings.collect { AnalyzedToken tkn ->
+                List<TaggedToken> tagTokens = readings.collect { AnalyzedToken tkn ->
                     getTagTokens(tkn)
                 }
                 Object firstToken = tagTokens[0]
@@ -278,9 +283,9 @@ class TagText {
     }
 
     @CompileStatic
-    static void addRates(List<Object> tagTokens, List<BigDecimal> rates) {
+    static void addRates(List<TaggedToken> tagTokens, List<BigDecimal> rates) {
         BigDecimal sum = (BigDecimal) rates.sum()
-        tagTokens.eachWithIndex { Object t, int idx2 ->
+        tagTokens.eachWithIndex { TaggedToken t, int idx2 ->
 //            if( ! sum ) System.err.println "sum of 0 for: $tagTokens"
             BigDecimal q = sum ? rates[idx2] / sum : BigDecimal.ZERO
             t['q'] = q.round(3)
@@ -289,14 +294,14 @@ class TagText {
     
     
     @CompileStatic
-    private getTagTokens(AnalyzedToken tkn) {
+    private TaggedToken getTagTokens(AnalyzedToken tkn) {
         String posTag = tkn.getPOSTag()
         String semTags = semTags.getSemTags(tkn, posTag)
 
         String lemma = tkn.getLemma() ?: ''
-        def token = semTags \
-                        ? ['value': tkn.getToken(), 'lemma': lemma, 'tags': posTag, 'semtags': semTags]
-                : ['value': tkn.getToken(), 'lemma': lemma, 'tags': posTag]
+        TaggedToken token = semTags \
+                        ? new TaggedToken('value': tkn.getToken(), 'lemma': lemma, 'tags': posTag, 'semtags': semTags)
+                : new TaggedToken('value': tkn.getToken(), 'lemma': lemma, 'tags': posTag)
     }
 
 
@@ -432,7 +437,9 @@ class TagText {
 
             if( ! quiet ) {
                 println "Output format: " + outputFormat
-                println "Disambig: " + disambiguate
+                if( disambiguate ) {
+                    println "Disambig: " + disambiguate
+                }
             }
         }
     }

@@ -4,13 +4,19 @@ package org.nlp_uk.tools
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.nlp_uk.tools.TagText.OutputFormat.json
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.nlp_uk.tools.TagText.OutputFormat
+import org.nlp_uk.tools.TagText.TTR
 import org.nlp_uk.tools.TagText.TagOptions
 import org.nlp_uk.tools.TagText.TagResult
+import org.nlp_uk.tools.TagText.TaggedToken
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import groovy.json.StringEscapeUtils
 
 
 class TagTextTest {
@@ -411,6 +417,17 @@ class TagTextTest {
 		assertEquals expected, outFile.getText("UTF-8")
 	}
 
+    @Test
+    public void testSingleTokenFormatJson() {
+        tagText.setOptions(new TagOptions(outputFormat: OutputFormat.json, tokenFormat: true))
+
+        TagResult tagged = tagText.tagText("Слово")
+
+        def alts = [ [value:"Слово", lemma: "слово", tags: "noun:inanim:n:v_zna"] ]
+        def expected = [ [tokens: [ [value:"Слово", lemma: "слово", tags: "noun:inanim:n:v_naz", alts: alts] ]] ]
+        assertEquals expected, new JsonSlurper().parseText(tagged.tagged)
+    }
+    
 
 	@Test
 	public void testJsonParallel() {
@@ -424,71 +441,37 @@ class TagTextTest {
 		outFile.text = ''
 
 		
-		tagText.setOptions(new TagOptions(outputFormat: "json", input: file.path, output: outFile.path, singleThread: false))
+		tagText.setOptions(new TagOptions(outputFormat: json, input: file.path, output: outFile.path, singleThread: false))
 		
 		tagText.process()
 
-		def expected =
+		def expected = new JsonSlurper().parseText(
 """{
   "sentences": [
-    {
-      "tokenReadings": [
-        {
-          "tokens": [
-            { "value": "Слово", "lemma": "слово", "tags": "noun:inanim:n:v_naz" },
-            { "value": "Слово", "lemma": "слово", "tags": "noun:inanim:n:v_zna" }
-          ]
-        },
-        {
-          "tokens": [
-            { "value": "X", "lemma": "X", "tags": "number:latin" }
-          ]
-        },
-        {
-          "tokens": [
-            { "value": ".", "lemma": ".", "tags": "punct", "whitespaceBefore": false }
-          ]
-        }
-      ]
-    },
-    {
-      "tokenReadings": [
-        {
-          "tokens": [
-            { "value": "Діло", "lemma": "діло", "tags": "noun:inanim:n:v_naz" },
-            { "value": "Діло", "lemma": "діло", "tags": "noun:inanim:n:v_zna" }
-          ]
-        },
-        {
-          "tokens": [
-            { "value": "\\\"", "lemma": "\\\"", "tags": "punct", "whitespaceBefore": false }
-          ]
-        },
-        {
-          "tokens": [
-            { "value": ".", "lemma": ".", "tags": "punct", "whitespaceBefore": false }
-          ]
-        }
-      ]
-    },
-    {
-      "tokenReadings": [
-        {
-          "tokens": [
-            { "value": "Швидко", "lemma": "швидко", "tags": "adv:compb" }
-          ]
-        },
-        {
-          "tokens": [
-            { "value": ".", "lemma": ".", "tags": "punct", "whitespaceBefore": false }
-          ]
-        }
-      ]
-    }
+  {"tokenReadings":[
+        {"tokens":[
+            {"value":"Слово","tags":"noun:inanim:n:v_naz","lemma":"слово"},
+            {"value":"Слово","tags":"noun:inanim:n:v_zna","lemma":"слово"}
+  ]},   {"tokens":[
+            {"value":"X","tags":"number:latin","lemma":"X"}]},
+        {"tokens":[
+            {"value":".","whitespaceBefore":false,"tags":"punct","lemma":"."}]}]},
+  {"tokenReadings":[{"tokens":[
+            {"value":"Діло","tags":"noun:inanim:n:v_naz","lemma":"діло"},
+            {"value":"Діло","tags":"noun:inanim:n:v_zna","lemma":"діло"}]},
+        {"tokens":[
+            {"value":"\\"","whitespaceBefore":false,"tags":"punct","lemma":"\\""}]},
+        {"tokens":[
+            {"value":".","whitespaceBefore":false,"tags":"punct","lemma":"."}]}]},
+  {"tokenReadings":[{"tokens":[
+            {"value":"Швидко","tags":"adv:compb","lemma":"швидко"}]},
+        {"tokens":[
+            {"value":".","whitespaceBefore":false,"tags":"punct","lemma":"."}]}]}
   ]
 }
-"""
-		assertEquals expected, outFile.getText("UTF-8")
+""")
+
+		assertEquals expected, new JsonSlurper().parseText(outFile.getText("UTF-8"))
 	}
 
 }
