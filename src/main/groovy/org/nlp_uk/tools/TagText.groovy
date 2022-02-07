@@ -79,74 +79,73 @@ class TagText {
 
     @CompileStatic
     TagResult tagText(String text) {
-        List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
 
         def stats = new TagStats()
         stats.options = options
         def outputFormats = new OutputFormats(options)
         outputFormats.init()
-        
+
+        List<List<TTR>> taggedSentences = tagTextCore(text, stats)
+
         def sb = new StringBuilder()
-        for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-            
-            analyzedSentence.getTokens().each { AnalyzedTokenReadings t ->
-                def multiWordReadings = t.getReadings().findAll { AnalyzedToken r ->
-                    r.getPOSTag() != null && r.getPOSTag().startsWith("<")
-                }
-                multiWordReadings.each { r ->
-                    t.removeReading(r, "remove_multiword")
-                }
-            }
-
+        
+        for(List<TTR> taggedSent: taggedSentences) {
             if ( ! options.noTag ) {
-
                 if( options.outputFormat == OutputFormat.xml ) {
-                    def field = AnalyzedSentence.getDeclaredField("nonBlankTokens")
-                    field.setAccessible(true)
-                    AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
-
-                    List<TTR> taggedObjects = tagAsObject(tokens, stats)
-
-                    CharSequence x = outputFormats.outputSentenceXml(taggedObjects)
+                    CharSequence x = outputFormats.outputSentenceXml(taggedSent)
                     sb.append(x).append("\n")
-                    
-                    if( options.tokenFormat ) {
-                        if( tokens[-1].hasPosTag(JLanguageTool.PARAGRAPH_END_TAGNAME) ) {
-                            if( options.outputFormat == OutputFormat.xml ) {
-                                sb.append("<paragraph/>\n")
-                            }
-                        }
-                    }
                 }
                 else if( options.outputFormat == OutputFormat.json ) {
-                    AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
-
-                    def tokenReadingObj = tagAsObject(tokens, stats)
-
-                    def s = outputFormats.outputSentenceJson(tokenReadingObj)
+                    def s = outputFormats.outputSentenceJson(taggedSent)
                     if( sb.length() > 0 ) sb.append(",\n");
                     sb.append(s)
-                }
-                else {
-                    String sentenceLine
-                    sentenceLine = analyzedSentence.toString()
-                    sentenceLine.replaceAll(/,[^\/].*?\/<.*?>/, '')
-                    if( options.tokenPerLine ) {
-                        sentenceLine = sentenceLine.replaceAll(/(<S>|\]) */, '$0\n')
-                    }
-                    else {
-                        sentenceLine = sentenceLine.replaceAll(/ *(<S>|\[<\/S>\]) */, '')
-                    }
 
-                    sb.append(sentenceLine) //.append("\n");
+                    //                    sb.append(",\n{}")
                 }
-
-                if( options.showDisambigRules ) {
-                    analyzedSentence.tokens.each { AnalyzedTokenReadings it ->
-                        def historicalAnnotations = it.getHistoricalAnnotations()
-                        if( historicalAnnotations && ! historicalAnnotations.contains("add_paragaph_end") ) {
-                            println "* " + historicalAnnotations.trim()
+                else { // legacy text
+                    if( sb.length() > 0 ) sb.append("\n")
+                    def prevToken = null
+                    taggedSent.each { TTR token ->
+                        if( prevToken != null && (token.tokens[0].whitespaceBefore == null || token.tokens[0].whitespaceBefore == true) ) {
+                            sb.append(" ")
                         }
+                        def lemmasAndTags = token.tokens.collect{ t -> "${t.lemma}/${t.tags}" }.join(",")
+                        sb.append("${token.tokens[0].value}[$lemmasAndTags]")
+                        prevToken = token
+                    }
+                }
+            }
+        }
+        
+        return new TagResult(sb.toString(), stats)
+    }
+
+    @CompileStatic
+    List<List<TTR>> tagTextCore(String text, TagStats stats) {
+        List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
+
+        List<List<TTR>> taggedSentences = []
+        for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+            
+            cleanup(analyzedSentence)
+            
+            AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
+
+            List<TTR> taggedObjects = tagAsObject(tokens, stats)
+
+            taggedSentences << taggedObjects
+            
+            if( options.tokenFormat ) {
+                if( tokens[-1].hasPosTag(JLanguageTool.PARAGRAPH_END_TAGNAME) ) {
+                    taggedSentences << []
+                }
+            }
+            
+            if( options.showDisambigRules ) {
+                analyzedSentence.tokens.each { AnalyzedTokenReadings it ->
+                    def historicalAnnotations = it.getHistoricalAnnotations()
+                    if( historicalAnnotations && ! historicalAnnotations.contains("add_paragaph_end") ) {
+                        println "* " + historicalAnnotations.trim()
                     }
                 }
             }
@@ -165,9 +164,22 @@ class TagText {
             stats.collectLemmaFrequency(analyzedSentences)
         }
 
-        return new TagResult(sb.toString(), stats)
+        taggedSentences
     }
 
+    @CompileStatic
+    void cleanup(AnalyzedSentence analyzedSentence) {
+        // multiwords are very LT-specific
+        analyzedSentence.getTokens().each { AnalyzedTokenReadings t ->
+            def multiWordReadings = t.getReadings().findAll { AnalyzedToken r ->
+                r.getPOSTag() != null && r.getPOSTag().startsWith("<")
+            }
+            multiWordReadings.each { r ->
+                t.removeReading(r, "remove_multiword")
+            }
+        }
+    }
+        
     @CompileStatic
     private static boolean hasPosTag(AnalyzedTokenReadings tokenReadings) {
         tokenReadings.getReadings().stream()
@@ -422,6 +434,9 @@ class TagText {
             }
             if( singleTokenOnly ) {
                 tokenFormat = true
+            }
+            if( outputFormat == OutputFormat.txt ) {
+                setLemmaForUnknown = true
             }
 
             if( disambiguate == null ) {

@@ -14,13 +14,13 @@ import groovy.xml.MarkupBuilder
 
 //@CompileStatic
 class OutputFormats {
-    static final boolean useXmlBuilder = true
+    static final boolean useXmlBuilder = false
     
     final TagOptions options
 
     StringWriter writer
     MarkupBuilder xmlBuilder
-    JsonBuilder jsonBuilder
+//    JsonBuilder jsonBuilder
     JsonGenerator jsonGenerator
     
     
@@ -54,7 +54,7 @@ class OutputFormats {
                 }
             }
                     
-            jsonBuilder = new JsonBuilder(jsonGenerator)
+//            jsonBuilder = new JsonBuilder(jsonGenerator)
         }
     }
 
@@ -66,14 +66,14 @@ class OutputFormats {
     }
     
     @CompileStatic
-    CharSequence outputSentenceXml(List<TTR> taggedObjects) {
+    CharSequence outputSentenceXml(List<TTR> taggedSentence) {
         if( useXmlBuilder ) {
-            return xmlWithBuilder(taggedObjects)
-//            return xmlWithDom(taggedObjects)
+            return xmlWithBuilder(taggedSentence)
+//            return xmlWithDom(taggedSentence)
         }
         
         // XmlBuilder is nice but using strings gives almost 20% speedup on large files
-        return xmlDirect(taggedObjects)
+        return xmlDirect(taggedSentence)
     }
     
     @CompileStatic
@@ -82,12 +82,12 @@ class OutputFormats {
 //        return jsonDirect(tokenReadingsList)
     }
 
-    CharSequence xmlWithBuilder(List<TTR> taggedObjects) {
+    CharSequence xmlWithBuilder(List<TTR> taggedSentence) {
         initXmlBuilder()
         
         xmlBuilder.'sentence'() {
             if( options.tokenFormat ) {
-                taggedObjects.each { tr -> tr
+                taggedSentence.each { tr -> tr
 //                    'tokens'() {
                         tr.tokens[0].each { t ->
                            'token'(value: t.value, lemma: t.lemma, tags: t.tags, semtags: t.semtags, q: t.q) {
@@ -104,7 +104,7 @@ class OutputFormats {
                 }
             }
             else {
-                taggedObjects.each { tr -> tr
+                taggedSentence.each { tr -> tr
                     'tokenReading'() {
                         tr.tokens.each { t ->
                            'token'(value: t.value, lemma: t.lemma, tags: t.tags, whitespaceBefore: t.whitespaceBefore, semtags: t.semtags)
@@ -147,13 +147,13 @@ class OutputFormats {
 //        return result.getWriter().toString()
 //    }
 
-    CharSequence jsonWithBuilder(List<TTR> taggedObjects) {
+    CharSequence jsonWithBuilder(List<TTR> taggedSentence) {
         if( options.tokenFormat ) {
-            jsonBuilder(taggedObjects[0])
+            jsonBuilder(taggedSentence[0])
         }
         else {
             jsonBuilder {
-                taggedObjects.each { tr -> tr
+                taggedSentence.each { tr -> tr
                     'tokenReading'() {
                         tr.tokens.each { t ->
                             'token'(value: t.value, lemma: t.lemma, tags: t.tags, whitespaceBefore: t.whitespaceBefore, semtags: t.semtags)
@@ -167,18 +167,21 @@ class OutputFormats {
     }
 
     @CompileStatic
-    CharSequence jsonWithGenerator(List<TTR> taggedObjects) {
+    CharSequence jsonWithGenerator(List<TTR> taggedSentence) {
         String jsonOut = options.tokenFormat
-            ? jsonGenerator.toJson(taggedObjects.collect{ token: it })
-            : jsonGenerator.toJson([tokenReadings: taggedObjects])
+            ? jsonGenerator.toJson(taggedSentence.collect{ token: it })
+            : jsonGenerator.toJson([tokenReadings: taggedSentence])
         return jsonOut
     }
 
     @CompileStatic
-    CharSequence xmlDirect(List<TTR> taggedObjects) {
+    CharSequence xmlDirect(List<TTR> taggedSentence) {
+        if( taggedSentence.size() == 0 )
+            return "<paragraph/>"
+        
         StringBuilder sb = new StringBuilder(1024)
         sb.append("<sentence>\n");
-        taggedObjects.each { TTR tr ->
+        taggedSentence.each { TTR tr ->
             if( ! options.tokenFormat ) {
                 sb.append("  <tokenReading>\n")
             }
@@ -229,54 +232,6 @@ class OutputFormats {
         }
     }
         
-//    @CompileStatic
-//    StringBuilder jsonDirect(List<TTR> tokenReadingsList) {
-//        // JsonBuilder is nice but using strings gives almost 40% speedup on large files
-//        StringBuilder sb = new StringBuilder(1024)
-//        sb.append("    {\n");
-//        sb.append("      \"tokenReadings\": [\n");
-//        tokenReadingsList.eachWithIndex { TTR tr, trIdx ->
-//            sb.append("        {\n");
-//            sb.append("          \"tokens\": [\n");
-//            
-//            tr.tokens.eachWithIndex { TaggedToken t, tIdx ->
-//                sb.append("            { ")
-//                sb.append("\"value\": \"").append(quoteJson(t.value)).append("\"")
-//                if( t.lemma != null ) {
-//                    sb.append(", \"lemma\": \"").append(quoteJson(t.lemma)).append("\"")
-//                }
-//                if( t.tags != null ) {
-//                    sb.append(", \"tags\": \"").append(t.tags).append("\"")
-//                    if( t.tags == "punct" ) {
-//                        sb.append(", \"whitespaceBefore\": ").append(t.whitespaceBefore) //.append("")
-//                    }
-//                }
-//                if( t.semtags ) {
-//                    sb.append(", \"semtags\": \"").append(t.semtags).append("\"")
-//                }
-//                sb.append(" }");
-//                if( tIdx < tr.tokens.size() - 1 ) {
-//                    sb.append(",")
-//                }
-//                sb.append("\n")
-//            }
-//
-//            sb.append("          ]");
-//            sb.append("\n        }");
-//            if( trIdx < tokenReadingsList.size() - 1 ) {
-//                sb.append(",")
-//            }
-//            sb.append("\n")
-//        }
-//        sb.append("      ]\n");
-//        sb.append("    }");
-//        return sb
-//    }
-//    
-//    @CompileStatic
-//    static String quoteJson(String s) {
-//        s.replace('"', '\\"')
-//    }
 
     @CompileStatic
     static String quoteXml(String s, boolean withApostrophe) {

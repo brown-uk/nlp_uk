@@ -14,6 +14,8 @@ import org.nlp_uk.tools.TagText.TTR
 import org.nlp_uk.tools.TagText.TagOptions
 import org.nlp_uk.tools.TagText.TagResult
 import org.nlp_uk.tools.TagText.TaggedToken
+import org.nlp_uk.tools.tag.TagStats
+
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.json.StringEscapeUtils
@@ -35,8 +37,9 @@ class TagTextTest {
 	@Test
 	public void test() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt))
-		TagResult tagged = tagText.tagText("Слово.")
-		def expected = "Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].[</S><P/>]"
+		TagResult tagged = tagText.tagText("Слово. Діло.")
+		def expected = "Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].[./punct]\n" \
+            + "Діло[діло/noun:inanim:n:v_naz,діло/noun:inanim:n:v_zna].[./punct]"
 		assertEquals expected, tagged.tagged
 	}
 
@@ -44,7 +47,7 @@ class TagTextTest {
     public void testOmitMultiwordTag() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt))
         TagResult tagged = tagText.tagText("Де можна")
-        def expected = "Де[де/adv:&pron:int:rel,де/conj:subord,де/part,де/part:pers] можна[можна/noninfl:&predic,</S><P/>]"
+        def expected = "Де[де/adv:&pron:int:rel,де/conj:subord,де/part,де/part:pers] можна[можна/noninfl:&predic]"
         assertEquals expected, tagged.tagged
     }
 
@@ -399,7 +402,7 @@ class TagTextTest {
 		
 		File file = File.createTempFile("tag_input",".tmp")
 		file.deleteOnExit()
-		file.setText("Слово.\n\nДіло.\n\nШвидко.\n\n", "UTF-8")
+		file.setText("Слово швидко.\n\nДіло.\n\nШвидко.\n\n", "UTF-8")
 
 		File outFile = File.createTempFile("tag_output",".tmp")
 		outFile.deleteOnExit()
@@ -411,9 +414,9 @@ class TagTextTest {
 		tagText.process()
 
 		def expected =
-"""Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].<P/> 
-Діло[діло/noun:inanim:n:v_naz,діло/noun:inanim:n:v_zna].<P/> 
-Швидко[швидко/adv:compb].<P/> """
+"""Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna] швидко[швидко/adv:compb].[./punct]
+Діло[діло/noun:inanim:n:v_naz,діло/noun:inanim:n:v_zna].[./punct]
+Швидко[швидко/adv:compb].[./punct]"""
 		assertEquals expected, outFile.getText("UTF-8")
 	}
 
@@ -473,5 +476,19 @@ class TagTextTest {
 
 		assertEquals expected, new JsonSlurper().parseText(outFile.getText("UTF-8"))
 	}
+
+    
+    @Test
+    public void testTagCore() {
+        tagText.setOptions(new TagOptions(setLemmaForUnknown: true))
+        
+        List<List<TTR>> tagged = tagText.tagTextCore("десь брарарат.\n\nковбасу.", new TagStats(options: options))
+
+        def expected = [['десь', 'брарарат', '.'], ['ковбаса', '.']]
+        assertEquals expected, tagged.collect { it.collect { TTR ttr -> ttr.tokens[0].lemma } }
+
+        expected = [['десь/adv', 'брарарат/unknown', './punct'], ['ковбаса/noun', './punct']]
+        assertEquals expected, tagged.collect { it.collect { TTR ttr -> ttr.tokens[0].lemma + "/" + ttr.tokens[0].tags.replaceFirst(/:.*/, '')} }
+    }
 
 }

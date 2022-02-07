@@ -13,6 +13,7 @@ import groovy.transform.TypeChecked
 
 class TextUtils {
     
+    static int BUFFER_SIZE = 4*1024
     static int MAX_PARAGRAPH_SIZE = 200*1024
 
     static def processByParagraph(options, Closure closure, Closure resultClosure) {
@@ -90,6 +91,9 @@ class TextUtils {
                 outputFile.println('\n  ]')
                 outputFile.println('}')
             }
+//            else {
+//                outputFile.println('\n')
+//            }
         }
 
         return outputFile
@@ -110,7 +114,8 @@ class TextUtils {
             outputFile.print(analyzed.tagged)
             if( analyzed.tagged.size() > 0 ) {
                 outStarted = true
-                if( ! jsonStarted && (analyzed.tagged.endsWith('}') || analyzed.tagged.endsWith(']')) ) {
+                if( ! jsonStarted && (analyzed.tagged.endsWith('}') 
+                        || ( analyzed.tagged.endsWith('[') && ! (analyzed.tagged =~ /[a-zA-Z0-9_]\['/ ))) ) {
                     jsonStarted = true
                 }
             }
@@ -118,8 +123,8 @@ class TextUtils {
     }
     
 
-	static void processFile(def inputFile, PrintStream outputFile, Closure closure, Closure resultClosure) {
-        StringBuilder buffer = new StringBuilder()
+	static void processFile(def inputFile, PrintStream outputFile, Closure closure, Closure postProcessClosure) {
+        StringBuilder buffer = new StringBuilder(BUFFER_SIZE)
         boolean notEmpty = false
         OutputHandler outputHandler = new OutputHandler(outputFile: outputFile)
         
@@ -135,13 +140,13 @@ class TextUtils {
 				try {
 					def analyzed = closure(str)
                     outputHandler.print(analyzed)
-					resultClosure(analyzed)
+					postProcessClosure(analyzed)
 				}
 				catch(Throwable e) {
 					e.printStackTrace()
 				}
 
-				buffer = new StringBuilder()
+				buffer = new StringBuilder(BUFFER_SIZE)
                 notEmpty = false
             }
         })
@@ -150,11 +155,11 @@ class TextUtils {
             def analyzed = closure(buffer.toString())
             outputHandler.print(analyzed)
             outputHandler.outputFile.println()
-			resultClosure(analyzed)
+			postProcessClosure(analyzed)
         }
     }
 
-	static void processFileParallel(def inputFile, PrintStream outputFile, Closure closure, int cores, Closure resultClosure) {
+	static void processFileParallel(def inputFile, PrintStream outputFile, Closure processClosure, int cores, Closure postProcessClosure) {
 		ExecutorService executor = Executors.newFixedThreadPool(cores + 1) 	// +1 for consumer
 		BlockingQueue<Future> futures = new ArrayBlockingQueue<>(cores*2)	// we need to poll for futures in order to keep the queue busy
         OutputHandler outputHandler = new OutputHandler(outputFile: outputFile)
@@ -170,7 +175,7 @@ class TextUtils {
                     def analyzed = f.get()
                     if( analyzed == null ) break;
                     outputHandler.print(analyzed)
-                    resultClosure(analyzed)
+                    postProcessClosure(analyzed)
                 }
                 catch(e) {
                     e.printStackTrace()
@@ -181,7 +186,7 @@ class TextUtils {
 		} as Callable
 
 	
-		StringBuilder buffer = new StringBuilder()
+		StringBuilder buffer = new StringBuilder(BUFFER_SIZE)
 		boolean notEmpty = false
 
 		inputFile.eachLine('UTF-8', 0, { String line ->
@@ -196,11 +201,11 @@ class TextUtils {
 
 				futures << executor.submit(new Callable<Object>() {
 					public def call() {
-						return closure(str)
+						return processClosure(str)
 					}
 				})
 
-				buffer = new StringBuilder()
+				buffer = new StringBuilder(BUFFER_SIZE)
 				notEmpty = false
 			}
 		})
@@ -210,10 +215,10 @@ class TextUtils {
 		executor.awaitTermination(1, TimeUnit.HOURS)
 
 		if( buffer ) {
-			def analyzed = closure(buffer.toString())
+			def analyzed = processClosure(buffer.toString())
             outputHandler.print(analyzed)
             outputHandler.outputFile.println()
-			resultClosure(analyzed)
+			postProcessClosure(analyzed)
 		}
 
 	}

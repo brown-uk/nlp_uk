@@ -8,8 +8,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.nlp_uk.tools.tag.StressText
-import org.nlp_uk.tools.tag.StressText.StressResult
+import org.nlp_uk.tools.StressText.StressResult
 
 
 class StressTextTest {

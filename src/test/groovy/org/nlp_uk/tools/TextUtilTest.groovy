@@ -54,7 +54,7 @@ class TextUtilTest {
 				tagText.stats.add(result.stats) 
 			})
 		
-		def expected = "борода[борода/noun:inanim:f:v_naz] кікука[кікука/null].<P/> \n".repeat(count) + "А[а/conj:coord,а/intj,а/part,</S>]<P/> \n\n"
+		def expected = "борода[борода/noun:inanim:f:v_naz] кікука[кікука/unknown].[./punct]\n".repeat(count) + "А[а/conj:coord,а/intj,а/part]\n\n"
 		assertEquals(expected, byteOS.toString("UTF-8") + "\n")
 		assertEquals(new HashMap<>(["кікука": count]), new HashMap<>(tagText.stats.unknownMap))
 	}
@@ -78,7 +78,7 @@ class TextUtilTest {
 				tagText.stats.add(result.stats) 
 			})
 		
-        String expected = "борода[борода/noun:inanim:f:v_naz] кікука[кікука/null].<P/> \n".repeat(count) + "А[а/conj:coord,а/intj,а/part,</S>]<P/> \n\n"
+        String expected = "борода[борода/noun:inanim:f:v_naz] кікука[кікука/unknown].[./punct]\n".repeat(count) + "А[а/conj:coord,а/intj,а/part]\n\n"
 		assertEquals(expected, byteOS.toString("UTF-8") +"\n")
 		assertEquals(new HashMap<>(["кікука": count]), new HashMap<>(tagText.stats.unknownMap))
 	}

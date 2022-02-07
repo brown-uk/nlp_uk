@@ -300,7 +300,7 @@ public class DisambigStats {
 
         long tm1 = System.currentTimeMillis()
         
-        def statDir = new File(new File((String)SCRIPT_DIR + "/../../../../../.."), "stats")
+        def statDir = new File(new File((String)SCRIPT_DIR + "/../../../../../../.."), "stats")
         assert statDir.isDirectory(), "Disambiguation stats not found in ${statDir.name}"
         
         String word
@@ -375,7 +375,7 @@ public class DisambigStats {
         System.err.println("Loaded ${statsByWord.size()} disambiguation stats, ${statsByTag.size()} tags, ${statsByWordEnding.size()} endings, ${statsForLemmaXp.size()} xps in ${tm2-tm1} ms")
         
         if( dbg ) {
-            File tff = new File("tag_freqs.txt")
+            File tff = new File("stats/tag_freqs.txt")
             tff.text = ''
             statsByTag
                     .sort{ a, b -> a.key.compareTo(b.key) }
@@ -383,7 +383,7 @@ public class DisambigStats {
                         tff << "$k\t$v\n"
                         tff << "\t" << statsByTagContext[k].collect { k2, v2 -> k2.toString() }.join("\n\t") << "\n"
                     }
-            tff = new File("tag_ending_freqs.txt")
+            tff = new File("stats/tag_ending_freqs.txt")
             tff.text = ''
             statsByWordEnding
                     .sort{ a, b -> a.key.compareTo(b.key) }
