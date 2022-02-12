@@ -50,7 +50,7 @@ class LemmatizeText {
         String tagged
     }
 
-    @CompileStatic
+//    @CompileStatic
     Analyzed analyzeText(String text) {
         text = FOOTER_PATTERN.matcher(text).replaceAll('')
         
