@@ -256,11 +256,9 @@ class TagText {
             TTR item = new TTR(tokens: [])
             
             List<AnalyzedToken> readings = new ArrayList<>(tokenReadings.getReadings())
-            readings.removeIf{ it -> it.getPOSTag() != null && it.getPOSTag().endsWith("_END") }
-            
-            readings = readings.findAll { AnalyzedToken tkn ->
+            readings.removeIf{ AnalyzedToken tkn ->
                 String posTag = tkn.getPOSTag()
-                posTag != null && ! posTag.startsWith("<")
+                posTag == null || posTag.endsWith("_END") || posTag.startsWith("<")
             }
             
             List<BigDecimal> rates = null

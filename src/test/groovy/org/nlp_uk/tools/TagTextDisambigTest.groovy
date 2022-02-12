@@ -52,10 +52,10 @@ class TagTextDisambigTest {
     <token value="Тому" lemma="тому" tags="adv" />
     <token value="Тому" lemma="тому" tags="conj:subord" />
     <token value="Тому" lemma="той" tags="adj:m:v_dav:&amp;pron:dem" />
-    <token value="Тому" lemma="Тома" tags="noun:anim:m:v_zna:prop:fname" />
     <token value="Тому" lemma="Том" tags="noun:anim:m:v_dav:prop:fname" />
-    <token value="Тому" lemma="те" tags="noun:inanim:n:v_dav:&amp;pron:dem" />
+    <token value="Тому" lemma="Тома" tags="noun:anim:m:v_zna:prop:fname" />
     <token value="Тому" lemma="той" tags="adj:n:v_dav:&amp;pron:dem" />
+    <token value="Тому" lemma="те" tags="noun:inanim:n:v_dav:&amp;pron:dem" />
   </tokenReading>
 </sentence>
 """
@@ -65,17 +65,17 @@ class TagTextDisambigTest {
 
     
     @Test
-    public void testSingleTokenFormat() {
+    public void testTokenFormat() {
         tagText.setOptions(new TagOptions(xmlOutput: true, disambiguate: [DisambigModule.frequency], tokenFormat: true, showDisambigRate: true))
 
         TagResult tagged = tagText.tagText("а")
 
         def expected =
 """<sentence>
-  <token value="а" lemma="а" tags="conj:coord" q="0.994">
+  <token value="а" lemma="а" tags="conj:coord" q="0.989">
     <alts>
-      <token value="а" lemma="а" tags="part" q="0.006" />
-      <token value="а" lemma="а" tags="intj" q="0.000" />
+      <token value="а" lemma="а" tags="part" q="0.011" />
+      <token value="а" lemma="а" tags="intj" q="0.001" />
     </alts>
   </token>
 </sentence>
@@ -87,10 +87,10 @@ class TagTextDisambigTest {
 
         def expected2 =
 """<sentence>
-  <token value="А" lemma="а" tags="conj:coord" q="0.783">
+  <token value="А" lemma="а" tags="conj:coord" q="0.779">
     <alts>
-      <token value="А" lemma="а" tags="part" q="0.215" />
-      <token value="А" lemma="а" tags="intj" q="0.002" />
+      <token value="А" lemma="а" tags="part" q="0.218" />
+      <token value="А" lemma="а" tags="intj" q="0.003" />
     </alts>
   </token>
 </sentence>
@@ -101,15 +101,15 @@ class TagTextDisambigTest {
 
     
     @Test
-    public void testSingleTokenFormat2() {
+    public void testTokenFormat2() {
         tagText.setOptions(new TagOptions(xmlOutput: true, disambiguate: [DisambigModule.frequency], tokenFormat: true, showDisambigRate: true))
         TagResult tagged4 = tagText.tagText("шаблоні")
         
         def expected4 =
 """<sentence>
-  <token value="шаблоні" lemma="шаблон" tags="noun:inanim:m:v_mis:xp2" q="0.501">
+  <token value="шаблоні" lemma="шаблон" tags="noun:inanim:m:v_mis:xp2" q="0.503">
     <alts>
-      <token value="шаблоні" lemma="шаблон" tags="noun:inanim:m:v_mis:xp1" q="0.499" />
+      <token value="шаблоні" lemma="шаблон" tags="noun:inanim:m:v_mis:xp1" q="0.497" />
     </alts>
   </token>
 </sentence>
@@ -121,7 +121,7 @@ class TagTextDisambigTest {
 
     
     @Test
-    public void testSingleTokenFormatWithCtx1() {
+    public void testTokenFormatWithCtx1() {
         tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.context], showDisambigRate: true))
 
         TagResult tagged = tagText.tagText("на нього")
@@ -144,7 +144,7 @@ class TagTextDisambigTest {
     }
     
     @Test
-    public void testSingleTokenFormatWithCtx21() {
+    public void testTokenFormatWithCtxAndXp() {
         tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.context], showDisambigRate: true))
 
         // by tag stats
@@ -173,7 +173,7 @@ class TagTextDisambigTest {
     }
 
     @Test
-    public void testSingleTokenFormatWithCtx22() {
+    public void testTokenFormatWithCtx22() {
         tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.context], showDisambigRate: true))
         // by tag stats
         TagResult tagged2 = tagText.tagText("в книгомережі")
@@ -197,7 +197,7 @@ class TagTextDisambigTest {
     }
 
     @Test
-    public void testSingleTokenFormatWithCtx23() {
+    public void testTokenFormatWithCtx23() {
         tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.context], showDisambigRate: true))
         TagResult tagged3 = tagText.tagText("в окремім")
         
@@ -218,7 +218,7 @@ class TagTextDisambigTest {
     }
     
     @Test
-    public void testSingleTokenFormatWithCtx3() {
+    public void testTokenFormatWithCtx3() {
         tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.context], showDisambigRate: true))
 
         TagResult tagged = tagText.tagText("засобів і методів")
@@ -240,7 +240,7 @@ class TagTextDisambigTest {
     }
     
     @Test
-    public void testSingleTokenFormatWithCtx4() {
+    public void testTokenFormatWithCtx4() {
         tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.context], showDisambigRate: true))
 
         // no left context word

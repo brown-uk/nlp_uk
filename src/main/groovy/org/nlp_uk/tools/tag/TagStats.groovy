@@ -237,7 +237,6 @@ public class TagStats {
             printStream = new PrintStream(outputFile, "UTF-8")
         }
 
-        println ":: " + lemmaFrequencyPostagsMap.size()            
         lemmaFrequencyMap
             .sort { it.key }
             .each{ k, v ->

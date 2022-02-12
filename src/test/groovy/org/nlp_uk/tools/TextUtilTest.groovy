@@ -45,7 +45,7 @@ class TextUtilTest {
 		
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt, unknownStats: true))
         
-		tagUtils.processFileParallel(input, out, 
+		tagUtils.processFileParallel(input, out, options,
 			{ buffer ->  
             	return tagText.tagText(buffer)
 			}, 
@@ -70,7 +70,7 @@ class TextUtilTest {
 		
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt, unknownStats: true))
         
-		tagUtils.processFile(input, out, 
+		tagUtils.processFile(input, out, options,
 			{ buffer ->  
             	return tagText.tagText(buffer)
 			}, 

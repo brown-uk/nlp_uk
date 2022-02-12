@@ -73,10 +73,10 @@ class TextUtils {
 
 		long tm1 = System.currentTimeMillis()
 		if( parallel ) {
-			processFileParallel(inputFile, outputFile, closure, (int)(cores), resultClosure)
+			processFileParallel(inputFile, outputFile, options, closure, (int)(cores), resultClosure)
 		}
 		else {
-			processFile(inputFile, outputFile, closure, resultClosure)
+			processFile(inputFile, outputFile, options, closure, resultClosure)
 		}
 		if( ! options.quiet ) {
 			long tm2 = System.currentTimeMillis()
@@ -101,6 +101,7 @@ class TextUtils {
 
     static class OutputHandler {
         PrintStream outputFile
+        def options
         boolean outStarted = false
         boolean jsonStarted = false
 
@@ -114,8 +115,9 @@ class TextUtils {
             outputFile.print(analyzed.tagged)
             if( analyzed.tagged.size() > 0 ) {
                 outStarted = true
-                if( ! jsonStarted && (analyzed.tagged.endsWith('}') 
-                        || ( analyzed.tagged.endsWith('[') && ! (analyzed.tagged =~ /[a-zA-Z0-9_]\['/ ))) ) {
+                if( options.outputFormat.name() == 'json'
+                        && ! jsonStarted
+                        && (analyzed.tagged.endsWith('}') || analyzed.tagged.endsWith('[') ) ) {
                     jsonStarted = true
                 }
             }
@@ -123,10 +125,10 @@ class TextUtils {
     }
     
 
-	static void processFile(def inputFile, PrintStream outputFile, Closure closure, Closure postProcessClosure) {
+	static void processFile(def inputFile, PrintStream outputFile, options, Closure closure, Closure postProcessClosure) {
         StringBuilder buffer = new StringBuilder(BUFFER_SIZE)
         boolean notEmpty = false
-        OutputHandler outputHandler = new OutputHandler(outputFile: outputFile)
+        OutputHandler outputHandler = new OutputHandler(outputFile: outputFile, options: options)
         
         inputFile.eachLine('UTF-8', 0, { line ->
             buffer.append(line).append("\n")
@@ -159,10 +161,10 @@ class TextUtils {
         }
     }
 
-	static void processFileParallel(def inputFile, PrintStream outputFile, Closure processClosure, int cores, Closure postProcessClosure) {
+	static void processFileParallel(def inputFile, PrintStream outputFile, options, Closure processClosure, int cores, Closure postProcessClosure) {
 		ExecutorService executor = Executors.newFixedThreadPool(cores + 1) 	// +1 for consumer
 		BlockingQueue<Future> futures = new ArrayBlockingQueue<>(cores*2)	// we need to poll for futures in order to keep the queue busy
-        OutputHandler outputHandler = new OutputHandler(outputFile: outputFile)
+        OutputHandler outputHandler = new OutputHandler(outputFile: outputFile, options: options)
         
 		executor.submit {
             for(Future f = futures.poll(5, TimeUnit.MINUTES); ; f = futures.poll(5, TimeUnit.MINUTES)) {
