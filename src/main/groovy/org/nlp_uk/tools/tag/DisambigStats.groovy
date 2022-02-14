@@ -87,17 +87,13 @@ public class DisambigStats {
             if( statsForWord != null ) {
                 rate += getRate(r, cleanToken, statsForWord, statsForWordCtx, tokens, idx, dbg)
             }
-            assert rate >= 0
+            
             if( DisambigModule.wordEnding in options.disambiguate ) {
                 BigDecimal re = getRateByEnding(r, cleanToken, null, null, tokens, idx, dbg) / 100.0
                 rate += re
             }
 
-            assert rate >= 0
-            if( ! rate ) {
-                rate += getPostagRate(r, tokens, idx, true, dbg) / 10000.0
-            }
-            assert rate >= 0
+            rate += getPostagRate(r, tokens, idx, true, dbg) / 1000.0
 
             [idx: i++, rate: rate, reading: r]
         }
@@ -159,39 +155,27 @@ public class DisambigStats {
         if( ! (DisambigModule.context in options.disambiguate) )
             return rate
             
-        Map<WordContext, Double> ctx = statsCtx[key]
-        Set<WordContext> wordContexts = createWordContext(tokens, idx, -1)
+        Map<WordContext, Double> ctxToRateMap = statsCtx[key]
+        Set<WordContext> currContexts = createWordContext(tokens, idx, -1)
 
-        Double fitCnt = (Double)ctx
-            .collect {
-                WordContext wc, Double v2 -> v2
-//                    wc.contextToken.postag.startsWith("prep") ? v2 * 2 : v2
-                boolean found = wordContexts.find { wordContext ->
-//                    if( wc.contextToken.postag 
-//                        && wc.contextToken.word != wordContext.contextToken.word 
-//                        && wc.contextToken.postag == wordContext.contextToken.postag ) {
-//                         println ":: tags match = ${wc.contextToken.postag} // ${wc.contextToken.word} "
-//                    }
-                    wc.offset == wordContext.offset \
-                    && (wc.contextToken.word == wordContext.contextToken.word)
-//                        || wc.contextToken.postag == wordContext.contextToken.postag)
+        // TODO: limit previous tokens by ratings already applied?
+        def matchedContexts = ctxToRateMap
+            .findAll {WordContext wc, Double v2 -> v2
+                // if any (previous) readings match the context add the context rate
+                boolean found = currContexts.find { currContext ->
+                    wc.contextToken.word == currContext.contextToken.word
                 }
-                found ? v2 : 0
             }
-            .sum()
-
-        if( fitCnt ) {
-            Double allCnt = (Double)ctx
-                .collect {
-                    WordContext wc, Double v2 -> v2
-                }
-                .sum()
             
-//                rate = (rate * 3 * 100 * fitCnt) / allCnt
-            BigDecimal adjust = 100 * BigDecimal.valueOf(fitCnt) / allCnt
+        Double matchRateSum = (Double) matchedContexts.collect{k,v -> v}.sum()
+
+        if( matchRateSum ) {
+//            matchRateSum /= matchedContexts.size() // get rate average
+            // give heave weight to context
+            BigDecimal adjust = matchRateSum * 100
             BigDecimal oldRate = rate
-            rate += rate * adjust 
-            debug(dbg, "ctxRate: key: $key, $fitCnt / $allCnt -> old rate: $oldRate, new rate: $rate")
+            rate += adjust 
+            debug(dbg, "ctxRate: key: $key, for ${matchedContexts.size()} matched ctx, adj: $adjust -> old rate: $oldRate, new rate: $rate")
         }
 
         rate
@@ -203,11 +187,6 @@ public class DisambigStats {
         String normPostag = normalizePostagForRate(postag)
         BigDecimal rate = statsByTag[normPostag]
         
-//        if( ! rate ) {
-//            println "INFO: no stats for tag: $normPostag"
-//            normPostag = normPostag.replaceAll(/:(nv|alt|&adjp:.*?:[^:]*/, '')
-//            rate = statsByTag[normPostag]
-//        }
         if( ! rate ) {
 //            println "WARN: no stats for tag: $normPostag"
             return 0
@@ -264,12 +243,14 @@ public class DisambigStats {
         }
         else {
             def token = tokens[idx+offset]
-            return token.getReadings().collect { tokenReading ->
-                String postag = getTag(token.getCleanToken(), tokenReading.getPOSTag())
-                def normalizedTokenValue = ContextToken.normalizeContextString(token.getCleanToken(), tokenReading.getLemma(), postag)
-                contextToken = new ContextToken(normalizedTokenValue, '', postag)
-                new WordContext(contextToken, offset)
-            } as Set
+            return token.getReadings()
+                .findAll{ AnalyzedToken tokenReading -> ! tokenReading.getPOSTag() != null }
+                .collect { AnalyzedToken tokenReading ->
+                    String postag = getTag(token.getCleanToken(), tokenReading.getPOSTag())
+                    def normalizedTokenValue = ContextToken.normalizeContextString(token.getCleanToken(), tokenReading.getLemma(), postag)
+                    contextToken = new ContextToken(normalizedTokenValue, '', postag)
+                    new WordContext(contextToken, offset)
+                } as Set
         }
 
         [new WordContext(contextToken, offset)] as Set
@@ -290,6 +271,8 @@ public class DisambigStats {
         WordReading wordReading
         String postagNorm
 
+        Map<String, List<Double>> statsByTagList = [:].withDefault { [] }
+        
         new File(statDir, "lemma_freqs_hom.txt").eachLine { String line ->
             def p = line.split(/\h+/)
 
@@ -305,8 +288,9 @@ public class DisambigStats {
                     .put(wordReading, cnt)
 
                 postagNorm = normalizePostagForRate(postag)
-                statsByTag[postagNorm] += cnt
-
+//                statsByTag[postagNorm] += cnt
+                statsByTagList[postagNorm] << cnt
+                
                 if( postag.contains(":xp") ) {
                     String xp = (postag =~ /xp[0-9]/)[0]
                     //TODO: xp needs rather an absolute count
@@ -357,6 +341,12 @@ public class DisambigStats {
             map[wordContext] = cnt
         }
 
+        double statsByTagTotal = (Double) statsByTagList.collect { k,v -> v.sum() }.sum()
+
+        statsByTagList.each { String k, List<Double> v ->
+            statsByTag[k] = (double)v.sum() / statsByTagTotal
+        }
+        
         long tm2 = System.currentTimeMillis()
         System.err.println("Loaded ${statsByWord.size()} disambiguation stats, ${statsByTag.size()} tags, ${statsByWordEnding.size()} endings, ${statsForLemmaXp.size()} xps in ${tm2-tm1} ms")
         
@@ -367,7 +357,11 @@ public class DisambigStats {
                     .sort{ a, b -> a.key.compareTo(b.key) }
                     .each { k,v ->
                         tff << "$k\t$v\n"
-                        tff << "\t" << statsByTagContext[k].collect { k2, v2 -> k2.toString() }.join("\n\t") << "\n"
+                        def ctxTotal = v
+                        tff << "\t" << statsByTagContext[k].collect { k2, v2 -> 
+                            k2.toString() + "\t" + (v2 / statsByTagTotal) 
+                        }
+                        .join("\n\t") << "\n"
                     }
             tff = new File("stats/tag_ending_freqs.txt")
             tff.text = ''

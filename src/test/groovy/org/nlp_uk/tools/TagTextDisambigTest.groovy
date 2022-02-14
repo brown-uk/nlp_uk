@@ -218,6 +218,33 @@ class TagTextDisambigTest {
     }
     
     @Test
+    public void testTokenFormatWithCtx2() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.context], showDisambigRate: true))
+
+        TagResult tagged = tagText.tagText(", цього тижня")
+
+        def expected =
+"""<sentence>
+  <token value="," lemma="," tags="punct" />
+  <token value="цього" lemma="це" tags="noun:inanim:n:v_rod:&amp;pron:dem" q="0.496">
+    <alts>
+      <token value="цього" lemma="цей" tags="adj:m:v_rod:&amp;pron:dem" q="0.458" />
+      <token value="цього" lemma="цей" tags="adj:n:v_rod:&amp;pron:dem" q="0.037" />
+      <token value="цього" lemma="цей" tags="adj:m:v_zna:ranim:&amp;pron:dem" q="0.009" />
+    </alts>
+  </token>
+  <token value="тижня" lemma="тиждень" tags="noun:inanim:m:v_rod" q="1.000">
+    <alts>
+      <token value="тижня" lemma="тиждень" tags="noun:inanim:m:v_zna:var" q="0.000" />
+    </alts>
+  </token>
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
+    @Test
     public void testTokenFormatWithCtx3() {
         tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.context], showDisambigRate: true))
 
@@ -260,6 +287,33 @@ class TagTextDisambigTest {
 """
         assertEquals expected, tagged.tagged
         assertEquals 1, tagged.stats.disambigMap['word']
+    }
+    
+    @Test
+    public void testTokenFormatWithCtx5() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.context], showDisambigRate: true))
+
+        TagResult tagged = tagText.tagText("під час переслідування")
+
+        def expected =
+"""<sentence>
+  <token value="під" lemma="під" tags="prep" />
+  <token value="час" lemma="час" tags="noun:inanim:m:v_zna" q="0.995">
+    <alts>
+      <token value="час" lemma="час" tags="noun:inanim:m:v_naz:&amp;predic" q="0.005" />
+    </alts>
+  </token>
+  <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_rod" q="0.836">
+    <alts>
+      <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_naz" q="0.097" />
+      <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_zna" q="0.065" />
+      <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_naz" q="0.001" />
+      <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_zna" q="0.001" />
+    </alts>
+  </token>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
     }
 
 
