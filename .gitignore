@@ -7,3 +7,7 @@
 _bin
 .settings
 .gradle
+lib/
+tmp/
+*.bak
+*.jfr

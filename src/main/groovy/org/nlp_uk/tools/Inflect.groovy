@@ -3,7 +3,7 @@
 package org.nlp_uk.tools
 
 @Grab(group='org.languagetool', module='language-uk', version='5.6')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.10')
 
 import org.languagetool.*
 import org.languagetool.language.*
@@ -20,8 +20,12 @@ class Inflect {
     // easy way to include a class without forcing classpath to be set
     static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
+    Ukrainian ukLanguage = new Ukrainian() {
+        @Override
+        protected synchronized List<?> getPatternRules() { return [] }
+    }
 
-    UkrainianSynthesizer synth = new UkrainianSynthesizer();
+    UkrainianSynthesizer synth = new UkrainianSynthesizer(ukLanguage);
 
 
     def inflectWord(String word, String tag, boolean regexp) {
