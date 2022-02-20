@@ -15,6 +15,7 @@ import org.nlp_uk.tools.TagText.TagOptions
 import org.nlp_uk.tools.TagText.TagOptions.DisambigModule
 
 import groovy.transform.CompileStatic;
+import groovy.xml.slurpersupport.Node
 
 public class DisambigStats {
     private static final Pattern UPPERCASED_PATTERN = Pattern.compile(/[А-ЯІЇЄҐ][а-яіїєґ'-]+/)
@@ -252,15 +253,26 @@ public class DisambigStats {
     }
     
     @CompileStatic
+    static boolean isIgnorableCtx(AnalyzedTokenReadings token) {
+        token.getCleanToken() in ContextToken.IGNORE_TOKENS
+    }
+
+    @CompileStatic
+    static AnalyzedTokenReadings findCtx(AnalyzedTokenReadings[] tokensXml, int pos, int offset) {
+        for( ; pos+offset >= 0 && pos+offset < tokensXml.size()-1; offset++) {
+            if( ! isIgnorableCtx(tokensXml[pos+offset]) ) // TODO: stop at 1 skipped?
+                return tokensXml[pos+offset]
+        }
+        return null
+    }
+
+    @CompileStatic
     private static Set<WordContext> createWordContext(AnalyzedTokenReadings[] tokens, int idx, int offset) {
+        
+        AnalyzedTokenReadings ctxTokenReading = findCtx(tokens, idx, offset)
+        
         ContextToken contextToken
-        if( idx + offset < 0 ) {
-            contextToken = new ContextToken('__BEG', '', 'BEG')
-        }
-        else if ( idx + offset >= tokens.length ) {
-            contextToken = new ContextToken('__END', '', 'END')
-        }
-        else {
+        if( ctxTokenReading != null ) {
             def token = tokens[idx+offset]
             return token.getReadings()
                 .findAll{ AnalyzedToken tokenReading -> ! tokenReading.getPOSTag() != null }
@@ -270,6 +282,9 @@ public class DisambigStats {
                     contextToken = new ContextToken(normalizedTokenValue, '', postag)
                     new WordContext(contextToken, offset)
                 } as Set
+        }
+        else {
+            contextToken = offset<0 ? new ContextToken('__BEG', '', 'BEG') : new ContextToken('__END', '', 'END')
         }
 
         [new WordContext(contextToken, offset)] as Set
@@ -384,7 +399,7 @@ public class DisambigStats {
 
         double statsByWordEndingTotal = (Double) statsByWordEnding.collect { k,v -> v.collect{ k2, v2 -> v2.rate}.sum() }.sum()
 
-        println ":: tagTotal: $statsByTagTotal, wordEndingTotal: $statsByWordEndingTotal"
+//        println ":: tagTotal: $statsByTagTotal, wordEndingTotal: $statsByWordEndingTotal"
 
         // normalize word ending rates
         statsByWordEnding.each { String wordEnding2, Map<String, Stat> v ->
