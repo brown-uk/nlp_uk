@@ -261,7 +261,7 @@ class TagText {
                 posTag == null || posTag.endsWith("_END") || posTag.startsWith("<")
             }
             
-            List<BigDecimal> rates = null
+            List<Double> rates = null
             if( options.disambiguate && readings.size() > 1 ) {
                 rates = disambigStats.orderByStats(readings, cleanToken, tokens, idx, stats)
             }
@@ -294,7 +294,7 @@ class TagText {
     }
 
     @CompileStatic
-    static void addRates(List<TaggedToken> tagTokens, List<BigDecimal> rates) {
+    static void addRates(List<TaggedToken> tagTokens, List<Double> rates) {
         BigDecimal sum = (BigDecimal) rates.sum()
         tagTokens.eachWithIndex { TaggedToken t, int idx2 ->
 //            if( ! sum ) System.err.println "sum of 0 for: $tagTokens"
