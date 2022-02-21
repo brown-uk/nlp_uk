@@ -3,20 +3,31 @@
 package org.nlp_uk.other
 
 // This script reads all .txt files in given directory (default is "txt/") 
-// and tries to find all with acceptable criterias for Ukrainian text (e.g. > 3k Ukrainian words)
-// output files go into <dir>/good/
-// NOTE:
-// it also tries to fix broken encoding
-// it also tries to clean up latin/cyrillic character mix
-// it also tries to replace weird apostrophe characters with correct one (')
-// it also tries to detect and skip two-column texts
-// it also tries to merge some simple word wraps
+// and tries to clean up the text ot make it more suitable for NLP
+// The output files go into <file/dir>-good
+// Cleanups:
+// fix broken encoding (broken cp1251 etc)
+// remove soft hyphen 
+// replace weird apostrophe characters with correct one (')
+// merge some simple word wraps
+// remove backslash from escaped quotes
+// weird ї and й via combining characters (U+0308)
+// і instead of ї: промисловоі, нацполіціі
+// clean up latin/cyrillic character mix
+//   CO/CO2 with cyr/lat mix
+//   degree Celcius with cyr
+// digit 3 instead of letter З
+// try to detect and skip two-column texts
+// separate leading hyphen (e.g. -Алло! - проричав він в слухавку)
+// fix dangling hyphen (at the end of the line)
+// check and warn for spaced words (e.g. Н А Т А Л К А)
+// mark/rate or remove Russian paragraphs
 
 @GrabConfig(systemClassLoader=true)
 @Grab(group='org.languagetool', module='language-uk', version='5.6')
 //@Grab(group='org.languagetool', module='language-uk', version='5.7-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='5.6')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.10')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 //@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.9')
 
@@ -149,7 +160,7 @@ class CleanText {
         //        @Parameters(arity="1", paramLabel="input", description="The file(s) whose checksum to calculate.")
         @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
         String input
-        @Option(names = ["-o", "--output"], arity="1", description = ["Output file ((default: input file with .out added before extention)"])
+        @Option(names = ["-o", "--output"], arity="1", description = ["Output file ((default: input file.вшк with \"-good\" added)"])
         String output
         @Option(names = ["--dir"], arity="1", description = ["Directory to process *.txt in (default is current directory)"])
         String dir
