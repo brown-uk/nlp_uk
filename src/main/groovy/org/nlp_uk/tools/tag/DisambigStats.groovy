@@ -90,22 +90,32 @@ public class DisambigStats {
             }
         }
 
-        double postagRateSum = (double) readings.collect { anToken -> getPostagRate(anToken, tokens, idx, true, false, 0) }.sum()
-        debug("${readings.size()} readings for $cleanToken, tag total: ${rnd(postagRateSum)}")
-        
+        boolean withXp = true
+        double postagRateSum = (double) readings.collect { anToken -> getPostagRate(anToken, tokens, idx, withXp, false, 0, 0) }.sum()
+        double wordEndingRateSum = (double) readings.collect { anToken -> getRateByEnding(anToken, cleanToken, tokens, idx, false, 0, 0) }.sum()
+        debug("${readings.size()} readings for $cleanToken, tag total: ${rnd(postagRateSum)}, wordEnding total: ${rnd(wordEndingRateSum)}")
+
         int i=0
         def rates0 = readings.collect { anToken ->
             
             double rate = getRate(anToken, cleanToken, statsForWord, tokens, idx, dbg)
             
-            if( DisambigModule.wordEnding in options.disambiguate ) {
-                double wordEndingRate = getRateByEnding(anToken, cleanToken, tokens, idx, dbg)
-                rate += wordEndingRate / 100.0
+            if( DisambigModule.wordEnding in options.disambiguate 
+                    && wordEndingRateSum > 0
+                    && rate == 0.0 ) {
+                double ctxQ = /*rate ? 100000 :*/ 1.2*1000000
+                double wordEndingRate = getRateByEnding(anToken, cleanToken, tokens, idx, dbg, wordEndingRateSum, ctxQ)
+                rate += wordEndingRate / 80.0
+            }
+            
+            if( postagRateSum ) {
+                double ctxQ = /*rate ? 100000 :*/ 1.2*1000000
+                double postagRate = getPostagRate(anToken, tokens, idx, withXp, dbg, postagRateSum, ctxQ)
+                rate += postagRate / 60.0
             }
 
-            double postagRate = postagRateSum ? getPostagRate(anToken, tokens, idx, true, dbg, postagRateSum) : 0
-            rate += postagRate / 10.0
-
+            debug(" RATE: ${rnd(rate)}")
+            
             [idx: i++, rate: rate, reading: anToken]
         }
 
@@ -126,7 +136,7 @@ public class DisambigStats {
     }
     
     @CompileStatic
-    private Double getRate(AnalyzedToken at, String cleanToken, Map<WordReading, Stat> stats, 
+    private double getRate(AnalyzedToken at, String cleanToken, Map<WordReading, Stat> stats, 
             AnalyzedTokenReadings[] tokens, int idx, boolean dbg) {
             
         if( stats == null )
@@ -134,34 +144,99 @@ public class DisambigStats {
 
         WordReading wordReading = new WordReading(at.getLemma(), at.getPOSTag())
         Stat r = stats[wordReading]
-        Double rate = r ? r.rate : null
+        Double rate = r ? r.rate : 0
         
         if( rate ) {
             rate = adjustByContext(rate, wordReading, r.ctxRates, tokens, idx, dbg, 10000)
         }
         
-        debug(dbg, "word rate: $at, idx: $idx : $rate")
-        return rate ?: 0
+        debug(dbg, "word rate: $at, idx: $idx : ${rnd(rate)}")
+        return rate
     }
 
     @CompileStatic
-    private double getRateByEnding(AnalyzedToken at, String cleanToken, AnalyzedTokenReadings[] tokens, int idx, boolean dbg) {
+    private double getRateByEnding(AnalyzedToken at, String cleanToken, AnalyzedTokenReadings[] tokens, int idx, boolean dbg, double total, double ctxQ) {
 
         double rate = 0
         String postag = at.getPOSTag()
         String wordEnding = getWordEnding(cleanToken, postag)
-        debug(dbg, ":: using word ending $wordEnding")
+        if( ! wordEnding )
+            return 0
+        
         Map<String, Stat> statsForWordEnding = statsByWordEnding[wordEnding]
         if( statsForWordEnding != null ) {
             String normPostag = normalizePostagForRate(postag)
-            Stat st = statsForWordEnding[normPostag]
-            if( st ) {
-                rate = st.rate
+            Stat stat = statsForWordEnding[normPostag]
+            
+            if( ! stat ) {
+//            println "WARN: no stats for tag: $wordEnding"
+                return 0
             }
-            debug(dbg, ":: using word ending $wordEnding, normPostag: ${postag} = rate: $rate")
+                
+            rate = stat.rate
+            if( total ) rate /= total
+            assert rate <= 1.0
+            
+            if( rate && total ) {
+                rate = adjustByContext(rate, wordEnding, stat.ctxRates, tokens, idx, dbg, ctxQ)
+            }
+    
+            debug(dbg, "  word ending rate: $wordEnding, normPostag: ${normPostag} = rate: ${rnd(rate)}")
         }
         
         return rate
+    }
+    
+    @CompileStatic
+    private double getPostagRate(AnalyzedToken reading, AnalyzedTokenReadings[] tokens, int idx, boolean withXp, boolean dbg, double total, double ctxQ) {
+        String postag = reading.getPOSTag()
+        String normPostag = normalizePostagForRate(postag)
+        def stat = statsByTag[normPostag]
+        
+        if( ! stat ) {
+//            println "WARN: no stats for tag: $normPostag"
+            return 0
+        }
+        
+        double rate = stat.rate
+        if( total ) rate /= total
+        assert rate <= 1.0
+        
+        double oldRate = rate
+        
+        if( rate && total ) {
+            rate = adjustByContext(rate, normPostag, stat.ctxRates, tokens, idx, dbg, ctxQ)
+        }
+
+        if( rate && withXp ) {
+            rate = adjustByXp(rate, postag, reading, dbg)
+        }        
+        
+        debug(dbg, "  tag rate: $normPostag, idx: $idx: oldRate: ${rnd(oldRate)}, rate: ${rnd(rate)}")
+
+        return rate
+    }
+
+    @CompileStatic
+    double adjustByXp(double rate, String postag, AnalyzedToken reading, boolean dbg) {
+        if( postag.contains(":xp") ) {
+            String xp = (postag =~ /xp[0-9]/)[0]
+            String lemma = reading.getLemma()
+            Double mi = statsForLemmaXp[lemma][xp]
+            if( mi != null ) {
+                mi = mi/(double)10.0 + 1
+                debug(dbg, "    xp for $lemma, $xp with q=$mi")
+                rate *= mi
+            }
+        }
+        rate
+    } 
+    
+    private static final Pattern POSTAG_NORM_PATTERN = ~ /:(xp[1-9]|ua_[0-9]{4}|comp.|&predic|&insert|coll|rare|vulg)/
+    
+    @CompileStatic
+    private static String normalizePostagForRate(String postag) {
+        POSTAG_NORM_PATTERN.matcher(postag).replaceAll('')
     }
 
     @CompileStatic
@@ -190,52 +265,10 @@ public class DisambigStats {
             assert adjust >= 1.0, "ctxSum: $matchRateSum, rate: $rate, adjust: $adjust, key: $key"
             double oldRate = rate
             rate *= adjust 
-            debug(dbg, "ctxRate: key: $key, ${matchedContexts.size()} ctxs, x: ${rnd(adjust)}")//, old: ${rnd(oldRate)} -> withCtx: ${rnd(rate)}")
+            debug(dbg, "    ctx for : $key, ${matchedContexts.size()} ctxs, x: ${rnd(adjust)}")//, old: ${rnd(oldRate)} -> withCtx: ${rnd(rate)}")
         }
 
         rate
-    }
-    
-    @CompileStatic
-    private double getPostagRate(AnalyzedToken reading, AnalyzedTokenReadings[] tokens, int idx, boolean withXp, boolean dbg, double total) {
-        String postag = reading.getPOSTag()
-        String normPostag = normalizePostagForRate(postag)
-        def stat = statsByTag[normPostag]
-        
-        if( ! stat ) {
-//            println "WARN: no stats for tag: $normPostag"
-            return 0
-        }
-        
-        double rate = stat.rate
-        if( total ) rate /= total
-        assert rate <= 1.0
-        
-        double oldRate = rate
-        
-        if( rate && total ) {
-            rate = adjustByContext(rate, normPostag, stat.ctxRates, tokens, idx, dbg, 1000000)
-        }
-
-        debug(dbg, "tag rate: $normPostag, idx: $idx: oldRate: ${rnd(oldRate)}, rate: ${rnd(rate)}")
-        
-        if( postag.contains(":xp") ) {
-            String xp = (postag =~ /xp[0-9]/)[0]
-            Double mi = statsForLemmaXp[reading.getLemma()][xp]
-            if( mi != null ) {
-                debug("Adjusted for xp for ${reading.getLemma()}, $xp with ($mi) by ${mi * 1.5}")
-                rate += mi * 1.5
-            }
-        }
-        
-        return rate
-    }
-
-    private static final Pattern POSTAG_NORM_PATTERN = ~ /:(xp[1-9]|ua_[0-9]{4}|comp.|&predic|&insert|coll|rare|vulg)/
-    
-    @CompileStatic
-    private static String normalizePostagForRate(String postag) {
-        POSTAG_NORM_PATTERN.matcher(postag).replaceAll('')
     }
     
     @CompileStatic
@@ -332,19 +365,18 @@ public class DisambigStats {
                 if( postag.contains(":xp") ) {
                     String xp = (postag =~ /xp[0-9]/)[0]
                     //TODO: xp needs rather an absolute count
-//                    String key = "${lemma}_${xp}".toString()
-//                    statsForLemmaXp.computeIfAbsent(key, {k -> 0})
                     if( ! (xp in statsForLemmaXp[lemma] ) ) {
                         statsForLemmaXp[lemma][xp] = Double.valueOf(0)
                     }
                     statsForLemmaXp[lemma][xp] += rate
                 }
 
+                wordEnding = null
                 if( true || DisambigModule.wordEnding in options.disambiguate ) {
                     wordEnding = getWordEnding(word, postagNorm)
                     if( wordEnding ) {
                         def sbweStat = statsByWordEnding.computeIfAbsent(wordEnding, {s -> new HashMap<>()})
-                            .computeIfAbsent(postagNorm, {x -> new Stat()})
+                        .computeIfAbsent(postagNorm, {x -> new Stat()})
                         sbweStat.rate += rate
                     }
                 }
@@ -447,6 +479,17 @@ public class DisambigStats {
                         }.join("\n")
                         tff << "$vvv\n"
                     }
+
+            tff = new File("stats/tag_xp_freqs.txt")
+            tff.text = ''
+            statsForLemmaXp
+                    .sort{ a, b -> a.key.compareTo(b.key) }
+                    .each { String lemma, Map<String, Double> v ->
+                        String vvv = v.collect { xp, v2 -> 
+                            "$lemma\t$xp\t$v2" 
+                        }.join("\n")
+                        tff << "$vvv\n"
+                    }
         }
         
     }
@@ -455,14 +498,22 @@ public class DisambigStats {
     static String getWordEnding(String word, String postag) {
         int endLength = 3
         if( postag != null
-                && ! word.endsWith('.') && word.length() >= endLength + 1 
-                && ! (word =~ /[А-ЯІЇЄҐ]$/) ) {
+                && ! postag.contains(":nv")
+                && postag =~ /^(noun|adj|verb|adv)/
+                && ! word.endsWith('.') 
+                && word.length() > endLength 
+                && word =~ /[а-яіїєґ]$/ 
+                && ! (word =~ /-(що|бо|то|от|но|таки)$/) ) {
+
             String wordEnding = word
             if( postag.startsWith("verb:rev") || postag.startsWith("advp:rev") ) { 
                 endLength = 5 
             }
+            else if( word[-endLength] == '-' ) {
+                endLength += 1
+            }
 
-            if( wordEnding.length() >= endLength + 1 ) {
+            if( wordEnding.length() > endLength ) {
                 wordEnding = wordEnding[-endLength..-1]
 
                 return wordEnding

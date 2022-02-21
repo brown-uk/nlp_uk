@@ -152,10 +152,10 @@ class TagTextDisambigTest {
         
         def expected0 =
 """<sentence>
-  <token value="стан" lemma="стан" tags="noun:inanim:m:v_naz:xp2" />
+  <token value="стан" lemma="стан" tags="noun:inanim:m:v_naz:xp2">
     <alts>
-      <token value="стан" lemma="стан" tags="noun:inanim:m:v_zna:xp2">
       <token value="стан" lemma="стан" tags="noun:inanim:m:v_naz:xp1" />
+      <token value="стан" lemma="стан" tags="noun:inanim:m:v_zna:xp2" />
       <token value="стан" lemma="стан" tags="noun:inanim:m:v_zna:xp1" />
     </alts>
   </token>
@@ -305,8 +305,8 @@ class TagTextDisambigTest {
   </token>
   <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_rod">
     <alts>
-      <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_zna" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_naz" />
+      <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_zna" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_naz" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_zna" />
     </alts>
@@ -387,11 +387,12 @@ class TagTextDisambigTest {
     public void testFirstTokenOnlyByTagWE() {
         tagText.setOptions(new TagOptions(xmlOutput: true, singleTokenOnly: true, disambiguate: [DisambigModule.frequency, DisambigModule.wordEnding], showDisambigRate: false))
 
-        TagResult tagged = tagText.tagText("стильні")
+        TagResult tagged = tagText.tagText("стильні дерева")
 
         def expected =
 """<sentence>
   <token value="стильні" lemma="стильний" tags="adj:p:v_naz:compb" />
+  <token value="дерева" lemma="дерево" tags="noun:inanim:p:v_naz" />
 </sentence>
 <paragraph/>
 """
