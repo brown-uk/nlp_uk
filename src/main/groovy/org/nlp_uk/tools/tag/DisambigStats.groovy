@@ -32,11 +32,11 @@ public class DisambigStats {
     // word -> wordReading -> rate/ctxRates
     Map<String, Map<WordReading, Stat>> statsByWord = new HashMap<>(16*1024)
     // wordEnding -> tag -> rate/ctxRates
-    Map<String, Map<String, Stat>> statsByWordEnding = new HashMap<>(8*1024)
+    Map<String, Map<String, Stat>> statsByWordEnding = new HashMap<>(3*1024)
     // tag -> rate/ctxRates
     Map<String, Stat> statsByTag = new HashMap<>(1*1024)
     // lemma_xpN -> rate
-    Map<String, Map<String, Double>> statsForLemmaXp = new HashMap<>(1*1024).withDefault{ new HashMap<>() }
+    Map<String, Map<String, Double>> statsForLemmaXp = new HashMap<>(256).withDefault{ new HashMap<>() }
     
     @groovy.transform.SourceURI
     static SOURCE_URI
@@ -241,10 +241,11 @@ public class DisambigStats {
 
     @CompileStatic
     private static boolean contextMatches(WordContext wctx1, WordContext currContext, ContextMode ctxMode) {
-                    wctx1.contextToken.word == currContext.contextToken.word \
+                    wctx1.offset == currContext.offset \
+                    && (wctx1.contextToken.word == currContext.contextToken.word \
                     || (wctx1.contextToken.postag == currContext.contextToken.postag 
                         && currContext.contextToken.postag =~ /adj|verb|noun/ 
-                        && ctxMode == ContextMode.TAG )
+                        && ctxMode == ContextMode.TAG ))
     }
 
     enum ContextMode { WORD, TAG }
@@ -254,12 +255,14 @@ public class DisambigStats {
         if( ! (DisambigModule.context in options.disambiguate) )
             return rate
             
-        Set<WordContext> currContexts = createWordContext(tokens, idx, -1)
-
+        Set<WordContext> currContextsPrev = createWordContext(tokens, idx, -1)
+//        Set<WordContext> currContextsNext = createWordContext(tokens, idx, +1)
+        
         // TODO: limit previous tokens by ratings already applied?
         def matchedContexts = ctxStats
             .findAll {WordContext wc, Double v2 -> v2
-                currContexts.find { currContext -> contextMatches(wc, currContext, ctxMode) }
+                currContextsPrev.find { currContext -> contextMatches(wc, currContext, ctxMode) } 
+//                || currContextsNext.find { currContext -> contextMatches(wc, currContext, ctxMode) }
             }
         
 //        debug(dbg, "  matched ctx: $matchedContexts")
@@ -344,12 +347,10 @@ public class DisambigStats {
         
         String word
         String wordEnding
+        Stat wordEndingStat
         WordReading wordReading
         String postagNorm
 
-//        Map<String, List<Double>> statsByTagList = [:].withDefault { [] }
-//        Map<String, Map<WordReading, List<Double>>> statsByWordEndingList = [:].withDefault { [:].withDefault{ [] } }
-        
         new File(statDir, "lemma_freqs_hom.txt").eachLine { String line ->
             def p = line.split(/\h+/)
 
@@ -383,9 +384,9 @@ public class DisambigStats {
                 if( true || DisambigModule.wordEnding in options.disambiguate ) {
                     wordEnding = getWordEnding(word, postagNorm)
                     if( wordEnding ) {
-                        def sbweStat = statsByWordEnding.computeIfAbsent(wordEnding, {s -> new HashMap<>()})
-                        .computeIfAbsent(postagNorm, {x -> new Stat()})
-                        sbweStat.rate += rate
+                        wordEndingStat = statsByWordEnding.computeIfAbsent(wordEnding, {s -> new HashMap<>()})
+                            .computeIfAbsent(postagNorm, {x -> new Stat()})
+                        wordEndingStat.rate += rate
                     }
                 }
     
@@ -394,6 +395,9 @@ public class DisambigStats {
 
             // context line
             int pos = p[1] as int
+            // TODO: temp
+//            if( pos == +1 ) return
+            
             String ctxWord=p[2], ctxLemma=p[3], ctxPostag=p[4]
             double ctxCnt=p[5] as double
 
@@ -418,23 +422,35 @@ public class DisambigStats {
 
             // aggregate word ending contexts
             if( wordEnding ) {
-//                def sbweStat = statsByWordEnding.computeIfAbsent(wordEnding, {s -> new HashMap<>()})
-//                    .computeIfAbsent(postagNorm, {x -> new Stat()})
-                statsByWordEnding[wordEnding][postagNorm].ctxRates.computeIfAbsent(wordContext, {Double.valueOf(0)})
-                statsByWordEnding[wordEnding][postagNorm].ctxRates[wordContext] += ctxCnt
+                wordEndingStat.ctxRates.computeIfAbsent(wordContext, {Double.valueOf(0)})
+                wordEndingStat.ctxRates[wordContext] += ctxCnt
             }
 
             // aggregate postag contexts
-            statsByTag[postagNorm].ctxRates.computeIfAbsent(wordContext, {Double.valueOf(0)})
-            statsByTag[postagNorm].ctxRates[wordContext] += ctxCnt
+            def statsByTagEntry = statsByTag[postagNorm]
+            statsByTagEntry.ctxRates.computeIfAbsent(wordContext, {Double.valueOf(0)})
+            statsByTagEntry.ctxRates[wordContext] += ctxCnt
         }
 
-        double statsByTagTotal = (Double) statsByTag.collect { k,v -> v.rate }.sum()
+        normalizeRates()
 
+        long tm2 = System.currentTimeMillis()
+        System.err.println("Loaded ${statsByWord.size()} disambiguation stats, ${statsByTag.size()} tags, ${statsByWordEnding.size()} endings, ${statsForLemmaXp.size()} xps in ${tm2-tm1} ms")
+        
+        if( dbg ) {
+            writeDerivedStats()
+        }
+        
+    }
+
+    @CompileStatic
+    void normalizeRates() {
+        double statsByTagTotal = (Double) statsByTag.collect { k,v -> v.rate }.sum()
+        
         // normalize tag rates
         statsByTag.each { String tag, Stat v ->
             v.rate /= statsByTagTotal
-            v.ctxRates.entrySet().each { e -> e.value /= (double)statsByTagTotal } 
+            v.ctxRates.entrySet().each { e -> e.value /= (double)statsByTagTotal }
         }
 
         double statsByWordEndingTotal = (Double) statsByWordEnding.collect { k,v -> v.collect{ k2, v2 -> v2.rate}.sum() }.sum()
@@ -445,63 +461,61 @@ public class DisambigStats {
         statsByWordEnding.each { String wordEnding2, Map<String, Stat> v ->
             v.each { String tag, Stat s ->
                 s.rate /= statsByWordEndingTotal
-                s.ctxRates.entrySet().each { e -> e.value /= (double)statsByWordEndingTotal } 
+                s.ctxRates.entrySet().each { e -> e.value /= (double)statsByWordEndingTotal }
             }
         }
         
         // normalize xp rate by lemma
-        statsForLemmaXp.each { String k, Map<String, Double> v ->  
+        statsForLemmaXp.each { String k, Map<String, Double> v ->
             double sum = (double)v.collect{ k2, v2 -> v2 }.sum()
             v.entrySet().each { Map.Entry<String, Double> e -> e.value /= (double)sum }
         }
-        
-
-        long tm2 = System.currentTimeMillis()
-        System.err.println("Loaded ${statsByWord.size()} disambiguation stats, ${statsByTag.size()} tags, ${statsByWordEnding.size()} endings, ${statsForLemmaXp.size()} xps in ${tm2-tm1} ms")
-        
-        if( dbg ) {
-            File tff = new File("stats/tag_freqs.txt")
-            tff.text = ''
-            statsByTag
-                    .sort{ a, b -> a.key.compareTo(b.key) }
-                    .each { k,v ->
-                        tff << "$k\t${v.rate}\n"
-                        def ctxTotal = v
-                        tff << "\t" << v.ctxRates.collect { k2, v2 -> 
-                            k2.toString() + "\t" + v2 
-                        }
-                        .join("\n\t") << "\n"
-                    }
-
-            tff = new File("stats/tag_ending_freqs.txt")
-            tff.text = ''
-            statsByWordEnding
-                    .sort{ a, b -> a.key.compareTo(b.key) }
-                    .each { String wordEnding2, Map<String, Stat> v ->
-                        String vvv = v.collect { tag, v2 -> 
-                            def ctx = v2.ctxRates.collect { k3, v3 -> 
-                                k3.toString() + "\t" + v3 
-                            }
-                            .join("\n\t")
-                            "$wordEnding2\t$tag\t${v2.rate}\n\t$ctx" 
-                        }.join("\n")
-                        tff << "$vvv\n"
-                    }
-
-            tff = new File("stats/tag_xp_freqs.txt")
-            tff.text = ''
-            statsForLemmaXp
-                    .sort{ a, b -> a.key.compareTo(b.key) }
-                    .each { String lemma, Map<String, Double> v ->
-                        String vvv = v.collect { xp, v2 -> 
-                            "$lemma\t$xp\t$v2" 
-                        }.join("\n")
-                        tff << "$vvv\n"
-                    }
-        }
-        
     }
+    
+    @CompileStatic
+    void writeDerivedStats() {
+        File tff = new File("stats/tag_freqs.txt")
+        tff.text = ''
+        statsByTag
+                .sort{ a, b -> a.key.compareTo(b.key) }
+                .each { k,v ->
+                    tff << "$k\t${v.rate}\n"
+                    def ctxTotal = v
+                    tff << "\t" << v.ctxRates.collect { k2, v2 ->
+                        k2.toString() + "\t" + v2
+                    }
+                    .join("\n\t") << "\n"
+                }
 
+        tff = new File("stats/tag_ending_freqs.txt")
+        tff.text = ''
+        statsByWordEnding
+                .sort{ a, b -> a.key.compareTo(b.key) }
+                .each { String wordEnding2, Map<String, Stat> v ->
+                    String vvv = v.collect { tag, v2 ->
+                        def ctx = v2.ctxRates.collect { k3, v3 ->
+                            k3.toString() + "\t" + v3
+                        }
+                        .join("\n\t")
+                        "$wordEnding2\t$tag\t${v2.rate}\n\t$ctx"
+                    }.join("\n")
+                    tff << "$vvv\n"
+                }
+
+        tff = new File("stats/tag_xp_freqs.txt")
+        tff.text = ''
+        statsForLemmaXp
+                .sort{ a, b -> a.key.compareTo(b.key) }
+                .each { String lemma, Map<String, Double> v ->
+                    String vvv = v.collect { xp, v2 ->
+                        "$lemma\t$xp\t$v2"
+                    }.join("\n")
+                    tff << "$vvv\n"
+                }
+
+    }
+    
+    
     @CompileStatic
     static String getWordEnding(String word, String postag) {
         int endLength = 3
