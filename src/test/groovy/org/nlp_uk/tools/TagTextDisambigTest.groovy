@@ -305,10 +305,10 @@ class TagTextDisambigTest {
   </token>
   <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_rod">
     <alts>
-      <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_naz" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_zna" />
-      <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_naz" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_zna" />
+      <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_naz" />
+      <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_naz" />
     </alts>
   </token>
 </sentence>

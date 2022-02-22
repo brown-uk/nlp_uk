@@ -147,7 +147,7 @@ public class DisambigStats {
         Double rate = r ? r.rate : 0
         
         if( rate ) {
-            rate = adjustByContext(rate, wordReading, r.ctxRates, tokens, idx, dbg, 10000)
+            rate = adjustByContext(rate, wordReading, r.ctxRates, tokens, idx, dbg, 10000, ContextMode.WORD)
         }
         
         debug(dbg, "word rate: $at, idx: $idx : ${rnd(rate)}")
@@ -178,7 +178,7 @@ public class DisambigStats {
             assert rate <= 1.0
             
             if( rate && total ) {
-                rate = adjustByContext(rate, wordEnding, stat.ctxRates, tokens, idx, dbg, ctxQ)
+                rate = adjustByContext(rate, wordEnding, stat.ctxRates, tokens, idx, dbg, ctxQ, ContextMode.WORD)
             }
     
             debug(dbg, "  word ending rate: $wordEnding, normPostag: ${normPostag} = rate: ${rnd(rate)}")
@@ -205,7 +205,7 @@ public class DisambigStats {
         double oldRate = rate
         
         if( rate && total ) {
-            rate = adjustByContext(rate, normPostag, stat.ctxRates, tokens, idx, dbg, ctxQ)
+            rate = adjustByContext(rate, normPostag, stat.ctxRates, tokens, idx, dbg, ctxQ, ContextMode.TAG)
         }
 
         if( rate && withXp ) {
@@ -240,29 +240,37 @@ public class DisambigStats {
     }
 
     @CompileStatic
-    private <T> double adjustByContext(double rate, T key, Map<WordContext, Double> ctxStats, AnalyzedTokenReadings[] tokens, int idx, boolean dbg, double ctxCoeff) {
+    private static boolean contextMatches(WordContext wctx1, WordContext currContext, ContextMode ctxMode) {
+                    wctx1.contextToken.word == currContext.contextToken.word \
+                    || (wctx1.contextToken.postag == currContext.contextToken.postag 
+                        && currContext.contextToken.postag =~ /adj|verb|noun/ 
+                        && ctxMode == ContextMode.TAG )
+    }
+
+    enum ContextMode { WORD, TAG }
+    
+    @CompileStatic
+    private <T> double adjustByContext(double rate, T key, Map<WordContext, Double> ctxStats, AnalyzedTokenReadings[] tokens, int idx, boolean dbg, double ctxCoeff, ContextMode ctxMode) {
         if( ! (DisambigModule.context in options.disambiguate) )
             return rate
             
-//        Map<WordContext, Double> ctxToRateMap = stats[key].ctxRates
         Set<WordContext> currContexts = createWordContext(tokens, idx, -1)
 
         // TODO: limit previous tokens by ratings already applied?
         def matchedContexts = ctxStats
             .findAll {WordContext wc, Double v2 -> v2
-                boolean found = currContexts.find { currContext ->
-                    wc.contextToken.word == currContext.contextToken.word
-                }
+                currContexts.find { currContext -> contextMatches(wc, currContext, ctxMode) }
             }
+        
+//        debug(dbg, "  matched ctx: $matchedContexts")
             
         // if any (previous) readings match the context add its context rate
-        Double matchRateSum = (Double) matchedContexts.collect{k,v -> v}.sum(0) /// (double)matchedContexts.size()
+        Double matchRateSum = (Double) matchedContexts.collect{k,v -> v}.sum(0.0) /// (double)matchedContexts.size()
 
         if( matchRateSum ) {
 //            matchRateSum /= matchedContexts.size() // get rate average
-            // normalize context rate to main rate and give it a weight, max boost (single context) is x50
+            // normalize context rate to main rate and give it a weight
             double adjust = (matchRateSum / rate) * ctxCoeff + 1
-            assert adjust >= 1.0, "ctxSum: $matchRateSum, rate: $rate, adjust: $adjust, key: $key"
             double oldRate = rate
             rate *= adjust 
             debug(dbg, "    ctx for : $key, ${matchedContexts.size()} ctxs, x: ${rnd(adjust)}")//, old: ${rnd(oldRate)} -> withCtx: ${rnd(rate)}")
@@ -526,6 +534,6 @@ public class DisambigStats {
     void printStats(disambigMap) {
         BigDecimal unknown = disambigMap['total'] ? disambigMap['noWord'] * 100 / disambigMap['total'] : 0
         unknown = unknown.round(0)
-        println "Disambig stats: ${disambigMap}: unknown: ${unknown}%"
+        //println "Disambig stats: ${disambigMap}: unknown: ${unknown}%"
     }
 }
