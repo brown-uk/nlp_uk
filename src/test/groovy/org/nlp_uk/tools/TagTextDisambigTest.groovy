@@ -54,8 +54,8 @@ class TagTextDisambigTest {
     <token value="Тому" lemma="той" tags="adj:m:v_dav:&amp;pron:dem" />
     <token value="Тому" lemma="Том" tags="noun:anim:m:v_dav:prop:fname" />
     <token value="Тому" lemma="Тома" tags="noun:anim:m:v_zna:prop:fname" />
-    <token value="Тому" lemma="той" tags="adj:n:v_dav:&amp;pron:dem" />
     <token value="Тому" lemma="те" tags="noun:inanim:n:v_dav:&amp;pron:dem" />
+    <token value="Тому" lemma="той" tags="adj:n:v_dav:&amp;pron:dem" />
   </tokenReading>
 </sentence>
 """
@@ -309,6 +309,28 @@ class TagTextDisambigTest {
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_zna" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_naz" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_naz" />
+    </alts>
+  </token>
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+    
+    @Test
+    public void testTokenFormatWithCtx6() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.context], showDisambigRate: false))
+
+        TagResult tagged = tagText.tagText("Щеплення")
+
+        def expected =
+"""<sentence>
+  <token value="Щеплення" lemma="щеплення" tags="noun:inanim:p:v_naz">
+    <alts>
+      <token value="Щеплення" lemma="щеплення" tags="noun:inanim:n:v_naz" />
+      <token value="Щеплення" lemma="щеплення" tags="noun:inanim:p:v_zna" />
+      <token value="Щеплення" lemma="щеплення" tags="noun:inanim:n:v_zna" />
+      <token value="Щеплення" lemma="щеплення" tags="noun:inanim:n:v_rod" />
     </alts>
   </token>
 </sentence>

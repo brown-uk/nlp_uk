@@ -254,25 +254,29 @@ public class DisambigStats {
     private <T> double adjustByContext(double rate, T key, Map<WordContext, Double> ctxStats, AnalyzedTokenReadings[] tokens, int idx, boolean dbg, double ctxCoeff, ContextMode ctxMode) {
         if( ! (DisambigModule.context in options.disambiguate) )
             return rate
-            
+        
+        boolean useRigthContext = false 
+                    
         Set<WordContext> currContextsPrev = createWordContext(tokens, idx, -1)
-//        Set<WordContext> currContextsNext = createWordContext(tokens, idx, +1)
+        Set<WordContext> currContextsNext = useRigthContext ? createWordContext(tokens, idx, +1) : null
         
         // TODO: limit previous tokens by ratings already applied?
         def matchedContexts = ctxStats
             .findAll {WordContext wc, Double v2 -> v2
-                currContextsPrev.find { currContext -> contextMatches(wc, currContext, ctxMode) } 
-//                || currContextsNext.find { currContext -> contextMatches(wc, currContext, ctxMode) }
+                currContextsPrev.find { currContext -> contextMatches(wc, currContext, ctxMode) } \
+                    || (useRigthContext 
+                            && currContextsNext.find { currContext -> contextMatches(wc, currContext, ctxMode) } )
             }
         
 //        debug(dbg, "  matched ctx: $matchedContexts")
             
         // if any (previous) readings match the context add its context rate
         Double matchRateSum = (Double) matchedContexts.collect{k,v -> v}.sum(0.0) /// (double)matchedContexts.size()
+        Set<Integer> matchedOffsets = useRigthContext ? matchedContexts.collect{k,v -> k.offset} as Set : [-1] as Set
 
         if( matchRateSum ) {
-//            matchRateSum /= matchedContexts.size() // get rate average
             // normalize context rate to main rate and give it a weight
+            matchRateSum /= matchedOffsets.size()
             double adjust = (matchRateSum / rate) * ctxCoeff + 1
             double oldRate = rate
             rate *= adjust 
