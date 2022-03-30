@@ -242,10 +242,11 @@ public class DisambigStats {
     @CompileStatic
     private static boolean contextMatches(WordContext wctx1, WordContext currContext, ContextMode ctxMode) {
                     wctx1.offset == currContext.offset \
-                    && (wctx1.contextToken.word == currContext.contextToken.word \
-                    || (wctx1.contextToken.postag == currContext.contextToken.postag 
-                        && currContext.contextToken.postag =~ /adj|verb|noun/ 
-                        && ctxMode == ContextMode.TAG ))
+                    && ((wctx1.contextToken.word == currContext.contextToken.word) 
+                    || (ctxMode == ContextMode.TAG
+                        && (wctx1.contextToken.postag == currContext.contextToken.postag 
+                        && currContext.contextToken.postag =~ /^(adj|verb|noun|advp)/ ) 
+                        ))
     }
 
     enum ContextMode { WORD, TAG }
@@ -255,24 +256,23 @@ public class DisambigStats {
         if( ! (DisambigModule.context in options.disambiguate) )
             return rate
         
-        boolean useRigthContext = false 
+        boolean useRightContext = false 
                     
         Set<WordContext> currContextsPrev = createWordContext(tokens, idx, -1)
-        Set<WordContext> currContextsNext = useRigthContext ? createWordContext(tokens, idx, +1) : null
+        Set<WordContext> currContextsNext = useRightContext ? createWordContext(tokens, idx, +1) : null
         
         // TODO: limit previous tokens by ratings already applied?
         def matchedContexts = ctxStats
             .findAll {WordContext wc, Double v2 -> v2
                 currContextsPrev.find { currContext -> contextMatches(wc, currContext, ctxMode) } \
-                    || (useRigthContext 
-                            && currContextsNext.find { currContext -> contextMatches(wc, currContext, ctxMode) } )
+                    || (useRightContext && currContextsNext.find { currContext -> contextMatches(wc, currContext, ctxMode) } )
             }
         
 //        debug(dbg, "  matched ctx: $matchedContexts")
             
         // if any (previous) readings match the context add its context rate
         Double matchRateSum = (Double) matchedContexts.collect{k,v -> v}.sum(0.0) /// (double)matchedContexts.size()
-        Set<Integer> matchedOffsets = useRigthContext ? matchedContexts.collect{k,v -> k.offset} as Set : [-1] as Set
+        Set<Integer> matchedOffsets = useRightContext ? matchedContexts.collect{k,v -> k.offset} as Set : [-1] as Set
 
         if( matchRateSum ) {
             // normalize context rate to main rate and give it a weight

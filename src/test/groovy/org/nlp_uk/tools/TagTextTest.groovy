@@ -47,7 +47,7 @@ class TagTextTest {
     public void testOmitMultiwordTag() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt))
         TagResult tagged = tagText.tagText("Де можна")
-        def expected = "Де[де/adv:&pron:int:rel,де/conj:subord,де/part,де/part:pers] можна[можна/noninfl:&predic]"
+        def expected = "Де[де/adv:&pron:int:rel,де/part,де/part:pers] можна[можна/noninfl:&predic]"
         assertEquals expected, tagged.tagged
     }
 

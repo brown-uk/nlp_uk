@@ -461,4 +461,20 @@ class TagTextDisambigTest {
 """
         assertEquals expected, tagged.tagged
     }
+
+    @Test
+    public void testFirstTokenOnlyByTagCtx3() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, singleTokenOnly: true, disambiguate: [DisambigModule.frequency, DisambigModule.context], showDisambigRate: false))
+
+        TagResult tagged = tagText.tagText("вегетативне розмноження")
+
+        def expected =
+"""<sentence>
+  <token value="вегетативне" lemma="вегетативний" tags="adj:n:v_naz" />
+  <token value="розмноження" lemma="розмноження" tags="noun:inanim:n:v_naz" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
 }
