@@ -24,10 +24,10 @@ package org.nlp_uk.other
 // mark/rate or remove Russian paragraphs
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.6')
-//@Grab(group='org.languagetool', module='language-uk', version='5.7-SNAPSHOT')
-@Grab(group='org.languagetool', module='language-ru', version='5.6')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.10')
+@Grab(group='org.languagetool', module='language-uk', version='5.7')
+//@Grab(group='org.languagetool', module='language-uk', version='5.8-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-ru', version='5.7')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 //@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.9')
 

@@ -2,8 +2,8 @@
 
 package org.nlp_uk.tools
 
-@Grab(group='org.languagetool', module='language-uk', version='5.6')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.10')
+@Grab(group='org.languagetool', module='language-uk', version='5.7')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.+')
 
 import org.languagetool.*
 import org.languagetool.language.*
