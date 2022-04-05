@@ -231,7 +231,7 @@ class TextUtils {
         String osName = System.getProperty("os.name").toLowerCase()
         if ( osName.contains("windows")) {
             if( ! "UTF-8".equals(System.getProperty("file.encoding"))
-                    || "UTF-8".equals(java.nio.charset.Charset.defaultCharset()) ) {
+                    || ! "UTF-8".equals(java.nio.charset.Charset.defaultCharset()) ) {
                 System.setOut(new PrintStream(System.out,true,"UTF-8"))
                 
                 println "Input/output charset: " + java.nio.charset.Charset.defaultCharset()
