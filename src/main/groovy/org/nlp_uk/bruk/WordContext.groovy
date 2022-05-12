@@ -1,1 +1,0 @@
-/home/arysin/work/ukr/bruk/disambig/src/main/groovy/org/nlp_uk/bruk/WordContext.groovy

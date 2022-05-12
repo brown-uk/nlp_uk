@@ -12,9 +12,8 @@ import threading
 import argparse
 
 
-SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
+SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/ua/net/nlp/tools'
 ENCODING='utf-8'
-SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
 
 
 in_txt = None

@@ -4,7 +4,7 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 
 Це — проект демонстрації API для обробляння природної мови в LanguageTool для української мови.
 
-Використовує мову [groovy](http://www.groovy-lang.org/), засоби для токенізації та тегування також мають скрипти-обгортки для python3.
+Використовує мову [groovy](http://www.groovy-lang.org/), засоби для токенізації та тегування також мають скрипти-обгортки для python3 та java.
 
 Для запуску скриптів потрібно встановити мову [groovy](http://www.groovy-lang.org/) 
 
@@ -14,15 +14,14 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 
 Для невеликих текстів приклад розбиття та тегування також можна переглянути [на сторінці аналізу LanguageTool](https://community.languagetool.org/analysis?lang=uk)
 
-Основні скрити аналізу текстів знаходяться в каталозі [src/main/groovy/org/nlp_uk/tools](src/main/groovy/org/nlp_uk/tools)
+Основні скрити аналізу текстів знаходяться в каталозі [src/main/groovy/ua/net/nlp/tools](src/main/groovy/ua/net/nlp/tools)
 
 
 ## Використання
 
 
-### Утиліта аналізу тексту: TagText.groovy
 ### Утиліта розбиття тексту: TokenizeText.groovy
-### Утиліта лематизації тексту: LemmatizeText.groovy
+### Утиліта аналізу тексту: TagText.groovy
 
 [докладніше про утиліти аналізу](doc/README_tools.md)
 
@@ -42,4 +41,4 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 
 Проект LanguageTool API NLP UK розповсюджується за умов ліцензії [GPL версії 3](https://www.gnu.org/licenses/gpl.html)
 
-Copyright (c) 2018 Андрій Рисін (arysin@gmail.com)
+Copyright (c) 2022 Андрій Рисін (arysin@gmail.com)

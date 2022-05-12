@@ -13,13 +13,13 @@ import argparse
 
 
 ENCODING='utf-8'
-SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/org/nlp_uk/tools'
+SCRIPT_PATH=os.path.dirname(__file__) + '/../groovy/ua/net/nlp/tools'
 
 in_txt = None
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", help="Verbose",  action="store_true")
-parser.add_argument("-f", help="Pick first lemma",  action="store_true")
+parser.add_argument("-f", help="Pick first token (implies disambig)",  action="store_true")
 parser.add_argument("input_file", default=None, type=str, help="Input file")
 parser.add_argument("-o", "--output_file", default=None, type=str, help="Output file")
 
@@ -47,10 +47,11 @@ my_env["JAVA_TOOL_OPTIONS"] = "-Dfile.encoding=UTF-8"
 
 
 groovy_cmd = 'groovy.bat' if sys.platform == "win32" else 'groovy'
-cmd = [groovy_cmd, SCRIPT_PATH + '/TagText.groovy', '-i', '-']
+cmd = [groovy_cmd, SCRIPT_PATH + '/TagTextW.groovy', '-i', '-']
 
 if args.f:
-    cmd.append('-f')
+    cmd.append('-t1')
+    cmd.append('--disambiguate=context')
 
 if args.output_file:
     cmd.append('-o')

@@ -40,10 +40,10 @@
        mavenCentral()
     }
     dependencies {
-        implementation 'ua.net.nlp:nlp_uk:2.0-SNAPSHOT'
+        implementation 'ua.net.nlp:nlp_uk:3.0-SNAPSHOT'
     }
 
 
 * Приклад коду Java з використанням тегування через nlp_uk:
-    * [TagTextWrapperRun.java](../src/example/java/org/nlp_uk/tools/TagTextWrapperRun.java)
+    * [TagTextWrapperRun.java](../src/example/java/ua/net/nlp/tools/TagTextWrapperRun.java)
 

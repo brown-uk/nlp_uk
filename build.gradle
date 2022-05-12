@@ -3,13 +3,14 @@ plugins {
     id 'groovy'
     id 'eclipse'
     id 'maven-publish'
+    id 'signing'
 }
 
 compileJava.options.encoding = 'UTF-8'
 
 
 group = 'ua.net.nlp'
-version="2.0-SNAPSHOT"
+ext.artifactId = 'nlp_uk'
 
 repositories {
     mavenCentral()
@@ -22,8 +23,8 @@ dependencies {
     implementation group: groovyGroup, name: 'groovy-json', version: groovyVersion, classifier: groovyClassifier
     implementation group: groovyGroup, name: 'groovy-xml', version: groovyVersion, classifier: groovyClassifier
 
-    implementation group: 'info.picocli', name: 'picocli', version: '4.6.1'
-    implementation group: 'ch.qos.logback', name:'logback-classic', version:'1.2.10'
+    implementation group: 'info.picocli', name: 'picocli', version: '4.6.3'
+    implementation group: 'ch.qos.logback', name:'logback-classic', version:'1.2.11'
 
     implementation("org.languagetool:language-uk:$ltUkVersion") {
         exclude module: 'hunspell'
@@ -112,7 +113,7 @@ task tagText(type: JavaExec) {
 // fatJar does not work due to LT having same file in different language modules
 task fatJar(type: Jar) {
     manifest {
-        attributes 'Implementation-Title': 'nlp_uk classes',
+        attributes 'Implementation-Title': 'NLP Tools for Ukrainian',
             'Implementation-Version': archiveVersion
     }
     archiveBaseName = project.name + '-all'
@@ -130,16 +131,90 @@ task copyRuntimeLibs(type: Copy) {
     }
 }
 
-publishing {
-    repositories {
-        mavenLocal()
+//compileJava.enabled = false
+
+jar {
+
+    manifest {
+        attributes 'Implementation-Title': 'NLP tools for Ukrainian language',
+                   'Implementation-Version': version
     }
 
+    setArchiveName "${artifactId}-${version}.jar"
+
+    includeEmptyDirs false
+}
+
+
+task sourceJar(type: Jar) {
+    classifier "sources"
+    from sourceSets.main.allGroovy
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier "javadoc"
+    from javadoc.destinationDir
+}
+
+signing {
+    sign configurations.archives
+    sign publishing.publications
+}
+
+publishing {
     publications {
-        mavenJava(MavenPublication) {
+        maven(MavenPublication) {
+//            groupId = group
+            artifactId = artifactId
+//            version = version
             from components.java
-            //artifact dictJar
-            //artifact ltJar
+
+            artifact(sourceJar) {
+                classifier = 'sources'
+            }
+            artifact(javadocJar) {
+                classifier = 'javadoc'
+            }
+            
+            pom {
+                name = 'NLP Tools for Ukrainian'
+                description = 'NLP tools for Ukrainian language'
+
+                url = "https://github.com/brown-uk/nlp_uk"
+                
+                licenses {
+                  license {
+                    name = 'GNU General Public License v3'
+                    url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
+                  }
+                }
+                
+                developers {
+                  developer {
+                    id = 'arysin'
+                    name = 'Andriy Rysin'
+                    email = 'arysin@gmail.com'
+                  }
+                }
+                
+                scm {
+                  url = "https://github.com/brown-uk/nlp_uk.git"
+                }
+            }
+        }
+    }
+
+    repositories {
+//        mavenLocal()
+
+        maven {
+            credentials {
+                username = getProperty('ossrhUsername')
+                password = getProperty('ossrhPassword')
+            }
+
+         //   url = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+            url = "https://oss.sonatype.org/content/repositories/snapshots/"
         }
     }
 }
