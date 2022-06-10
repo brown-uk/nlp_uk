@@ -295,6 +295,8 @@ class TagText {
             
             tokenReadingsT << item
         }
+        
+        disambigStats.debugStatsFlush()
             
         tokenReadingsT
     }
@@ -315,6 +317,8 @@ class TagText {
         String posTag = tkn.getPOSTag()
         String semTags = semTags.getSemTags(tkn, posTag)
 
+//        posTag = posTag.replaceFirst(/:r(in)?anim/, '')
+        
         String lemma = tkn.getLemma() ?: ''
         TaggedToken token = semTags \
                         ? new TaggedToken('value': tkn.getToken(), 'lemma': lemma, 'tags': posTag, 'semtags': semTags)

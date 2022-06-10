@@ -23,7 +23,7 @@ class TagTextDisambigTest {
 	
 	@BeforeAll
 	static void before() {
-        tagText.disambigStats.dbg = true
+        tagText.disambigStats.writeDerivedStats = true
 	}
 
 
@@ -228,8 +228,8 @@ class TagTextDisambigTest {
   <token value="," lemma="," tags="punct" />
   <token value="цього" lemma="цей" tags="adj:m:v_rod:&amp;pron:dem">
     <alts>
-      <token value="цього" lemma="цей" tags="adj:m:v_zna:ranim:&amp;pron:dem" />
       <token value="цього" lemma="це" tags="noun:inanim:n:v_rod:&amp;pron:dem" />
+      <token value="цього" lemma="цей" tags="adj:m:v_zna:ranim:&amp;pron:dem" />
       <token value="цього" lemma="цей" tags="adj:n:v_rod:&amp;pron:dem" />
     </alts>
   </token>
@@ -305,8 +305,8 @@ class TagTextDisambigTest {
   </token>
   <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_rod">
     <alts>
-      <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_zna" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_zna" />
+      <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_zna" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_naz" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_naz" />
     </alts>
@@ -462,10 +462,9 @@ class TagTextDisambigTest {
         assertEquals expected, tagged.tagged
     }
 
-    @Disabled
     @Test
     public void testFirstTokenOnlyByTagCtx3() {
-        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, singleTokenOnly: true, disambiguate: [DisambigModule.frequency, DisambigModule.context], showDisambigRate: false))
+        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, singleTokenOnly: true, disambiguate: [DisambigModule.frequency, DisambigModule.context, DisambigModule.wordEnding], showDisambigRate: false))
 
         TagResult tagged = tagText.tagText("вегетативне розмноження")
 
@@ -478,4 +477,5 @@ class TagTextDisambigTest {
 """
         assertEquals expected, tagged.tagged
     }
+
 }
