@@ -19,6 +19,8 @@ class TagTextW {
         def tagTextClass = cl.loadClass("${basePkg}.TagText")
         def m = tagTextClass.getMethod("main", String[].class)
         def mArgs = [args].toArray() // new Object[]{args} - Eclips chokes on this
+        
+        System.err.println("---")
         m.invoke(null, mArgs)
     }
 

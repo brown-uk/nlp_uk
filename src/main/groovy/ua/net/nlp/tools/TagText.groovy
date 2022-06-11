@@ -261,6 +261,11 @@ class TagText {
             
             TTR item = new TTR(tokens: [])
             
+            List<String> splitPart = options.isPartsSeparate() ? TextUtils.splitWithPart(cleanToken) : null
+            if( splitPart ) {
+                cleanToken = splitPart[0]
+            }
+            
             List<AnalyzedToken> readings = new ArrayList<>(tokenReadings.getReadings())
             readings.removeIf{ AnalyzedToken tkn ->
                 String posTag = tkn.getPOSTag()
@@ -274,7 +279,7 @@ class TagText {
 
             if( options.tokenFormat ) {
                 List<TaggedToken> tagTokens = readings.collect { AnalyzedToken tkn ->
-                    getTagTokens(tkn)
+                    getTagTokens(tkn, splitPart)
                 }
                 Object firstToken = tagTokens[0]
                 if( tagTokens.size() > 1 ) {
@@ -289,11 +294,17 @@ class TagText {
             }
             else {
                 item.tokens = readings.collect { AnalyzedToken tkn ->   
-                    getTagTokens(tkn)
+                    getTagTokens(tkn, splitPart)
                 }
             }
             
             tokenReadingsT << item
+            
+            if( splitPart ) {
+                def partToken = new TaggedToken('value': splitPart[1], 'lemma': splitPart[1][1..-1], 'tags': 'part')
+                tokenReadingsT << new TTR(tokens: [partToken])
+            }
+
         }
         
         disambigStats.debugStatsFlush()
@@ -313,16 +324,21 @@ class TagText {
     
     
     @CompileStatic
-    private TaggedToken getTagTokens(AnalyzedToken tkn) {
+    private TaggedToken getTagTokens(AnalyzedToken tkn, List<String> splitPart) {
         String posTag = tkn.getPOSTag()
         String semTags = semTags.getSemTags(tkn, posTag)
 
 //        posTag = posTag.replaceFirst(/:r(in)?anim/, '')
         
         String lemma = tkn.getLemma() ?: ''
+        if( lemma && lemma.indexOf('-') >= 0 && splitPart ) {
+            lemma = TextUtils.WITH_PARTS.matcher(lemma).replaceFirst('$1')
+        }
+        String value = splitPart ? splitPart[0] : tkn.getToken()
+        
         TaggedToken token = semTags \
-                        ? new TaggedToken('value': tkn.getToken(), 'lemma': lemma, 'tags': posTag, 'semtags': semTags)
-                : new TaggedToken('value': tkn.getToken(), 'lemma': lemma, 'tags': posTag)
+                        ? new TaggedToken('value': value, 'lemma': lemma, 'tags': posTag, 'semtags': semTags)
+                : new TaggedToken('value': value, 'lemma': lemma, 'tags': posTag)
     }
 
 
@@ -424,7 +440,8 @@ class TagText {
         public List<DisambigModule> disambiguate
         @Option(names = ["-gr", "--disambiguationRate"], description = "Show a disambiguated token ratings")
         boolean showDisambigRate
-
+        boolean partsSeparate = true
+        
         public enum DisambigModule {
             frequency,
             wordEnding,

@@ -47,7 +47,7 @@ class TagTextTest {
     public void testOmitMultiwordTag() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt))
         TagResult tagged = tagText.tagText("Де можна")
-        def expected = "Де[де/adv:&pron:int:rel,де/part,де/part:pers] можна[можна/noninfl:&predic]"
+        def expected = "Де[де/adv:&pron:int:rel,де/conj:subord,де/part,де/part:pers] можна[можна/noninfl:&predic]"
         assertEquals expected, tagged.tagged
     }
 
@@ -489,6 +489,66 @@ class TagTextTest {
 
         expected = [['десь/adv', 'брарарат/unknown', './punct'], ['ковбаса/noun', './punct']]
         assertEquals expected, tagged.collect { it.collect { TTR ttr -> ttr.tokens[0].lemma + "/" + ttr.tokens[0].tags.replaceFirst(/:.*/, '')} }
+    }
+
+    
+    @Test
+    public void testPartsSeparate() {
+        tagText.setOptions(new TagOptions(xmlOutput: true))
+
+        def expected =
+"""<sentence>
+  <tokenReading>
+    <token value="сідай" lemma="сідати" tags="verb:imperf:impr:s:2" />
+  </tokenReading>
+  <tokenReading>
+    <token value="-но" lemma="но" tags="part" />
+  </tokenReading>
+</sentence>
+"""
+        TagResult tagged = tagText.tagText("сідай-но")
+        assertEquals expected, tagged.tagged
+
+    
+        def expected2 =
+"""<sentence>
+  <tokenReading>
+    <token value="сякий" lemma="сякий" tags="adj:m:v_naz:&amp;pron:def" />
+    <token value="сякий" lemma="сякий" tags="adj:m:v_zna:rinanim:&amp;pron:def" />
+  </tokenReading>
+  <tokenReading>
+    <token value="-то" lemma="то" tags="part" />
+  </tokenReading>
+</sentence>
+"""
+    
+        tagged = tagText.tagText("сякий\u2013то")
+        assertEquals expected2, tagged.tagged
+        
+        def expected4 =
+"""<sentence>
+  <tokenReading>
+    <token value="десь" lemma="десь" tags="adv" />
+  </tokenReading>
+  <tokenReading>
+    <token value="-то" lemma="то" tags="part" />
+  </tokenReading>
+</sentence>
+"""
+        tagged = tagText.tagText("десь-то")
+        assertEquals expected4, tagged.tagged
+
+        def expected3 =
+        """<sentence>
+  <tokenReading>
+    <token value="себ-то" lemma="себ-то" tags="conj:subord:arch" />
+  </tokenReading>
+</sentence>
+"""
+            
+        tagged = tagText.tagText("себ-то")
+        assertEquals expected3, tagged.tagged
+        
     }
 
 }

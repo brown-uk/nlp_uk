@@ -248,8 +248,8 @@ class TextUtils {
 
     // common helpers
     
-    static List<String> notParts = ['себ-то', 'накінець-то', 'як-от', 'ф-но', 'все-таки', 'усе-таки', 'то-то',
-        'тим-то', 'аби-то', 'єй-бо', 'їй-бо', 'от-от', 'от-от-от']
+    static List<String> notParts = ['себ-то', 'як-от', 'ф-но', 'все-таки', 'усе-таки', 'то-то',
+        'тим-то', 'аби-то', 'єй-бо', 'їй-бо', 'от-от', 'от-от-от', 'ото-то']
     
     // TODO: disambig
     /*
@@ -282,6 +282,21 @@ class TextUtils {
         }
         
         return newWords
+    }
+    
+    static List<String> splitWithPart(String word) {
+        if( word.indexOf('-') == -1 && word.indexOf('\u2013') == -1 )
+            return null
+        
+        String lWord = word.toLowerCase().replace('\u2013', '-')
+        if( ! (lWord in notParts) ) {
+            def matcher = WITH_PARTS.matcher(word)
+            if( matcher ) {
+                return [matcher[0][1], "-" + matcher[0][2]]
+            }
+        }
+
+        return null
     }
     
 }
