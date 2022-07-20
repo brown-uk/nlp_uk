@@ -3,18 +3,19 @@ package ua.net.nlp.tools
 import static org.junit.jupiter.api.Assertions.*
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
-import groovy.json.JsonOutput
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import ua.net.nlp.tools.TagText.OutputFormat
-import ua.net.nlp.tools.TagText.TagOptions
-import ua.net.nlp.tools.TagText.TagResult
-import ua.net.nlp.tools.TagText.TaggedToken
+
+import ua.net.nlp.tools.tag.TagOptions
+import ua.net.nlp.tools.tag.TagOptions.OutputFormat
+import ua.net.nlp.tools.tag.TagTextCore
+import ua.net.nlp.tools.tag.TagTextCore.TagResult
+
 
 public class TagTextPerfTest {
 
     static String text
-    static tagText = new TagText()
+    static tagText = new TagTextCore()
     
     @BeforeEach
     void before() {

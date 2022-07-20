@@ -11,3 +11,8 @@ lib/
 tmp/
 *.bak
 *.jfr
+**/semtags/*.csv
+**/lemma_freqs_hom.txt
+stats_dbg*
+stress
+settings.gradle

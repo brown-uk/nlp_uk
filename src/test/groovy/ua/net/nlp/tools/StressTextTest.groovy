@@ -8,7 +8,9 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import ua.net.nlp.tools.StressText.StressResult
+
+import ua.net.nlp.other.StressText
+import ua.net.nlp.other.StressText.StressResult
 
 
 class StressTextTest {

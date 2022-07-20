@@ -5,12 +5,12 @@ package ua.net.nlp.tools
 import static org.junit.jupiter.api.Assertions.assertEquals
 
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import ua.net.nlp.tools.TagText.OutputFormat
-import ua.net.nlp.tools.TagText.TagOptions
-import ua.net.nlp.tools.TagText.TagResult
-import ua.net.nlp.tools.tag.TagStats
+
+import ua.net.nlp.tools.tag.TagOptions
+import ua.net.nlp.tools.tag.TagOptions.OutputFormat
+import ua.net.nlp.tools.tag.TagTextCore
+import ua.net.nlp.tools.tag.TagTextCore.TagResult
 
 
 class TextUtilTest {
@@ -20,7 +20,7 @@ class TextUtilTest {
 		)
 
 	TextUtils tagUtils = new TextUtils()
-	TagText tagText = new TagText()
+	TagTextCore tagText = new TagTextCore()
 	
 	@BeforeEach
 	void before() {

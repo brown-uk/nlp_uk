@@ -3,23 +3,20 @@
 package ua.net.nlp.tools
 
 import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertFalse
-import static ua.net.nlp.tools.TagText.OutputFormat.json
 
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import ua.net.nlp.tools.TagText.OutputFormat
-import ua.net.nlp.tools.TagText.TagOptions
-import ua.net.nlp.tools.TagText.TagOptions.DisambigModule
-import ua.net.nlp.tools.TagText.TagResult
+
+import ua.net.nlp.tools.tag.TagOptions
+import ua.net.nlp.tools.tag.TagTextCore
+import ua.net.nlp.tools.tag.TagTextCore.TagResult
+
 
 
 class TagTextSemTest {
 	def options = new TagOptions()
 
-	static TagText tagText = new TagText()
+	static TagTextCore tagText = new TagTextCore()
 	
 	@BeforeAll
 	static void before() {
@@ -38,7 +35,6 @@ class TagTextSemTest {
   </tokenReading>
   <tokenReading>
     <token value="усе" lemma="усе" tags="adv" semtags="1:dur:max" />
-    <token value="усе" lemma="усе" tags="conj:coord" />
     <token value="усе" lemma="усе" tags="noun:inanim:n:v_naz:&amp;pron:gen" semtags="1:quantif" />
     <token value="усе" lemma="усе" tags="noun:inanim:n:v_zna:&amp;pron:gen" semtags="1:quantif" />
     <token value="усе" lemma="усе" tags="part" />
@@ -67,8 +63,8 @@ class TagTextSemTest {
     <token value="акту" lemma="акт" tags="noun:inanim:m:v_rod:xp2" semtags="1:abst:part:2:abst:quantum" />
   </tokenReading>
   <tokenReading>
-    <token value="один-другий" lemma="один-другий" tags="numr:m:v_naz:&amp;numr" semtags="1:abst:quantity" />
-    <token value="один-другий" lemma="один-другий" tags="numr:m:v_zna:rinanim:&amp;numr" semtags="1:abst:quantity" />
+    <token value="один-другий" lemma="один-другий" tags="adj:m:v_naz:&amp;numr" semtags="1:abst:quantity" />
+    <token value="один-другий" lemma="один-другий" tags="adj:m:v_zna:rinanim:&amp;numr" semtags="1:abst:quantity" />
   </tokenReading>
   <tokenReading>
     <token value="." lemma="." tags="punct" whitespaceBefore="false" />

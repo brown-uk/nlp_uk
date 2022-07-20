@@ -27,7 +27,7 @@ public class TagTextWrapper {
 //        GroovyScriptEngine engine = new GroovyScriptEngine(SCRIPT_DIR);
 
         GroovyShell shell = new GroovyShell(); //this.class.classLoader, new Binding(), config)  
-        Object script = shell.evaluate("ua.net.nlp.tools.TagText.class");         
+        Object script = shell.evaluate("ua.net.nlp.tools.tag.TagTextCore.class");         
 //        engine.loadScriptByName("TextUtils.groovy");
 //        Class<?> clazz = engine.loadScriptByName("TagText.groovy");
 

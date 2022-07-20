@@ -3,7 +3,8 @@ package ua.net.nlp.tools
 import static org.junit.jupiter.api.Assertions.*
 
 import org.junit.jupiter.api.Test
-import groovy.json.JsonSlurper
+
+import ua.net.nlp.other.Inflect
 
 
 class InflectTest {

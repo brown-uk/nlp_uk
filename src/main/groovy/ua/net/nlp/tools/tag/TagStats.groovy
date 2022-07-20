@@ -6,10 +6,11 @@ import org.languagetool.AnalyzedSentence
 import org.languagetool.AnalyzedToken
 import org.languagetool.AnalyzedTokenReadings
 import org.languagetool.JLanguageTool
-import ua.net.nlp.tools.TagText
-import ua.net.nlp.tools.TagText.TagOptions
+import ua.net.nlp.tools.tag.TagTextCore
+import ua.net.nlp.tools.tag.TagOptions
 
 import groovy.transform.CompileStatic
+
 
 public class TagStats {
     static final Pattern CYR_LETTER = Pattern.compile(/[а-яіїєґА-ЯІЇЄҐ]/)
@@ -60,7 +61,7 @@ public class TagStats {
 
             tokensNoSpace.each { AnalyzedTokenReadings tokenReadings ->
                     String posTag = tokenReadings.getAnalyzedToken(0).getPOSTag()
-                    if( TagText.isTagEmpty(posTag) ) {
+                    if( TagTextCore.isTagEmpty(posTag) ) {
                         String token = tokenReadings.getCleanToken()
                         if( CYR_LETTER.matcher(token).find()
                             && ! NON_UK_LETTER.matcher(token).find() ) {
@@ -71,7 +72,7 @@ public class TagStats {
 
             tokensNoSpace.each { AnalyzedTokenReadings tokenReadings ->
                 if( ! (tokenReadings.getToken() =~ /[0-9]|^[a-zA-Z-]+$/) 
-                        && tokenReadings.getReadings().any { AnalyzedToken at -> ! TagText.isTagEmpty(at.getPOSTag())} ) {
+                        && tokenReadings.getReadings().any { AnalyzedToken at -> ! TagTextCore.isTagEmpty(at.getPOSTag())} ) {
                   knownCnt++
                   knownMap[tokenReadings.getToken()] += 1
                 }
@@ -110,7 +111,7 @@ public class TagStats {
     def collectFrequency(List<AnalyzedSentence> analyzedSentences) {
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
             analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
-                if( TagText.isTagEmpty(tokenReadings.getAnalyzedToken(0).getPOSTag())
+                if( TagTextCore.isTagEmpty(tokenReadings.getAnalyzedToken(0).getPOSTag())
                         && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/ ) {
 //                            && ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
                     frequencyMap[tokenReadings.getCleanToken()] += 1

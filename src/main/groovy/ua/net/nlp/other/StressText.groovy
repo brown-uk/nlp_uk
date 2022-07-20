@@ -1,10 +1,10 @@
 #!/usr/bin/env groovy
 
-package ua.net.nlp.tools
+package ua.net.nlp.other
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.7')
-//@Grab(group='org.languagetool', module='language-uk', version='5.8-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='5.9-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='5.8')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
@@ -16,6 +16,7 @@ import groovy.transform.CompileStatic
 import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
+import ua.net.nlp.tools.TextUtils
 
 
 class StressText {
@@ -395,7 +396,7 @@ class StressText {
 	}
 	
 
-    static class TagOptions {
+    static class StressOptions {
         @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
         String input
         @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .stressed.txt)"])
@@ -409,8 +410,8 @@ class StressText {
     }
     
     @CompileStatic
-    static TagOptions parseOptions(String[] argv) {
-        TagOptions options = new TagOptions()
+    static StressOptions parseOptions(String[] argv) {
+        StressOptions options = new StressOptions()
         CommandLine commandLine = new CommandLine(options)
         try {
             commandLine.parseArgs(argv)
@@ -435,7 +436,7 @@ class StressText {
 
 
     static void main(String[] argv) {
-        TagOptions options = parseOptions(argv)
+        StressOptions options = parseOptions(argv)
 
         def nlpUk = new StressText()
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-package ua.net.nlp.tools
+package ua.net.nlp.other
 
 @Grab(group='org.languagetool', module='language-uk', version='5.7')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.+')
@@ -18,7 +18,7 @@ class Inflect {
     static SCRIPT_DIR=new File(SOURCE_URI).parent
 
     // easy way to include a class without forcing classpath to be set
-    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
+    static textUtils = Eval.me(new File("$SCRIPT_DIR/../tools/TextUtils.groovy").text + "\n new TextUtils()")
 
     Ukrainian ukLanguage = new Ukrainian() {
         @Override

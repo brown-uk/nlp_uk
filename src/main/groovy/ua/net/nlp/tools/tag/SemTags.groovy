@@ -13,10 +13,10 @@ import org.languagetool.rules.uk.LemmaHelper
 import ua.net.nlp.bruk.ContextToken
 import ua.net.nlp.bruk.WordContext;
 import ua.net.nlp.bruk.WordReading;
-import ua.net.nlp.tools.TagText.TagOptions
-import ua.net.nlp.tools.TagText.TagOptions.DisambigModule
+import ua.net.nlp.tools.tag.TagOptions
 
 import groovy.transform.CompileStatic;
+
 
 public class SemTags {
     @groovy.transform.SourceURI

@@ -1,16 +1,16 @@
 package ua.net.nlp.tools.tag
 
 import org.apache.groovy.json.internal.CharBuf
-import ua.net.nlp.tools.TagText.OutputFormat
-import ua.net.nlp.tools.TagText.TTR
-import ua.net.nlp.tools.TagText.TagOptions
-import ua.net.nlp.tools.TagText.TaggedToken
 
 import groovy.json.DefaultJsonGenerator
-import groovy.json.JsonBuilder
 import groovy.json.JsonGenerator
 import groovy.transform.CompileStatic
 import groovy.xml.MarkupBuilder
+
+import ua.net.nlp.tools.tag.TagOptions
+import ua.net.nlp.tools.tag.TagOptions.OutputFormat
+import ua.net.nlp.tools.tag.TagTextCore.TTR
+import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 
 //@CompileStatic
 class OutputFormats {

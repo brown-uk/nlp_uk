@@ -18,10 +18,10 @@
 * Зібрати та встановити ядро та український модуль LT (в теці languagetool):
   * ./build.sh languagetool-core install
   * ./build.sh languagetool-language-modules/uk install
-* Поставити останню версію languagetool в скрипті, напр. в TagText.groovy:
-    `@Grab(group='org.languagetool', module='language-uk', version='5.5-SNAPSHOT')`
+* Поставити останню версію languagetool в скрипті, напр. в TagTextCore.groovy:
+    `@Grab(group='org.languagetool', module='language-uk', version='5.9-SNAPSHOT')`
 * Стерти кеш groovy grapes: `rm -rf $HOME/.groovy/grapes/org.languagetool`
-* Запустити потрібний скрипт в модулі nlp_uk
+* Запустити скрипт TagText.groovy в модулі nlp_uk
 
 
 ### Інтеграція *nlp_uk* в іншому проєкті:

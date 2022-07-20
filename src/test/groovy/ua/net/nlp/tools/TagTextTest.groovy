@@ -4,27 +4,24 @@ package ua.net.nlp.tools
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
-import static ua.net.nlp.tools.TagText.OutputFormat.json
+import static ua.net.nlp.tools.tag.TagOptions.OutputFormat.json
 
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import ua.net.nlp.tools.TagText.OutputFormat
-import ua.net.nlp.tools.TagText.TTR
-import ua.net.nlp.tools.TagText.TagOptions
-import ua.net.nlp.tools.TagText.TagResult
-import ua.net.nlp.tools.TagText.TaggedToken
-import ua.net.nlp.tools.tag.TagStats
 
-import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
-import groovy.json.StringEscapeUtils
+import ua.net.nlp.tools.tag.TagOptions
+import ua.net.nlp.tools.tag.TagOptions.OutputFormat
+import ua.net.nlp.tools.tag.TagStats
+import ua.net.nlp.tools.tag.TagTextCore
+import ua.net.nlp.tools.tag.TagTextCore.TTR
+import ua.net.nlp.tools.tag.TagTextCore.TagResult
 
 
 class TagTextTest {
 	def options = new TagOptions()
 
-	static TagText tagText = new TagText()
+	static TagTextCore tagText = new TagTextCore()
 	
 	@BeforeEach
 	void before() {
@@ -47,7 +44,7 @@ class TagTextTest {
     public void testOmitMultiwordTag() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt))
         TagResult tagged = tagText.tagText("Де можна")
-        def expected = "Де[де/adv:&pron:int:rel,де/conj:subord,де/part,де/part:pers] можна[можна/noninfl:&predic]"
+        def expected = "Де[де/adv:&pron:int:rel,де/part,де/part:pers] можна[можна/noninfl:&predic]"
         assertEquals expected, tagged.tagged
     }
 
@@ -395,7 +392,7 @@ class TagTextTest {
 		outFile.text = ''
 
 		
-		tagText.setOptions(new TagOptions(outputFormat: json, input: file.path, output: outFile.path, singleThread: false))
+		tagText.setOptions(new TagOptions(outputFormat: OutputFormat.json, input: file.path, output: outFile.path, singleThread: false))
 		
 		tagText.process()
 
@@ -479,7 +476,7 @@ class TagTextTest {
         def expected4 =
 """<sentence>
   <tokenReading>
-    <token value="десь" lemma="десь" tags="adv" />
+    <token value="десь" lemma="десь" tags="adv:&amp;pron:ind" />
   </tokenReading>
   <tokenReading>
     <token value="-то" lemma="то" tags="part" />

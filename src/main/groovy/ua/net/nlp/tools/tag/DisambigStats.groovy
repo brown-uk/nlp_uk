@@ -2,21 +2,23 @@ package ua.net.nlp.tools.tag;
 
 import java.util.regex.Pattern
 
-import org.languagetool.AnalyzedToken;
-import org.languagetool.AnalyzedTokenReadings;
+import org.languagetool.AnalyzedToken
+import org.languagetool.AnalyzedTokenReadings
 
-import groovy.transform.CompileStatic;
+import groovy.transform.CompileStatic
 import ua.net.nlp.bruk.ContextToken
-import ua.net.nlp.bruk.WordContext;
-import ua.net.nlp.bruk.WordReading;
-import ua.net.nlp.tools.TagText
-import ua.net.nlp.tools.TagText.TagOptions
-import ua.net.nlp.tools.TagText.TagOptions.DisambigModule
+import ua.net.nlp.bruk.WordContext
+import ua.net.nlp.bruk.WordReading
+import ua.net.nlp.tools.tag.TagTextCore
+import ua.net.nlp.tools.tag.TagOptions
+
 
 public class DisambigStats {
     private static final Pattern UPPERCASED_PATTERN = Pattern.compile(/[А-ЯІЇЄҐ][а-яіїєґ'-]+/)
     private static final boolean USE_SUFFIX_2 = false
     
+    boolean disambigBySuffix = true //DisambigModule.wordEnding in options.disambiguate
+    boolean disambigByContext = true
     boolean writeDerivedStats = false
     boolean writeDebugFile = true
     File debugStatsFile = writeDebugFile ? new File("stats_dbg.txt") : null
@@ -106,11 +108,10 @@ public class DisambigStats {
         updateDebugStats(readings, cleanToken, stats, statsForWord)
                 
 
-        boolean byWordEnding = DisambigModule.wordEnding in options.disambiguate
         boolean withXp = true
         double tagRateSum = (double) readings.collect { anToken -> getRateByTag(anToken, tokens, idx, withXp, 0, 0) }.sum()
-        double sfx3RateSum = byWordEnding ? (double) readings.collect { anToken -> getRateBySuffix(anToken, cleanToken, tokens, idx, 0, 0, 3) }.sum() : 0
-        double sfx2RateSum = byWordEnding ? (double) readings.collect { anToken -> getRateBySuffix(anToken, cleanToken, tokens, idx, 0, 0, 2) }.sum() : 0
+        double sfx3RateSum = disambigBySuffix ? (double) readings.collect { anToken -> getRateBySuffix(anToken, cleanToken, tokens, idx, 0, 0, 3) }.sum() : 0
+        double sfx2RateSum = disambigBySuffix ? (double) readings.collect { anToken -> getRateBySuffix(anToken, cleanToken, tokens, idx, 0, 0, 2) }.sum() : 0
         debugStats("  readings: ${readings.size()}, tag total: ${round(tagRateSum)}, sfx3 total: ${round(sfx2RateSum)}, sfx2 total: ${round(sfx2RateSum)}")
 
         int i=0
@@ -122,7 +123,7 @@ public class DisambigStats {
             double rate = getRateByWord(anToken, cleanToken, statsForWord, tokens, idx, ctxQ_)
 
             boolean wordEndingUsed = false
-            if( byWordEnding ) {
+            if( disambigBySuffix ) {
                 boolean useNext3 = true || ! rate
                 if( useNext3 && sfx3RateSum ) {
                     double ctxQ = 6.0e7
@@ -337,7 +338,7 @@ public class DisambigStats {
     
     @CompileStatic
     private <T> double adjustByContext(double rate, T key, Map<WordContext, Double> ctxStats, AnalyzedTokenReadings[] tokens, int idx, double ctxCoeff, ContextMode ctxMode) {
-        if( ! (DisambigModule.context in options.disambiguate) )
+        if( ! disambigByContext )
             return rate
         
         boolean useRightContext = false 
@@ -373,13 +374,13 @@ public class DisambigStats {
     
     @CompileStatic
     static String getTag(String theToken, String tag) {
-        if( TagText.PUNCT_PATTERN.matcher(theToken).matches() ) {
+        if( TagTextCore.PUNCT_PATTERN.matcher(theToken).matches() ) {
             return 'punct'
         }
-        else if( TagText.SYMBOL_PATTERN.matcher(theToken).matches() ) {
+        else if( TagTextCore.SYMBOL_PATTERN.matcher(theToken).matches() ) {
             return 'symb'
         }
-        else if( TagText.XML_TAG_PATTERN.matcher(theToken).matches() ) {
+        else if( TagTextCore.XML_TAG_PATTERN.matcher(theToken).matches() ) {
             return 'xmltag'
         }
         tag
@@ -498,7 +499,7 @@ public class DisambigStats {
 
                 wordSuffix3 = null
                 wordSuffix2 = null
-                if( DisambigModule.wordEnding in options.disambiguate ) {
+                if( disambigBySuffix ) {
                     wordSuffix3 = getWordEnding(word, postagNorm, 3)
                     if( wordSuffix3 ) {
                         wordEndingStat = statsBySuffix3.computeIfAbsent(wordSuffix3, {s -> new HashMap<>()})

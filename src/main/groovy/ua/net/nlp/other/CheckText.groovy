@@ -1,6 +1,6 @@
 #!/usr/bin/env groovy
 
-package ua.net.nlp.tools
+package ua.net.nlp.other
 
 @Grab(group='org.languagetool', module='language-uk', version='5.7')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.+')
@@ -111,7 +111,7 @@ class CheckText {
 	}
 
 
-    static class TagOptions {
+    static class CheckOptions {
         @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
         String input
 //        @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .tagged.txt/.xml)"])
@@ -122,8 +122,8 @@ class CheckText {
     }
     
     @CompileStatic
-    static TagOptions parseOptions(String[] argv) {
-        TagOptions options = new TagOptions()
+    static CheckOptions parseOptions(String[] argv) {
+        CheckOptions options = new CheckOptions()
         CommandLine commandLine = new CommandLine(options)
         try {
             commandLine.parseArgs(argv)
@@ -143,7 +143,7 @@ class CheckText {
 
     static void main(String[] argv) {
 
-        TagOptions options = parseOptions(argv)
+        CheckOptions options = parseOptions(argv)
 
 
 		def nlpUk = new CheckText()

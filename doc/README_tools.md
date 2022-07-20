@@ -2,7 +2,7 @@
 
 
 ## Утиліта аналізу тексту:
-`groovy TagTextW.groovy -i <input_file> -o <output_file>`
+`groovy TagText.groovy -i <input_file> -o <output_file>`
 
 Аналізує текст і записує результат у виходовий файл:
 
