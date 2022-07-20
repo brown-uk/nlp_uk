@@ -307,8 +307,8 @@ class TagTextDisambigTest {
     <alts>
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_zna" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_zna" />
-      <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_naz" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_naz" />
+      <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_naz" />
     </alts>
   </token>
 </sentence>
@@ -423,7 +423,7 @@ class TagTextDisambigTest {
 
     @Test
     public void testFirstTokenOnlyByTagCtx() {
-        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.frequency, DisambigModule.context], showDisambigRate: false))
+        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, disambiguate: [DisambigModule.frequency, DisambigModule.context, DisambigModule.wordEnding], showDisambigRate: false))
 
         TagResult tagged = tagText.tagText("в чорно-біле")
 

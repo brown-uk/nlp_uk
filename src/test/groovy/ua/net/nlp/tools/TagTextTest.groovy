@@ -548,7 +548,19 @@ class TagTextTest {
             
         tagged = tagText.tagText("себ-то")
         assertEquals expected3, tagged.tagged
-        
+
+        def expected5 =
+"""<sentence>
+  <tokenReading>
+    <token value="Взагалі" lemma="взагалі" tags="adv:&amp;insert" />
+  </tokenReading>
+  <tokenReading>
+    <token value="-то" lemma="то" tags="part" />
+  </tokenReading>
+</sentence>
+"""
+        tagged = tagText.tagText("Взагалі-то")
+        assertEquals expected5, tagged.tagged
     }
 
 }

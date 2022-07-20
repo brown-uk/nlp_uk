@@ -301,7 +301,7 @@ class TagText {
             tokenReadingsT << item
             
             if( splitPart ) {
-                def partToken = new TaggedToken('value': splitPart[1], 'lemma': splitPart[1][1..-1], 'tags': 'part')
+                def partToken = new TaggedToken('value': splitPart[1], 'lemma': splitPart[1][1..-1].toLowerCase(), 'tags': 'part')
                 tokenReadingsT << new TTR(tokens: [partToken])
             }
 
@@ -426,6 +426,8 @@ class TagText {
         boolean singleThread
         @Option(names = ["-q", "--quiet"], description = "Less output")
         boolean quiet
+        @Option(names = ["--timing"], description = "Pring timing information", hidden = true)
+        boolean timing
         @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
         boolean helpRequested
 
