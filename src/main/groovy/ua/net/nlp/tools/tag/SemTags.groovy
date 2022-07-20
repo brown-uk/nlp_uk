@@ -19,7 +19,15 @@ import ua.net.nlp.tools.TagText.TagOptions.DisambigModule
 import groovy.transform.CompileStatic;
 
 public class SemTags {
+    @groovy.transform.SourceURI
+    static SOURCE_URI
+    // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
+    static File SCRIPT_DIR = SOURCE_URI.scheme == "data"
+        ? null // new File("src/main/groovy/ua/net/nlp/tools/tag")
+        : new File(SOURCE_URI).getParentFile()
 
+    def categories = ["noun", "adj", "adv", "verb", "numr"]
+        
     TagOptions options
     Map<String, Map<String,List<String>>> semanticTags = new HashMap<>()
     
@@ -28,27 +36,36 @@ public class SemTags {
         if( semanticTags.size() > 0 )
             return
 
-        // def base = System.getProperty("user.home") + "/work/ukr/spelling/dict_uk/data/sem"
-//        String base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
-//        def semDir = new File("sem")
-//        if( semDir.isDirectory() ) {
-//            base = "${semDir.path}"
-//            System.err.println("Loading semantic tags from ./sem")
-//        }
-//        else {
-//            System.err.println("Loading semantic tags from $base")
-//        }
+        def baseDir = "/ua/net/nlp/tools/semtags"
+        URL nounFile = getClass().getResource("$baseDir/noun.csv")
+
+        if( nounFile == null ) {
+            if( options.allowDownloads ) {
+                if( SCRIPT_DIR == null ) { // should not happen - jar will bundle the stats
+                    System.err.println "Can't download from inside the jar"
+                    System.exit 1
+                }
+                
+                String base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
+                File targetDir = new File(SCRIPT_DIR, "../../../../../../resources/$baseDir")
+                assert targetDir.isDirectory()
+                
+                categories.each { cat ->
+                    System.err.println("Downloading $base/$cat...")
+                    def statTxt = new URL("$base/${cat}.csv").getText('UTF-8')
+                    File targetFile = new File(targetDir, "${cat}.csv")
+                    targetFile.setText(statTxt, 'UTF-8')
+                }
+            }
+        }
+
 
         long tm1 = System.currentTimeMillis()
         int semtagCount = 0
-        ["noun", "adj", "adv", "verb", "numr"].each { cat ->
+        categories.each { cat ->
 
             String text = getClass().getResource("/ua/net/nlp/tools/semtags/${cat}.csv").getText('UTF-8')
             
-//            String text = base.startsWith("http")
-//                ? "$base/${cat}.csv".toURL().getText("UTF-8")
-//                : new File(semDir, "${cat}.csv").getText("UTF-8")
-
             if( text.startsWith("\uFEFF") ) {
                 text = text.substring(1)
             }

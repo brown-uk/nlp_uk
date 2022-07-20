@@ -1,7 +1,5 @@
 package ua.net.nlp.tools.tag;
 
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.regex.Pattern
 
 import org.languagetool.AnalyzedToken;
@@ -73,22 +71,13 @@ public class DisambigStats {
     @groovy.transform.SourceURI
     static SOURCE_URI
     // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
-    static SCRIPT_DIR = SOURCE_URI.scheme == "data"
-        ? new File("src/main/groovy/ua/net/nlp/tools")
-        : new File(SOURCE_URI).parent
+    static File SCRIPT_DIR = SOURCE_URI.scheme == "data"
+        ? null // new File("src/main/groovy/ua/net/nlp/tools/tag")
+        : new File(SOURCE_URI).getParentFile()
 
-//    @CompileStatic
-//    static void debug(String s) {
-//        if( dbg ) println ":: $s"
-//    }
-//    @CompileStatic
-//    static void debug(boolean dbg, String s) {
-//        if( dbg ) println ":: $s"
-//    }
     @CompileStatic
     static double round(double d) {
         //BigDecimal.valueOf(d).setScale(4, RoundingMode.CEILING)
-//        BigDecimal.valueOf(d)
         d
     }
 
@@ -132,6 +121,7 @@ public class DisambigStats {
             double ctxQ_ = 1e4
             double rate = getRateByWord(anToken, cleanToken, statsForWord, tokens, idx, ctxQ_)
 
+            boolean wordEndingUsed = false
             if( byWordEnding ) {
                 boolean useNext3 = true || ! rate
                 if( useNext3 && sfx3RateSum ) {
@@ -144,6 +134,7 @@ public class DisambigStats {
                     }
                     
                     rate += wordEndingRate / 6.1e3
+                    wordEndingUsed = true
                 }
             }
             
@@ -151,7 +142,7 @@ public class DisambigStats {
             if( useNext && tagRateSum ) {
                 double ctxQ = 6.0e7 // 4.5e7
                 double postagRate = getRateByTag(anToken, tokens, idx, withXp, tagRateSum, ctxQ)
-                rate += postagRate / 6.1e3 // 5.8e3
+                rate += postagRate /  6.1e3 // 5.8e3
             }
             
             debugStats("    final: ${round(rate)}\n")
@@ -217,9 +208,7 @@ public class DisambigStats {
                     debugStats("  sfx2 stats: %s", suffixStats2 ? "yes" : "no")
                 }
             }
-            
         }
-
     }
     
     @CompileStatic
@@ -239,8 +228,6 @@ public class DisambigStats {
             rate = adjustByContext(rate, wordReading, r.ctxRates, tokens, idx, ctxQ, ContextMode.WORD)
         }
         
-//        debugStats("      wrd rate: %f -> %f", round(oldRate), round(rate))
-//        debug(dbg, "word rate: $at, idx: $idx : ${round(rate)}")
         return rate
     }
 
@@ -322,7 +309,6 @@ public class DisambigStats {
             Double mi = statsForLemmaXp[lemma][xp]
             if( mi != null ) {
                 mi = mi/(double)10.0 + 1
-//                debug(dbg, "    xp for $lemma, $xp with q=$mi")
                 debugStats("    xp for $lemma, $xp with q=$mi")
                 rate *= mi
             }
@@ -366,8 +352,6 @@ public class DisambigStats {
                     || (useRightContext && currContextsNext.find { currContext -> contextMatches(wc, currContext, ctxMode) } )
             }
         
-//        debug(dbg, "  matched ctx: $matchedContexts")
-            
         // if any (previous) readings match the context add its context rate
         Double matchRateSum = (Double) matchedContexts.collect{k,v -> v}.sum(0.0) /// (double)matchedContexts.size()
         Set<Integer> matchedOffsets = useRightContext ? matchedContexts.collect{k,v -> k.offset} as Set : [-1] as Set
@@ -378,7 +362,6 @@ public class DisambigStats {
             double adjust = (matchRateSum / rate) * ctxCoeff + 1
             double oldRate = rate
             rate *= adjust 
-//            debug(dbg, "    ctx for : $key, ${matchedContexts.size()} ctxs, x: ${round(adjust)}")//, old: ${rnd(oldRate)} -> withCtx: ${rnd(rate)}")
             debugStats("        ↓ ctxs: ${matchedContexts.size()}, coef: ${round(adjust)} -> ${rate}")
         }
         else {
@@ -448,18 +431,32 @@ public class DisambigStats {
 
         long tm1 = System.currentTimeMillis()
 
-        def statsFile = getClass().getResource("/ua/net/nlp/tools/stats/lemma_freqs_hom.txt")
-        if( statsFile == null ) {
-            System.err.println "Disambiguation stats not found"
-            System.exit 1
+        def statsFile = "/ua/net/nlp/tools/stats/lemma_freqs_hom.txt"
+        
+        def statsFileRes = getClass().getResource(statsFile)
+        if( statsFileRes == null ) {
+            if( options.allowDownloads ) {
+                if( SCRIPT_DIR == null ) { // should not happen - jar will bundle the stats
+                    System.err.println "Can't download from inside the jar"
+                    System.exit 1
+                }
+                
+                def targetDir = new File(SCRIPT_DIR, "../../../../../../resources/")
+                assert targetDir.isDirectory()
+                
+                def remoteStats = "https://github.com/brown-uk/nlp_uk/releases/download/v3.0.0/lemma_freqs_hom.txt"
+                System.err.println("Downloading $remoteStats...");
+                def statTxt = new URL(remoteStats).getText('UTF-8')
+                File targetFile = new File(targetDir, statsFile)
+                targetFile.setText(statTxt, 'UTF-8')
+                statsFileRes = targetFile.toURI().toURL()            }
+            else {
+                System.err.println "Disambiguation stats not found, use --allow-downloads to automatically download it from github"
+                System.exit 1
+            }
+            
         }
         
-//        def statDir = new File(new File((String)SCRIPT_DIR + "/../../../../../../../.."), "stats")
-//        if( ! statDir.isDirectory() ) {
-//            System.err.println "Disambiguation stats not found in ${statDir.name}"
-//            System.exit 1
-//        }
-//        def statsFile = new File(statDir, "lemma_freqs_hom.txt")
         
         String word
         WordReading wordReading
@@ -470,7 +467,7 @@ public class DisambigStats {
         Stat wordEndingStat
         Stat wordSuffix2Stat
 
-        statsFile.eachLine { String line ->
+        statsFileRes.eachLine { String line ->
             def p = line.split(/\h+/)
 
             if( ! line.startsWith('\t') ) {

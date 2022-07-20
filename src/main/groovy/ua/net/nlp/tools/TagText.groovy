@@ -419,18 +419,6 @@ class TagText {
         @Option(names = ["--setLemmaForUnknown"], description = "Fill lemma for unknown words (default: empty lemma)")
         boolean setLemmaForUnknown
 
-        @Option(names = ["-m", "--modules"], arity="1", description = "Comma-separated list of modules, supported modules: [zheleh]")
-        List<String> modules
-        
-        @Option(names = ["--singleThread"], description = "Always use single thread (default is to use multithreading if > 2 cpus are found)")
-        boolean singleThread
-        @Option(names = ["-q", "--quiet"], description = "Less output")
-        boolean quiet
-        @Option(names = ["--timing"], description = "Pring timing information", hidden = true)
-        boolean timing
-        @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
-        boolean helpRequested
-
         @Option(names = ["-t", "--tokenFormat"], description = "Use <token> format (instead of <tokenReading>)")
         boolean tokenFormat
         @Option(names = ["-t1", "--singleTokenOnly"], description = "Print only one token per reading (-g is recommended with this option)")
@@ -443,6 +431,21 @@ class TagText {
         @Option(names = ["-gr", "--disambiguationRate"], description = "Show a disambiguated token ratings")
         boolean showDisambigRate
         boolean partsSeparate = true
+        
+        @Option(names = ["-m", "--modules"], arity="1", description = "Comma-separated list of modules, supported modules: [zheleh]")
+        List<String> modules
+        
+        @Option(names = ["--singleThread"], description = "Always use single thread (default is to use multithreading if > 2 cpus are found)")
+        boolean singleThread
+        @Option(names = ["-q", "--quiet"], description = "Less output")
+        boolean quiet
+        @Option(names = ["--timing"], description = "Pring timing information", hidden = true)
+        boolean timing
+        @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
+        boolean helpRequested
+        @Option(names = ["--allow-downloads"], description = "For tagging from CLI allow downloading file with disambiguation statistics")
+        boolean allowDownloads
+
         
         public enum DisambigModule {
             frequency,
