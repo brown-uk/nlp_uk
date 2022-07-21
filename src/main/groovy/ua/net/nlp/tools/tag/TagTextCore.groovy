@@ -82,6 +82,7 @@ class TagTextCore {
     DisambigStats disambigStats = new DisambigStats()
     SemTags semTags = new SemTags()
     ModZheleh modZheleh = new ModZheleh(langTool)
+    ModLesya modLesya = new ModLesya(langTool)
     
 
 
@@ -169,7 +170,7 @@ class TagTextCore {
             stats.collectHomonyms(analyzedSentences)
         }
         if( options.unknownStats ) {
-            stats.collectUnknown(analyzedSentences)
+            stats.collectUnknown(taggedSentences)
         }
         if( options.frequencyStats ) {
             stats.collectFrequency(analyzedSentences)
@@ -229,41 +230,52 @@ class TagTextCore {
             
             boolean hasTag = hasPosTag(tokenReadings) 
 
+            if( isZheleh(options) 
+                    && idx < tokens.size() -1 
+                    && tokens[idx+1].getCleanToken().equals("ся") ) {
+                tokenReadings = modZheleh.adjustTokens(tokenReadings, tokens, idx)
+                hasTag = hasPosTag(tokenReadings)
+            }
+            
             // TODO: ugly workaround for disambiguator problem
             if( ! hasTag || "\u2014".equals(theToken) ) {
                 if( tokenReadings.isLinebreak() )
-                    return
+                    return tokenReadingsT
     
                 if( PUNCT_PATTERN.matcher(theToken).matches() ) {
                     def tkn = options.tokenFormat 
                         ? new TaggedToken(value: theToken, lemma: cleanToken, tags: 'punct')
                         : new TaggedToken(value: theToken, lemma: cleanToken, tags: 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore())
                     tokenReadingsT << new TTR(tokens: [tkn])
-                    return
+                    return tokenReadingsT
                 }
                 else if( SYMBOL_PATTERN.matcher(theToken).matches() ) {
                     tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: cleanToken, tags: 'symb')])
-                    return
+                    return tokenReadingsT
                 }
                 else if( XML_TAG_PATTERN.matcher(theToken).matches() ) {
                     tokenReadingsT << new TTR(tokens: [new TaggedToken(value: theToken, lemma: cleanToken, tags: 'xmltag')])
-                    return
+                    return tokenReadingsT
                 }
                 else if( UNKNOWN_PATTERN.matcher(theToken).matches() && ! NON_UK_PATTERN.matcher(theToken).find() ) {
                     if( isZheleh(options) ) {
-                        tokenReadings = modZheleh.adjustTokensWithZheleh(tokenReadings, tokens, idx)
+                        tokenReadings = modZheleh.adjustTokens(tokenReadings, tokens, idx)
                         hasTag = hasPosTag(tokenReadings)
                     }
-                    
+                    else if( isLesya(options) ) {
+                        tokenReadings = modLesya.adjustTokens(tokenReadings, tokens, idx)
+                        hasTag = hasPosTag(tokenReadings)
+                    }
+
                     if( ! hasTag ) {
                         def lemma = options.setLemmaForUnknown ? cleanToken : ''
                         tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: lemma, tags: 'unknown')])
-                        return
+                        return tokenReadingsT
                     }
                 }
                 else { // if( UNCLASS_PATTERN.matcher(theToken).matches() ) {
                     tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: cleanToken, tags: 'unclass')])
-                    return
+                    return tokenReadingsT
                 }
             }
             
@@ -317,7 +329,7 @@ class TagTextCore {
         
         disambigStats.debugStatsFlush()
             
-        tokenReadingsT
+        return tokenReadingsT
     }
 
     @CompileStatic
@@ -352,6 +364,9 @@ class TagTextCore {
 
     private static boolean isZheleh(TagOptions options) {
         return options.modules && 'zheleh' in options.modules
+    }
+    private static boolean isLesya(TagOptions options) {
+        return options.modules && 'lesya' in options.modules
     }
 
 

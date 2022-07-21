@@ -26,7 +26,7 @@ class ModZheleh {
     }
 
     @CompileStatic
-    AnalyzedTokenReadings adjustTokensWithZheleh(AnalyzedTokenReadings tokenReadings, AnalyzedTokenReadings[] tokens, int idx) {
+    AnalyzedTokenReadings adjustTokens(AnalyzedTokenReadings tokenReadings, AnalyzedTokenReadings[] tokens, int idx) {
         AnalyzedToken origAnalyzedToken = tokenReadings.getReadings().get(0)
         boolean syaIsNext = idx < tokens.size()-1 && tokens[idx+1].getToken() == 'ся'
 

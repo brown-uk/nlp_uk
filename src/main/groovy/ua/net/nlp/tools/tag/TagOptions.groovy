@@ -54,7 +54,7 @@ public class TagOptions {
     boolean partsSeparate = true
 //    List<DisambigModule> disambiguateModules
     
-    @Option(names = ["-m", "--modules"], arity="1", description = "Comma-separated list of modules, supported modules: [zheleh]")
+    @Option(names = ["-m", "--modules"], arity="1", description = "Alternative spelling module (only 1 at a time), supported modules: [zheleh, lesya]")
     List<String> modules
     
     @Option(names = ["--singleThread"], description = "Always use single thread (default is to use multithreading if > 2 cpus are found)")

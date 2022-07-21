@@ -197,68 +197,6 @@ class TagTextTest {
 """
     }
 
-    
-    @Test
-    public void testZheleh() {
-        tagText.setOptions(new TagOptions(xmlOutput: true, modules: ["zheleh"]))
-
-        TagResult tagged = tagText.tagText("миготїнь купаєть ся житє і смерть")
-        def expected =
-"""<sentence>
-  <tokenReading>
-    <token value="миготїнь" lemma="миготіння" tags="noun:inanim:p:v_rod" />
-  </tokenReading>
-  <tokenReading>
-    <token value="купаєть" lemma="купатися" tags="verb:rev:imperf:pres:s:3" />
-  </tokenReading>
-  <tokenReading>
-    <token value="ся" lemma="ся" tags="part:arch" />
-    <token value="ся" lemma="сей" tags="adj:f:v_naz:&amp;pron:dem:arch" />
-  </tokenReading>
-  <tokenReading>
-    <token value="житє" lemma="житє" tags="noun:inanim:n:v_naz:alt" />
-    <token value="житє" lemma="житє" tags="noun:inanim:n:v_zna:alt" />
-  </tokenReading>
-  <tokenReading>
-    <token value="і" lemma="і" tags="conj:coord" />
-    <token value="і" lemma="і" tags="part" />
-  </tokenReading>
-  <tokenReading>
-    <token value="смерть" lemma="смерть" tags="noun:inanim:f:v_naz" />
-    <token value="смерть" lemma="смерть" tags="noun:inanim:f:v_zna" />
-  </tokenReading>
-</sentence>
-"""
-        assertEquals expected, tagged.tagged
-    }
-
-
-//	@Disabled
-//	@Test
-//	public void testIgnoreLang() {
-//		tagText.setOptions(new TagOptions(ignoreOtherLanguages: true, xmlOutput: true))
-//
-//		TagResult tagged = tagText.tagText("<span lang=\"ru\"">Слво.</span>")
-//		assertEquals "<foreign>Слво.</foreign>\n\n", tagged
-//
-//		def expected=
-//"""<sentence>
-//  <tokenReading>
-//    <token value="Газета" lemma="газета" tags="noun:inanim:f:v_naz" />
-//  </tokenReading>
-//  <foreign>Дело</foreign>
-//  <tokenReading>
-//    <token value="." tags="punct" whitespaceBefore="false" />
-//  </tokenReading>
-//</sentence>
-//
-//"""
-//		
-//		tagged = tagText.tagText("Газета <span lang=\"ru\">Дело</span>.")
-//		assertEquals expected, tagged.tagged
-//	}
-
-
 
 	@Test
 	public void testStats() {
@@ -277,7 +215,6 @@ class TagTextTest {
         
 		tagged.stats.printUnknownStats()
 	}
-
 	
 	
 	@Test

@@ -7,6 +7,8 @@ import org.languagetool.AnalyzedToken
 import org.languagetool.AnalyzedTokenReadings
 import org.languagetool.JLanguageTool
 import ua.net.nlp.tools.tag.TagTextCore
+import ua.net.nlp.tools.tag.TagTextCore.TTR
+import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 import ua.net.nlp.tools.tag.TagOptions
 
 import groovy.transform.CompileStatic
@@ -45,36 +47,27 @@ public class TagStats {
     }
 
     @CompileStatic
-    def collectUnknown(List<AnalyzedSentence> analyzedSentences) {
-        for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+    def collectUnknown(List<List<TTR>> analyzedSentences) {
+        for (List<TTR> sentTTR : analyzedSentences) {
             // if any words contain Russian sequence filter out the whole sentence - this removes tons of Russian words from our unknown list
             // we could also test each word against Russian dictionary but that would filter out some valid Ukrainian words too
             
-            def tokensNoSpace = analyzedSentence.getTokensWithoutWhitespace()[1..-1]
             if( options.filterUnknown ) {
-                def unknownBad = tokensNoSpace.any { AnalyzedTokenReadings tokenReadings ->
-                    tokenReadings.getCleanToken().indexOf('еи') > 0
+                def unknownBad = sentTTR.any { TTR ttr ->
+                    ttr.tokens[0].value.indexOf('еи') > 0
                 }
                 if( unknownBad )
                     continue
             }
 
-            tokensNoSpace.each { AnalyzedTokenReadings tokenReadings ->
-                    String posTag = tokenReadings.getAnalyzedToken(0).getPOSTag()
-                    if( TagTextCore.isTagEmpty(posTag) ) {
-                        String token = tokenReadings.getCleanToken()
-                        if( CYR_LETTER.matcher(token).find()
-                            && ! NON_UK_LETTER.matcher(token).find() ) {
-                        unknownMap[token] += 1
-                    }
+            sentTTR.each { TTR ttr ->
+                TaggedToken tk = ttr.tokens[0]
+                if( tk.tags == 'unknown' ) {
+                    unknownMap[tk.value] += 1
                 }
-            }
-
-            tokensNoSpace.each { AnalyzedTokenReadings tokenReadings ->
-                if( ! (tokenReadings.getToken() =~ /[0-9]|^[a-zA-Z-]+$/) 
-                        && tokenReadings.getReadings().any { AnalyzedToken at -> ! TagTextCore.isTagEmpty(at.getPOSTag())} ) {
-                  knownCnt++
-                  knownMap[tokenReadings.getToken()] += 1
+                else if( tk.tags != 'unclass' && tk.value =~ /[а-яіїєґА-ЯІЇЄҐ]/ ) {
+                    knownCnt++
+                    knownMap[tk.value] += 1
                 }
             }
         }
