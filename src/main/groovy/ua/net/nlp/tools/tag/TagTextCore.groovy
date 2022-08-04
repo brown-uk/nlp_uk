@@ -457,7 +457,7 @@ class TagTextCore {
             semTags.loadSemTags()
         }
 
-        disambigStats.options = options
+        disambigStats.setOptions(options)
         if( options.disambiguate ) {
             if( options.outputFormat == OutputFormat.txt ) {
                 System.err.println ("Semantic tagging only available in xml/json output")
@@ -481,6 +481,10 @@ class TagTextCore {
 
     }
     
+    void download() {
+        disambigStats.download()
+        semTags.download()
+    }
     
 	
     static void main(String[] args) {
@@ -490,6 +494,11 @@ class TagTextCore {
         def options = parseOptions(args)
 
         nlpUk.setOptions(options)
+        
+        if( options.download ) {
+            nlpUk.download()
+            return
+        }
 
         // TODO: quick hack to support multiple files
         if( options.inputFiles && options.inputFiles != ["-"] ) {

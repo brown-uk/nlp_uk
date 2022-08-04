@@ -51,10 +51,12 @@ public class TagOptions {
     public boolean disambiguate
     @Option(names = ["-gr", "--disambiguationRate"], description = "Show a disambiguated token ratings")
     boolean showDisambigRate
+    @Option(names = ["-gd", "--writeDisambiguationDebug"], description = "Write disambig debug info into a file")
+    boolean disambiguationDebug
+
     boolean partsSeparate = true
-//    List<DisambigModule> disambiguateModules
     
-    @Option(names = ["-m", "--modules"], arity="1", description = "Alternative spelling module (only 1 at a time), supported modules: [zheleh, lesya]")
+    @Option(names = ["-m", "--module"], arity="1", description = "Alternative spelling module (only 1 at a time), supported modules: [zheleh, lesya]")
     List<String> modules
     
     @Option(names = ["--singleThread"], description = "Always use single thread (default is to use multithreading if > 2 cpus are found)")
@@ -65,8 +67,8 @@ public class TagOptions {
     boolean timing
     @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
     boolean helpRequested
-    @Option(names = ["--allow-downloads"], description = "For tagging from CLI allow downloading file with disambiguation statistics")
-    boolean allowDownloads
+    @Option(names = ["--download"], description = "Download file with disambiguation statistics and semantic tags (for tagging from CLI only)")
+    boolean download
 
     
 //    public enum DisambigModule {

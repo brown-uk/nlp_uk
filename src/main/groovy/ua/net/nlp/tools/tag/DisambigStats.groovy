@@ -16,12 +16,14 @@ import ua.net.nlp.tools.tag.TagOptions
 public class DisambigStats {
     private static final Pattern UPPERCASED_PATTERN = Pattern.compile(/[А-ЯІЇЄҐ][а-яіїєґ'-]+/)
     private static final boolean USE_SUFFIX_2 = false
+    private static final String statsFile = "/ua/net/nlp/tools/stats/lemma_freqs_hom.txt"
     
+
     boolean disambigBySuffix = true //DisambigModule.wordEnding in options.disambiguate
     boolean disambigByContext = true
     boolean writeDerivedStats = false
-    boolean writeDebugFile = true
-    File debugStatsFile = writeDebugFile ? new File("stats_dbg.txt") : null
+
+    File debugStatsFile = null
     ThreadLocal<List<String>> debugStatsLines = new ThreadLocal<List<String>>() {
         protected List<String> initialValue() {
             return []
@@ -40,6 +42,11 @@ public class DisambigStats {
         if( debugStatsFile ) {
             debugStatsFile.text = ''
         }
+    }
+    
+    void setOptions(TagOptions options) {
+        debugStatsFile = options.disambiguationDebug ? new File("stats_dbg.txt") : null
+        this.options = options
     }
 
     @CompileStatic    
@@ -424,6 +431,23 @@ public class DisambigStats {
         [new WordContext(contextToken, offset)] as Set
     }
 
+    void download() {
+        if( SCRIPT_DIR == null ) { // should not happen - jar will bundle the stats
+            System.err.println "Can't download from inside the jar"
+            System.exit 1
+        }
+        
+        def targetDir = new File(SCRIPT_DIR, "../../../../../../resources/")
+        assert targetDir.isDirectory()
+        
+        def remoteStats = "https://github.com/brown-uk/nlp_uk/releases/download/v3.0.0/lemma_freqs_hom.txt"
+        System.err.println("Downloading $remoteStats...");
+        def statTxt = new URL(remoteStats).getText('UTF-8')
+        File targetFile = new File(targetDir, statsFile)
+        targetFile.setText(statTxt, 'UTF-8')
+//        statsFileRes = targetFile.toURI().toURL()
+    }
+    
     
     @CompileStatic
     def loadDisambigStats() {
@@ -432,30 +456,10 @@ public class DisambigStats {
 
         long tm1 = System.currentTimeMillis()
 
-        def statsFile = "/ua/net/nlp/tools/stats/lemma_freqs_hom.txt"
-        
         def statsFileRes = getClass().getResource(statsFile)
         if( statsFileRes == null ) {
-            if( options.allowDownloads ) {
-                if( SCRIPT_DIR == null ) { // should not happen - jar will bundle the stats
-                    System.err.println "Can't download from inside the jar"
-                    System.exit 1
-                }
-                
-                def targetDir = new File(SCRIPT_DIR, "../../../../../../resources/")
-                assert targetDir.isDirectory()
-                
-                def remoteStats = "https://github.com/brown-uk/nlp_uk/releases/download/v3.0.0/lemma_freqs_hom.txt"
-                System.err.println("Downloading $remoteStats...");
-                def statTxt = new URL(remoteStats).getText('UTF-8')
-                File targetFile = new File(targetDir, statsFile)
-                targetFile.setText(statTxt, 'UTF-8')
-                statsFileRes = targetFile.toURI().toURL()            }
-            else {
-                System.err.println "Disambiguation stats not found, use --allow-downloads to automatically download it from github"
-                System.exit 1
-            }
-            
+            System.err.println "Disambiguation stats not found, run with --download to download it from github"
+            System.exit 1
         }
         
         

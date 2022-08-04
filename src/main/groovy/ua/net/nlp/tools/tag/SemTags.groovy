@@ -25,6 +25,7 @@ public class SemTags {
     static File SCRIPT_DIR = SOURCE_URI.scheme == "data"
         ? null // new File("src/main/groovy/ua/net/nlp/tools/tag")
         : new File(SOURCE_URI).getParentFile()
+    static final String baseDir = "/ua/net/nlp/tools/semtags"
 
     def categories = ["noun", "adj", "adv", "verb", "numr"]
         
@@ -36,27 +37,11 @@ public class SemTags {
         if( semanticTags.size() > 0 )
             return
 
-        def baseDir = "/ua/net/nlp/tools/semtags"
         URL nounFile = getClass().getResource("$baseDir/noun.csv")
 
         if( nounFile == null ) {
-            if( options.allowDownloads ) {
-                if( SCRIPT_DIR == null ) { // should not happen - jar will bundle the stats
-                    System.err.println "Can't download from inside the jar"
-                    System.exit 1
-                }
-                
-                String base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
-                File targetDir = new File(SCRIPT_DIR, "../../../../../../resources/$baseDir")
-                assert targetDir.isDirectory()
-                
-                categories.each { cat ->
-                    System.err.println("Downloading $base/$cat...")
-                    def statTxt = new URL("$base/${cat}.csv").getText('UTF-8')
-                    File targetFile = new File(targetDir, "${cat}.csv")
-                    targetFile.setText(statTxt, 'UTF-8')
-                }
-            }
+            System.err.println "Can't download from inside the jar"
+            System.exit 1
         }
 
 
@@ -158,4 +143,22 @@ public class SemTags {
         true
     }
 
+    void download() {
+        if( SCRIPT_DIR == null ) { // should not happen - jar will bundle the stats
+            System.err.println "Can't download from inside the jar"
+            System.exit 1
+        }
+        
+        String base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
+        File targetDir = new File(SCRIPT_DIR, "../../../../../../resources/$baseDir")
+        assert targetDir.isDirectory()
+        
+        categories.each { cat ->
+            System.err.println("Downloading $base/$cat...")
+            def statTxt = new URL("$base/${cat}.csv").getText('UTF-8')
+            File targetFile = new File(targetDir, "${cat}.csv")
+            targetFile.setText(statTxt, 'UTF-8')
+        }
+    }
+    
 }
