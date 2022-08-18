@@ -439,13 +439,15 @@ public class DisambigStats {
         
         def targetDir = new File(SCRIPT_DIR, "../../../../../../resources/")
         assert targetDir.isDirectory()
+
+        File targetFile = new File(targetDir, statsFile)
+        targetFile.parentFile.mkdirs()
         
         def remoteStats = "https://github.com/brown-uk/nlp_uk/releases/download/v3.0.0/lemma_freqs_hom.txt"
         System.err.println("Downloading $remoteStats...");
         def statTxt = new URL(remoteStats).getText('UTF-8')
-        File targetFile = new File(targetDir, statsFile)
+        
         targetFile.setText(statTxt, 'UTF-8')
-//        statsFileRes = targetFile.toURI().toURL()
     }
     
     

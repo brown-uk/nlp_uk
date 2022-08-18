@@ -151,7 +151,8 @@ public class SemTags {
         
         String base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
         File targetDir = new File(SCRIPT_DIR, "../../../../../../resources/$baseDir")
-        assert targetDir.isDirectory()
+        targetDir.mkdirs()
+//        assert targetDir.isDirectory()
         
         categories.each { cat ->
             System.err.println("Downloading $base/$cat...")
