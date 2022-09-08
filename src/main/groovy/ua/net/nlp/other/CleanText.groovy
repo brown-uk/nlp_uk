@@ -24,7 +24,7 @@ package ua.net.nlp.other
 // mark/rate or remove Russian paragraphs
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.7')
+@Grab(group='org.languagetool', module='language-uk', version='5.8')
 //@Grab(group='org.languagetool', module='language-uk', version='5.9-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='5.8')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.2.+')
@@ -160,7 +160,7 @@ class CleanText {
         //        @Parameters(arity="1", paramLabel="input", description="The file(s) whose checksum to calculate.")
         @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
         String input
-        @Option(names = ["-o", "--output"], arity="1", description = ["Output file ((default: input file.вшк with \"-good\" added)"])
+        @Option(names = ["-o", "--output"], arity="1", description = ["Output file ((default: input file/dir with \"-good\" added)"])
         String output
         @Option(names = ["--dir"], arity="1", description = ["Directory to process *.txt in (default is current directory)"])
         String dir
