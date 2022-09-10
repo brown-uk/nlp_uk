@@ -387,8 +387,7 @@ class CleanText {
             }
 
             
-			String origText = file.getText(UTF8)
-            String text = origText
+			String text = file.getText(UTF8)
 
             text = cleanUp(text, file, options, outFile)
             if( ! text ) {
@@ -1226,9 +1225,9 @@ class CleanText {
         //    if( ukrWordCount < 300 ) println "\t\t: " + ukrWords
 
         // for really big text counting chars takes long time
-        // we'll just evaluate first 1000k
+        // we'll just evaluate first 1MB
 
-        def lowerTextSample = text.toLowerCase().take(1024*1024)
+        def lowerTextSample = text.take(1024*1024).toLowerCase()
         int ukrLetterCount = lowerTextSample.findAll { String it -> "іїєґ".contains(it) } .size()
         int rusLetterCount = lowerTextSample.findAll { String it -> "ыэъё".contains(it) } .size()
 
