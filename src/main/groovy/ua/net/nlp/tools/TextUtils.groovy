@@ -1,5 +1,6 @@
 package ua.net.nlp.tools
 
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Callable
@@ -18,9 +19,9 @@ class TextUtils {
 
     static def processByParagraph(options, Closure closure, Closure resultClosure) {
 
-        if( options.output == "-" || options.input == "-" ) {
-            warnOnWindows();
-        }
+//        if( options.output == "-" || options.input == "-" ) {
+//            warnOnWindows();
+//        }
 
         def outputFile
 
@@ -231,8 +232,11 @@ class TextUtils {
         String osName = System.getProperty("os.name").toLowerCase()
         if ( osName.contains("windows")) {
             if( ! "UTF-8".equals(System.getProperty("file.encoding"))
-                    || ! "UTF-8".equals(java.nio.charset.Charset.defaultCharset()) ) {
+                    || ! StandardCharsets.UTF_8.equals(java.nio.charset.Charset.defaultCharset()) ) {
                 System.setOut(new PrintStream(System.out,true,"UTF-8"))
+        
+                println "file.encoding: " + System.getProperty("file.encoding")
+                println "defaultCharset: " + java.nio.charset.Charset.defaultCharset()
                 
                 println "Input/output charset: " + java.nio.charset.Charset.defaultCharset()
                 println "On Windows to get unicode handled correctly you need to set environment variable before running expand:"
