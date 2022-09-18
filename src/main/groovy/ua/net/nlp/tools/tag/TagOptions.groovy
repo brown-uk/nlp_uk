@@ -89,6 +89,9 @@ public class TagOptions {
         if( singleTokenOnly ) {
             tokenFormat = true
         }
+        if( showDisambigRate || disambiguationDebug ) {
+            disambiguate = true
+        }
         if( outputFormat == OutputFormat.txt ) {
             setLemmaForUnknown = true
         }
