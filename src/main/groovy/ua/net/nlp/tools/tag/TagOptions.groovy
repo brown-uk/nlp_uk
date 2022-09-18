@@ -48,11 +48,13 @@ public class TagOptions {
     @Option(names = ["-d", "--showDisambigRules"], description = "Show deterministic disambiguation rules applied")
     boolean showDisambigRules
     @Option(names = ["-g", "--disambiguate"], description = "Use statistics for disambiguation")
-    public boolean disambiguate
+    boolean disambiguate
     @Option(names = ["-gr", "--disambiguationRate"], description = "Show a disambiguated token ratings")
     boolean showDisambigRate
     @Option(names = ["-gd", "--writeDisambiguationDebug"], description = "Write disambig debug info into a file")
     boolean disambiguationDebug
+    @Option(names = ["-u", "--tagUnknown"], description = "Use statistics to tag unknown words")
+    boolean tagUnknown
 
     boolean partsSeparate = true
     

@@ -73,7 +73,7 @@ class TagTextCore {
     SemTags semTags = new SemTags()
     ModZheleh modZheleh = new ModZheleh(langTool)
     ModLesya modLesya = new ModLesya(langTool)
-    
+    TagUnknown tagUnknown = new TagUnknown()
 
 
     @CompileStatic
@@ -258,6 +258,15 @@ class TagTextCore {
                     }
 
                     if( ! hasTag ) {
+                        
+                        if( options.tagUnknown ) {
+                            TaggedToken taggedToken = tagUnknown.tag(theToken, idx, tokens)
+                            if( taggedToken ) {
+                                tokenReadingsT << new TTR(tokens: [taggedToken])
+                                return tokenReadingsT
+                            }
+                        }
+                        
                         def lemma = options.setLemmaForUnknown ? cleanToken : ''
                         tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: lemma, tags: 'unknown')])
                         return tokenReadingsT
@@ -455,6 +464,9 @@ class TagTextCore {
             }
 
             disambigStats.loadDisambigStats()
+        }
+        if( options.tagUnknown ) {
+            tagUnknown.loadStats()
         }
     }
 
