@@ -460,7 +460,7 @@ public class DisambigStats {
 
         def statsFileRes = getClass().getResource(statsFile)
         if( statsFileRes == null ) {
-            System.err.println "Disambiguation stats not found, run with --download to download it from github"
+            System.err.println "Disambiguation stats not found, run \"TagText.groovy --download\" to download it from github, and then retry"
             System.exit 1
         }
         
