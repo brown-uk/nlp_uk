@@ -438,6 +438,7 @@ public class DisambigStats {
         }
         
         def targetDir = new File(SCRIPT_DIR, "../../../../../../resources/")
+        targetDir.mkdirs()
         assert targetDir.isDirectory()
 
         File targetFile = new File(targetDir, statsFile)

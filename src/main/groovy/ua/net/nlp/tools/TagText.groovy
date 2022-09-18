@@ -19,7 +19,12 @@ class TagText {
         
         def cl = new GroovyClassLoader()
         cl.addClasspath(SCRIPT_DIR + "/../../../../")
-        cl.addClasspath(SCRIPT_DIR + "/../../../../../resources") 
+        def resourceDir = SCRIPT_DIR + "/../../../../../resources"
+        if( ! new File(resourceDir).isDirectory() ) {
+//            println "making missing dir: $resourceDir"
+            new File(resourceDir).mkdirs()
+        }
+        cl.addClasspath(resourceDir)
         
         def basePkg = TagText.class.getPackageName()
         def tagTextClass = cl.loadClass("${basePkg}.tag.TagTextCore")

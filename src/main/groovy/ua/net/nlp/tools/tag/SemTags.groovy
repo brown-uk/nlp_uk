@@ -40,6 +40,7 @@ public class SemTags {
         URL nounFile = getClass().getResource("$baseDir/noun.csv")
 
         if( nounFile == null ) {
+            def dir = new File(baseDir)
             System.err.println "Semantic stats not found, run \"TagText.groovy --download\" to download it from github, and then retry"
             System.exit 1
         }
