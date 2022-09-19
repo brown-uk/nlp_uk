@@ -54,6 +54,11 @@ class CleanTextTest {
         assertEquals "За віщо йому таке. Вул. Залізнична 3а.", clean("3а віщо йому таке. Вул. 3алізнична 3а.")
         
         assertEquals "концентрація CO та CO2", clean("концентрація СO та CО2")
+        
+        assertEquals "загальновідоме", clean("загальновідо¬ме")
+        assertEquals "по-турецьки", clean("по¬турецьки")
+        assertEquals "10-11", clean("10¬11")
+        assertEquals "о¬е", clean("о¬е")
     }
 
 	@Test

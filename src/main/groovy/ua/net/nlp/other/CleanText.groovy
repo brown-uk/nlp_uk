@@ -27,9 +27,8 @@ package ua.net.nlp.other
 @Grab(group='org.languagetool', module='language-uk', version='5.8')
 //@Grab(group='org.languagetool', module='language-uk', version='5.9-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='5.8')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.+')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
-//@Grab(group='org.codehaus.groovy', module='groovy-cli-picocli', version='3.0.9')
 
 import static ua.net.nlp.other.CleanText.MarkOption.none
 import java.nio.charset.StandardCharsets
@@ -447,8 +446,26 @@ class CleanText {
         }
         return text
     }
+
+    private final Pattern AC_HYPHEN_PATTERN1 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]*[а-яіїєґА-ЯІЇЄҐ])\u00AC([а-яіїєґА-ЯІЇЄҐ][а-яіїєґА-ЯІЇЄҐ'ʼ’-]*)/)
     
-    
+    @CompileStatic
+    String remove00ACHyphens(String text) {
+        if( text.contains("\u00AC") ) { // ¬
+            println "\tremoving U+00AC hyphens: "
+            text = text.replaceAll(/([0-9])\u00AC([а-яіїєґА-ЯІЇЄҐ0-9])/, '$1-$2')
+            text = text.replaceAll(AC_HYPHEN_PATTERN1, { String all, w1, w2 ->
+//            text = AC_HYPHEN_PATTERN1.matcher(text).replaceAll({ String all, w1, w2 ->
+                def fix = "$w1$w2"
+                if( knownWord(fix) ) return fix
+                fix = "$w1-$w2"
+                if( knownWord(fix) ) return fix
+                return all
+            })
+        }
+        return text
+    }
+
     @CompileStatic
     String cleanUp(String text, File file, CleanOptions options, File outFile) {
         if( file.length() > 100 && file.bytes[0..3] == [0x50, 0x4B, 0x03, 0x04] ) {
@@ -521,7 +538,8 @@ class CleanText {
 //        }
         
         text = removeSoftHyphens(text)
-
+        text = remove00ACHyphens(text)
+        
         if( text.contains('\u2028') ) {
             text = text.replaceAll(/\u2028\n?/, '\n')
         }
