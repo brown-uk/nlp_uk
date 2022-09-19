@@ -16,13 +16,16 @@ import groovy.transform.CompileStatic
 
 public class TagStats {
     static final Pattern CYR_LETTER = Pattern.compile(/[а-яіїєґА-ЯІЇЄҐ]/)
-    static final Pattern NON_UK_LETTER = Pattern.compile(/[ыэъёЫЭЪЁ]|ие|ИЕ|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/)
+    static final Pattern ONLY_CYR_LETTER = Pattern.compile(/[а-яіїєґА-ЯІЇЄҐ'-]+/)
+    static final Pattern IGNORE_TAGS_FOR_LEMMA = Pattern.compile(/arch|alt|short|long|bad/)
+//    static final Pattern NON_UK_LETTER = Pattern.compile(/[ыэъёЫЭЪЁ]|ие|ИЕ|ннн|оі$|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/)
 
     TagOptions options
     
     Map<String, Integer> homonymFreqMap = [:].withDefault { 0 }
     Map<String, Set<String>> homonymTokenMap = [:].withDefault{ new LinkedHashSet<>() }
     Map<String, Integer> unknownMap = [:].withDefault { 0 }
+    Map<String, Integer> unclassMap = [:].withDefault { 0 }
     Map<String, Integer> frequencyMap = [:].withDefault { 0 }
     Map<String, Integer> lemmaFrequencyMap = [:].withDefault { 0 }
     Map<String, Set<String>> lemmaFrequencyPostagsMap = [:].withDefault { [] as Set }
@@ -36,6 +39,7 @@ public class TagStats {
         stats.homonymFreqMap.each { k,v -> homonymFreqMap[k] += v }
         stats.homonymTokenMap.each { k,v -> homonymTokenMap[k].addAll(v) }
         stats.unknownMap.each { k,v -> unknownMap[k] += v }
+        stats.unclassMap.each { k,v -> unclassMap[k] += v }
         stats.knownMap.each { k,v -> knownMap[k] += v }
         stats.frequencyMap.each { k,v -> frequencyMap[k] += v }
         stats.lemmaFrequencyMap.each { k,v -> lemmaFrequencyMap[k] += v }
@@ -54,7 +58,9 @@ public class TagStats {
             
             if( options.filterUnknown ) {
                 def unknownBad = sentTTR.any { TTR ttr ->
-                    ttr.tokens[0].value.indexOf('еи') > 0
+                    def value = ttr.tokens[0].value
+                    value = value.toLowerCase()
+                    value.indexOf('еи') >= 0 || value =~ /[ыэёъ]/ || value ==~ /и|не|что/
                 }
                 if( unknownBad )
                     continue
@@ -65,7 +71,10 @@ public class TagStats {
                 if( tk.tags == 'unknown' ) {
                     unknownMap[tk.value] += 1
                 }
-                else if( tk.tags != 'unclass' && tk.value =~ /[а-яіїєґА-ЯІЇЄҐ]/ ) {
+                else if( tk.tags == 'unclass' ) {
+                    unclassMap[tk.value] += 1
+                }
+                else if( tk.value =~ CYR_LETTER ) {
                     knownCnt++
                     knownMap[tk.value] += 1
                 }
@@ -105,7 +114,7 @@ public class TagStats {
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
             analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
                 if( TagTextCore.isTagEmpty(tokenReadings.getAnalyzedToken(0).getPOSTag())
-                        && tokenReadings.getToken() =~ /[а-яіїєґА-ЯІЇЄҐ]/ ) {
+                        && tokenReadings.getToken() =~ CYR_LETTER ) {
 //                            && ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
                     frequencyMap[tokenReadings.getCleanToken()] += 1
                 }
@@ -119,8 +128,8 @@ public class TagStats {
             analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
                  Map<String, List<AnalyzedToken>> lemmas = tokenReadings.getReadings()
                     .findAll { it.getLemma() \
-                        && tokenReadings.getCleanToken() ==~ /[а-яіїєґА-ЯІЇЄҐ'-]+/ \
-                        && ! (it.getPOSTag() =~ /arch|alt|short|long|bad|</) 
+                        && tokenReadings.getCleanToken() ==~ ONLY_CYR_LETTER \
+                        && ! (it.getPOSTag() =~ IGNORE_TAGS_FOR_LEMMA) 
                     }
                     .groupBy{ it.getLemma() }
                 
@@ -129,7 +138,11 @@ public class TagStats {
                     if( lemmas.size() > 1 ) {
                         lemmaAmbigs << k
                     }
-                    def tags = v.findAll{ it.getPOSTag() && ! it.getPOSTag().startsWith("SENT") }.collect { it.getPOSTag().replaceFirst(/:.*/, '') }
+                    def tags = v.findAll { 
+                        it.getPOSTag() && ! it.getPOSTag().startsWith("SENT") 
+                    }.collect { 
+                        it.getPOSTag().replaceFirst(/:.*/, '') 
+                    }
                     lemmaFrequencyPostagsMap[k].addAll( tags ) 
                 }
             }
@@ -173,7 +186,7 @@ public class TagStats {
         def printStream
         if( options.output == "-" ) {
             printStream = System.out
-            printStream.println "\n\n"
+            printStream.println "\n\nUnknown:\n\n"
         }
         else {
             def outputFile = new File(options.output.replaceFirst(/\.(txt|xml|json)$/, '') + '.unknown.txt')
@@ -197,8 +210,29 @@ public class TagStats {
         Map unknownWordsMap = unknownMap.findAll { k,v -> k =~ /(?iu)^[а-яіїєґ][а-яіїєґ'-]*/ }
         double unknownUniqueWordPct = knownMap.size()+unknownWordsMap.size() ? (double)unknownWordsMap.size()*100/(knownMap.size()+unknownWordsMap.size()) : 0
         println "\tunknown unique (letters only): " + unknownWordsMap.size() + ", " + String.format("%.1f", unknownUniqueWordPct) + "%"
+        
+        printUnclassStats()
     }
 
+    def printUnclassStats() {
+        def printStream
+        if( options.output == "-" ) {
+            printStream = System.out
+            printStream.println "\n\nUnclass:\n\n"
+        }
+        else {
+            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml|json)$/, '') + '.unclass.txt')
+            printStream = new PrintStream(outputFile, "UTF-8")
+        }
+
+        unclassMap
+            .sort { it.key }
+            .each{ k, v ->
+                def str = String.format("%6d\t%s", v, k)
+                printStream.println(str)
+            }
+    }
+    
     def printFrequencyStats() {
 
         def printStream

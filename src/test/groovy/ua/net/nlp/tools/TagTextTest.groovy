@@ -118,6 +118,16 @@ class TagTextTest {
 </sentence>
 """
 		assertEquals expected, tagged.tagged
+
+        tagged = tagText.tagText("-сніг")
+        expected =
+"""<sentence>
+  <tokenReading>
+    <token value="-сніг" lemma="-сніг" tags="unclass" />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
 	}
     
     @Test
@@ -184,17 +194,19 @@ class TagTextTest {
   </tokenReading>
 </sentence>
 """
-        tagText.setOptions(new TagOptions(xmlOutput: true, setLemmaForUnknown: true))
-        
         assertEquals expected, tagged.tagged
 
         def expected2 =
 """<sentence>
   <tokenReading>
-    <token value="житєє" lemma="житєє" tags="unknown" />
+    <token value="триивожний" lemma="триивожний" tags="unknown" />
   </tokenReading>
 </sentence>
 """
+        tagText.setOptions(new TagOptions(setLemmaForUnknown: true))
+        tagged = tagText.tagText("триивожний")
+
+        assertEquals expected2, tagged.tagged
     }
 
 
