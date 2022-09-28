@@ -24,9 +24,9 @@ package ua.net.nlp.other
 // mark/rate or remove Russian paragraphs
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.8')
-//@Grab(group='org.languagetool', module='language-uk', version='5.9-SNAPSHOT')
-@Grab(group='org.languagetool', module='language-ru', version='5.8')
+@Grab(group='org.languagetool', module='language-uk', version='5.9')
+//@Grab(group='org.languagetool', module='language-uk', version='5.10-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-ru', version='5.9')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 

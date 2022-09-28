@@ -2,15 +2,16 @@
 
 package ua.net.nlp.tools
 
+@GrabConfig(systemClassLoader=true)
+@Grab(group='org.languagetool', module='language-uk', version='5.9')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
+@Grab(group='info.picocli', module='picocli', version='4.6.+')
+
+
 import java.util.regex.Pattern
 import groovy.json.JsonGenerator
 
 import org.languagetool.JLanguageTool
-@GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.8')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.+')
-@Grab(group='info.picocli', module='picocli', version='4.6.+')
-
 import org.languagetool.language.*
 import org.languagetool.tokenizers.*
 import org.languagetool.tokenizers.uk.*

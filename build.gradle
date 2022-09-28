@@ -19,9 +19,9 @@ repositories {
 
 
 dependencies {
-    implementation group: groovyGroup, name: 'groovy', version: groovyVersion, classifier: groovyClassifier
-    implementation group: groovyGroup, name: 'groovy-json', version: groovyVersion, classifier: groovyClassifier
-    implementation group: groovyGroup, name: 'groovy-xml', version: groovyVersion, classifier: groovyClassifier
+    implementation group: 'org.apache.groovy', name: 'groovy', version: groovyVersion
+    implementation group: 'org.apache.groovy', name: 'groovy-json', version: groovyVersion
+    implementation group: 'org.apache.groovy', name: 'groovy-xml', version: groovyVersion
 
     implementation group: 'info.picocli', name: 'picocli', version: '4.6.3'
     implementation group: 'ch.qos.logback', name:'logback-classic', version:'1.4.+'
@@ -41,14 +41,8 @@ dependencies {
         exclude group: 'io.grpc'
     }
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.+'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.+'
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.+'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.+'
 }
 
 sourceSets {
@@ -101,7 +95,7 @@ test {
 
 task tagText(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
-    main = "org.nlp_uk.tools.TagText"
+    mainClass = "org.nlp_uk.tools.TagText"
 
     jvmArgs '-Dgroovy.grape.enable=false'
 
@@ -137,10 +131,10 @@ jar {
 
     manifest {
         attributes 'Implementation-Title': 'NLP tools for Ukrainian language',
-                   'Implementation-Version': version
+                   'Implementation-Version': project.version
     }
 
-    setArchiveName "${artifactId}-${version}.jar"
+    setArchiveFileName "${artifactId}-${project.version}.jar"
 
     includeEmptyDirs false
 }

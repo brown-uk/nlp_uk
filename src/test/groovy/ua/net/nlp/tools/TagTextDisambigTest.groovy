@@ -476,5 +476,22 @@ class TagTextDisambigTest {
 """
         assertEquals expected, tagged.tagged
     }
+    
+    @Test
+    public void testFirstTokenOnlyByTagCtxVerbNoun() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, singleTokenOnly: true, disambiguate: true, showDisambigRate: false, disambiguationDebug:true))
+
+        TagResult tagged = tagText.tagText("будували спеціальні зимівники")
+
+        def expected =
+"""<sentence>
+  <token value="будували" lemma="будувати" tags="verb:imperf:past:p" />
+  <token value="спеціальні" lemma="спеціальний" tags="adj:p:v_zna" />
+  <token value="зимівники" lemma="зимівник" tags="noun:inanim:p:v_zna" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
 
 }
