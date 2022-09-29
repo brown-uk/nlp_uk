@@ -17,6 +17,7 @@ public class DisambigStats {
     private static final Pattern UPPERCASED_PATTERN = Pattern.compile(/[А-ЯІЇЄҐ][а-яіїєґ'-]+/)
     private static final boolean USE_SUFFIX_2 = false
     private static final String statsFile = "/ua/net/nlp/tools/stats/lemma_freqs_hom.txt"
+    private static final String statsVersion = "3.1.0"
     
 
     boolean disambigBySuffix = true //DisambigModule.wordEnding in options.disambiguate
@@ -444,7 +445,7 @@ public class DisambigStats {
         File targetFile = new File(targetDir, statsFile)
         targetFile.parentFile.mkdirs()
         
-        def remoteStats = "https://github.com/brown-uk/nlp_uk/releases/download/v3.0.0/lemma_freqs_hom.txt"
+        def remoteStats = "https://github.com/brown-uk/nlp_uk/releases/download/v${statsVersion}/lemma_freqs_hom.txt"
         System.err.println("Downloading $remoteStats...");
         def statTxt = new URL(remoteStats).getText('UTF-8')
         
@@ -474,8 +475,22 @@ public class DisambigStats {
         String wordSuffix2
         Stat wordEndingStat
         Stat wordSuffix2Stat
+        int lineNum = 0
 
         statsFileRes.eachLine { String line ->
+            if( lineNum++ == 0 ) {
+                def starter = "# version: "
+                def statsVersionFound = ""
+                if( line.startsWith(starter) ) {
+                    statsVersionFound = (line - starter).trim()                
+                }
+                if( statsVersion != statsVersionFound ) {
+                    System.err.println "Disambiguation stats version mismatch, expected \"$statsVersion\", run \"TagText.groovy --download\" to download it from github, and then retry"
+                    System.exit 1
+                }
+                return
+            }
+            
             def p = line.split(/\h+/)
 
             if( ! line.startsWith('\t') ) {
