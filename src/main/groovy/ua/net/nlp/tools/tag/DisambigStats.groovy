@@ -18,6 +18,7 @@ public class DisambigStats {
     private static final boolean USE_SUFFIX_2 = false
     private static final String statsFile = "/ua/net/nlp/tools/stats/lemma_freqs_hom.txt"
     private static final String statsVersion = "3.1.0"
+    private static final boolean useRightContext = false
     
 
     boolean disambigBySuffix = true //DisambigModule.wordEnding in options.disambiguate
@@ -46,7 +47,10 @@ public class DisambigStats {
     }
     
     void setOptions(TagOptions options) {
-        debugStatsFile = options.disambiguationDebug ? new File("stats_dbg.txt") : null
+        if( options.disambiguationDebug ) {
+            debugStatsFile = new File("stats_dbg.txt")
+            debugStatsFile.text = ''
+        }
         this.options = options
     }
 
@@ -334,14 +338,24 @@ public class DisambigStats {
 
     @CompileStatic
     private static boolean contextMatches(WordContext wctx1, WordContext currContext, ContextMode ctxMode) {
-                    wctx1.offset == currContext.offset \
-                    && ((wctx1.contextToken.word == currContext.contextToken.word) 
+        wctx1.offset == currContext.offset \
+                && (
+                    wctx1.contextToken.word == currContext.contextToken.word 
                     || (ctxMode == ContextMode.TAG
-                        && (wctx1.contextToken.postag == currContext.contextToken.postag 
-                        && currContext.contextToken.postag =~ /^(adj|noun|verb|advp)/ ) 
-                        ))
+                        && contextMatchesByTag(wctx1, currContext)) )
     }
 
+    @CompileStatic
+    private static boolean contextMatchesByTag(WordContext wctx1, WordContext currContext) {
+        (wctx1.contextToken.postag == currContext.contextToken.postag
+                            && currContext.contextToken.postag =~ /^(adj|noun|verb|advp)/)
+//        (wctx1.contextToken.postag == currContext.contextToken.postag 
+//                            && currContext.contextToken.postag =~ /^(adj|noun|advp)/) \
+//            || (wctx1.contextToken.lemma == currContext.contextToken.lemma
+//                            && currContext.contextToken.postag =~ /^(verb)/ 
+//                            && wctx1.contextToken.postag =~ /^(verb)/)
+    }
+    
     enum ContextMode { WORD, TAG }
     
     @CompileStatic
@@ -349,13 +363,11 @@ public class DisambigStats {
         if( ! disambigByContext )
             return rate
         
-        boolean useRightContext = false 
-                    
         Set<WordContext> currContextsPrev = createWordContext(tokens, idx, -1)
         Set<WordContext> currContextsNext = useRightContext ? createWordContext(tokens, idx, +1) : null
         
         // TODO: limit previous tokens by ratings already applied?
-        def matchedContexts = ctxStats
+        Map<WordContext, Double> matchedContexts = ctxStats
             .findAll {WordContext wc, Double v2 -> v2
                 currContextsPrev.find { currContext -> contextMatches(wc, currContext, ctxMode) } \
                     || (useRightContext && currContextsNext.find { currContext -> contextMatches(wc, currContext, ctxMode) } )
@@ -363,6 +375,9 @@ public class DisambigStats {
         
         // if any (previous) readings match the context add its context rate
         Double matchRateSum = (Double) matchedContexts.collect{k,v -> v}.sum(0.0) /// (double)matchedContexts.size()
+        
+        matchRateSum = adjustByContextAdjNoun(rate, key, tokens, idx, ctxMode, matchRateSum)
+        
         Set<Integer> matchedOffsets = useRightContext ? matchedContexts.collect{k,v -> k.offset} as Set : [-1] as Set
 
         if( matchRateSum ) {
@@ -379,7 +394,32 @@ public class DisambigStats {
 
         rate
     }
-    
+
+    @CompileStatic
+    private <T> double adjustByContextAdjNoun(double rate, T key, AnalyzedTokenReadings[] tokens, int idx, ContextMode ctxMode, Double matchRateSum) {
+        if( ctxMode == ContextMode.TAG 
+                && idx < tokens.length-1 
+                && matchRateSum < 1 ) {
+
+            String tag = (String)key;
+            if( tag.startsWith("adj") && tokens[idx].getCleanToken().toLowerCase() != "та" ) {
+                String genRegex = "^noun"
+                if( tag.contains("ranim") ) genRegex += ":(un)?anim"
+                else if( tag.contains("rinanim") ) genRegex += ":(un|in)anim"
+                else genRegex += ":([ui]n)?anim"
+                genRegex += tag[3..<11]
+//                println ":: $tag / $genRegex"
+                
+                def wcF = tokens[idx+1].getReadings().find { AnalyzedToken at -> at.getPOSTag() =~ genRegex }
+                if( wcF ) {
+//                    println ":: found ${wcF} : ${matchRateSum} -> ${matchRateSum += 0.5}"
+                    matchRateSum += 0.35
+                }
+            }
+        }
+        matchRateSum
+    }
+        
     @CompileStatic
     static String getTag(String theToken, String tag) {
         if( TagTextCore.PUNCT_PATTERN.matcher(theToken).matches() ) {
@@ -421,7 +461,7 @@ public class DisambigStats {
                 .collect { AnalyzedToken tokenReading ->
                     String postag = getTag(token.getCleanToken(), tokenReading.getPOSTag())
                     def normalizedTokenValue = ContextToken.normalizeContextString(token.getCleanToken(), tokenReading.getLemma(), postag)
-                    contextToken = new ContextToken(normalizedTokenValue, '', postag)
+                    contextToken = new ContextToken(normalizedTokenValue, tokenReading.getLemma(), postag)
                     new WordContext(contextToken, offset)
                 } as Set
         }

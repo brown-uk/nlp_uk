@@ -304,8 +304,8 @@ class TagTextDisambigTest {
   <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_rod">
     <alts>
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_zna" />
-      <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_zna" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_naz" />
+      <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_zna" />
       <token value="переслідування" lemma="переслідування" tags="noun:inanim:p:v_naz" />
     </alts>
   </token>
@@ -478,16 +478,49 @@ class TagTextDisambigTest {
     }
     
     @Test
-    public void testFirstTokenOnlyByTagCtxVerbNoun() {
+    public void testFirstTokenOnlyByTagCtxVerbNoun1() {
+        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, singleTokenOnly: true, disambiguate: true, showDisambigRate: false, disambiguationDebug:true))
+
+        TagResult tagged = tagText.tagText("вивчає репродуктивне")
+        
+        def expected =
+"""<sentence>
+  <token value="вивчає" lemma="вивчати" tags="verb:imperf:pres:s:3" />
+  <token value="репродуктивне" lemma="репродуктивний" tags="adj:n:v_zna" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
+    @Test
+    public void testFirstTokenOnlyByTagCtxVerbNoun2() {
         tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, singleTokenOnly: true, disambiguate: true, showDisambigRate: false, disambiguationDebug:true))
 
         TagResult tagged = tagText.tagText("будували спеціальні зимівники")
-
+        
         def expected =
 """<sentence>
   <token value="будували" lemma="будувати" tags="verb:imperf:past:p" />
-  <token value="спеціальні" lemma="спеціальний" tags="adj:p:v_zna" />
+  <token value="спеціальні" lemma="спеціальний" tags="adj:p:v_zna:rinanim" />
   <token value="зимівники" lemma="зимівник" tags="noun:inanim:p:v_zna" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+    
+    @Test
+    public void testAdjNounLink() {
+        tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, disambiguationDebug:true))
+
+        TagResult tagged = tagText.tagText("й зеленого відродження")
+        
+        def expected =
+"""<sentence>
+  <token value="й" lemma="й" tags="part" />
+  <token value="зеленого" lemma="зелений" tags="adj:n:v_rod:compb" />
+  <token value="відродження" lemma="відродження" tags="noun:inanim:n:v_rod" />
 </sentence>
 <paragraph/>
 """
