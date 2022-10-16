@@ -350,6 +350,9 @@ class TagTextCore {
 //        posTag = posTag.replaceFirst(/:r(in)?anim/, '')
         
         String lemma = tkn.getLemma() ?: ''
+        if( options.setLemmaForUnknown && ! lemma ) {
+            lemma = tkn.getToken().replace('\u0301', '') // TODO: cleanToken
+        }
         if( lemma && lemma.indexOf('-') >= 0 && splitPart ) {
             lemma = TextUtils.WITH_PARTS.matcher(lemma).replaceFirst('$1')
         }

@@ -19,7 +19,7 @@ public class TagTextUnknownTest {
 	
 	@BeforeAll
 	static void before() {
-        tagText.setOptions(new TagOptions(tagUnknown: true, disambiguate: true))
+        tagText.setOptions(new TagOptions(tagUnknown: true, disambiguate: true, setLemmaForUnknown: true))
 	}
 
 
@@ -156,6 +156,27 @@ public class TagTextUnknownTest {
         assertEquals expected, tagged.tagged
     }
     
+    @Test
+    public void testDotAbbr() {
+        def tagged = tagText.tagText("І. В. Збарськ")
+
+        def expected =
+"""<sentence>
+  <tokenReading>
+    <token value="І." lemma="І." tags="noninf:abbr" />
+  </tokenReading>
+  <tokenReading>
+    <token value="В." lemma="В." tags="noninf:abbr" />
+  </tokenReading>
+  <tokenReading>
+    <token value="Збарськ" lemma="Збарськ" tags="noun:inanim:m:v_naz:prop:geo" q="-0.5" />
+  </tokenReading>
+</sentence>
+"""
+
+        assertEquals expected, tagged.tagged
+    }
+
     
     @Test
     public void testVerb() {
