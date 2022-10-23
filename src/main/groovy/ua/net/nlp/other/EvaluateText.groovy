@@ -8,15 +8,19 @@
 
 package ua.net.nlp.other
 
+import groovy.transform.CompileStatic
 @Grab(group='org.languagetool', module='language-uk', version='5.9')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.3')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 
 import org.codehaus.groovy.util.StringUtil;
 import org.languagetool.*
 import org.languagetool.rules.*
+import org.languagetool.rules.patterns.RuleSet
 import org.languagetool.tokenizers.*
 import org.languagetool.language.*
 import org.languagetool.uk.*
+import org.languagetool.JLanguageTool.Level
+import org.languagetool.JLanguageTool.Mode
 import org.languagetool.JLanguageTool.ParagraphHandling
 import org.languagetool.markup.*
 
@@ -33,13 +37,10 @@ class EvaluateText {
     final SRXSentenceTokenizer stokenizer = new SRXSentenceTokenizer(new Ukrainian());
     final List<Rule> allRules = langTool.getAllRules()
     int sentenceCount = 0;
+    List<String> sentenceBuffer = []
     
-    EvaluateText() {
-    }
-
-    def sentenceBuffer = []
     
-    def check(text, force, errorLines) {
+    List<RuleMatch> check(String text, boolean force, List<String> errorLines) {
         if( ! force && text.trim().isEmpty() ) 
             return
         
@@ -53,14 +54,18 @@ class EvaluateText {
         if( ! sentenceBuffer )
             return
         
-            
+        // invoking protected
         List<AnalyzedSentence> analyzedSentences = langTool.analyzeSentences(sentenceBuffer)
 
         sentenceCount += sentenceBuffer.size()
         
         def annotatedText = new AnnotatedTextBuilder().addText(text).build()
-        List<RuleMatch> matches = langTool.performCheck(analyzedSentences, sentenceBuffer, allRules, ParagraphHandling.NORMAL, annotatedText)
+        // invoking protected
+        CheckResults results = langTool.performCheck(analyzedSentences, sentenceBuffer, RuleSet.plain(allRules), 
+            ParagraphHandling.NORMAL, annotatedText, null, Mode.ALL, Level.DEFAULT, true)
 
+        List<RuleMatch> matches = results.getRuleMatches()
+        
         if( matches.size() > 0 ) {
             printMatches(matches, sentenceBuffer, text, errorLines)
         }
@@ -70,10 +75,11 @@ class EvaluateText {
         return matches
     }
 
-    
-    def printMatches(matches, sentences, text, errorLines) {
 
-        def sentPosMap = [:]
+    @CompileStatic    
+    void printMatches(List<RuleMatch> matches, List<String> sentences, String text, List<String> errorLines) {
+
+        Map<Integer, IntRange> sentPosMap = [:]
         def i = 0
         def total = 0
         sentences.each { sent ->
@@ -94,11 +100,11 @@ class EvaluateText {
             def posInSent = match.getFromPos() - sentPosMap[lineIdx].from
             def posToInSent = match.getToPos() - sentPosMap[lineIdx].from
             
-            def sentence = sentences[lineIdx]
+            String sentence = sentences[lineIdx]
             if( sentence.endsWith("\n") ) {
                 sentence = sentence.replaceAll("\n+", "")
             }
-            if( sentence.size() > posToInSent + 20 ) {
+            if( sentence.length() > posToInSent + 20 ) {
                 sentence = sentence[0..posToInSent + 20] + "…"
             }
             if( sentence.contains("\n") ) {
@@ -145,7 +151,7 @@ class EvaluateText {
 
 
             def text = file.text
-            def errorLines = []
+            List<String> errorLines = []
 
 
             println(String.format("checking $file.name, words: %d, size: %d", word_count(text), text.size()))
@@ -157,7 +163,7 @@ class EvaluateText {
 
             try {
 
-            paragraphs.each { para ->
+            paragraphs.each { String para ->
                 def matches = nlpUk.check(para, false, errorLines)
                 if( matches ) {
                     matchCnt += matches.size()
