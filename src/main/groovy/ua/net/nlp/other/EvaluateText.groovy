@@ -61,6 +61,7 @@ class EvaluateText {
         def lines = text.split("\n")
         
         for (RuleMatch match : matches) {
+            errorLines << "Rule ID:  ${match.getRule().getId()}".toString()
             errorLines << "Message:  " + match.getMessage().replace("<suggestion>", "«").replace("</suggestion>", "»")
 
             def chunkOffset = 0
