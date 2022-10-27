@@ -6,6 +6,7 @@ import org.languagetool.AnalyzedToken
 import org.languagetool.AnalyzedTokenReadings
 
 import groovy.transform.CompileStatic
+import groovy.transform.ToString
 import ua.net.nlp.bruk.ContextToken
 import ua.net.nlp.bruk.WordContext
 import ua.net.nlp.bruk.WordReading
@@ -34,7 +35,8 @@ public class DisambigStats {
     
     TagOptions options
     
-    @CompileStatic    
+    @CompileStatic
+    @ToString
     static class Stat {
         double rate = 0.0
         Map<WordContext, Double> ctxRates = [:]
@@ -383,10 +385,12 @@ public class DisambigStats {
         if( matchRateSum ) {
             // normalize context rate to main rate and give it a weight
             matchRateSum /= matchedOffsets.size()
-            double adjust = (matchRateSum / rate) * ctxCoeff + 1
             double oldRate = rate
-            rate *= adjust 
-            debugStats("        ↓ ctxs: ${matchedContexts.size()}, coef: ${round(adjust)} -> ${rate}")
+//            double adjust = (matchRateSum / rate) * ctxCoeff + 1
+//            rate *= adjust
+            double adjust = matchRateSum * ctxCoeff
+            rate += adjust
+            debugStats("        ↓ ctxs: ${matchedContexts.size()}, mrSum: $matchRateSum, adjust: ${round(adjust)} -> rate: ${rate}")
         }
         else {
 //            debugStats("        ↓ ctxs: 0")
