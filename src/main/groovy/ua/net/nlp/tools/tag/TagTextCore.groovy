@@ -3,8 +3,9 @@
 package ua.net.nlp.tools.tag
 
 @GrabConfig(systemClassLoader=true)
-//@Grab(group='org.languagetool', module='language-uk', version='5.10-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-uk', version='5.9')
+//@Grab(group='org.languagetool', module='language-uk', version='6.0-SNAPSHOT')
+//@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='5.9.1-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
@@ -104,6 +105,7 @@ class TagTextCore {
                 }
                 else { // legacy text
                     if( sb.length() > 0 ) sb.append("\n")
+
                     def prevToken = null
                     taggedSent.each { TTR token ->
                         if( prevToken != null && (token.tokens[0].whitespaceBefore == null || token.tokens[0].whitespaceBefore == true) ) {
@@ -273,6 +275,23 @@ class TagTextCore {
                     }
                 }
                 else { // if( UNCLASS_PATTERN.matcher(theToken).matches() ) {
+                    // TODO: tmp workaround, remove after LT 6.0
+                    if( theToken.startsWith("№") && theToken =~ /^№[0-9XХVIІ]/ ) {
+                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': '№', lemma: '№', tags: 'symb')])
+                        String tags = theToken ==~ /№[0-9]+/ ? 'number'
+                             : theToken ==~ /№[XХVIІ]+/ ? 'number:latin' : 'unclass'
+                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken[1..-1], lemma: theToken[1..-1], tags: tags)])
+                        return tokenReadingsT
+                    }
+
+//                    if( theToken ==~ /[0-9]+\.[0-9]+/ ) {
+//                        def parts = theToken.split(/\./)
+//                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': parts[0], lemma: parts[0], tags: 'number')])
+//                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': '.', lemma: '.', tags: 'punct')])
+//                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': parts[0], lemma: parts[0], tags: 'number')])
+//                        return tokenReadingsT
+//                    }
+
                     tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: cleanToken, tags: 'unclass')])
                     return tokenReadingsT
                 }
@@ -316,8 +335,27 @@ class TagTextCore {
                     getTagTokens(tkn, splitPart)
                 }
             }
-            
+
             tokenReadingsT << item
+            
+            if( options.separateDotAbbreviation ) {
+                if( cleanToken.endsWith(".") && item.tokens.find { it.tags.contains(":abbr") } ) {
+                    item.tokens.each { 
+                        it.value = it.value.replaceFirst(/\.$/, '')
+                        it.lemma = it.lemma.replaceFirst(/\.$/, '')
+                    }
+                    def dotToken = new TaggedToken('value': '.', 'lemma': '.', 'tags': 'punct')
+                    tokenReadingsT << new TTR(tokens: [dotToken])
+                }
+//                else if( cleanToken ==~ /[0-9]+.[0-9]+/ && item.tokens.find { it.tags.contains("unclass") } ) {
+//                    item.tokens.each { 
+//                        it.value = it.value.replace('.', '')
+//                        it.lemma = it.lemma.replace('.', '')
+//                    }
+//                    def dotToken = new TaggedToken('value': '.', 'lemma': '.', 'tags': 'punct')
+//                    tokenReadingsT << new TTR(tokens: [dotToken])
+//                }
+            }
             
             if( splitPart ) {
                 def partToken = new TaggedToken('value': splitPart[1], 'lemma': splitPart[1][1..-1].toLowerCase(), 'tags': 'part')
@@ -462,7 +500,7 @@ class TagTextCore {
         disambigStats.setOptions(options)
         if( options.disambiguate ) {
             if( options.outputFormat == OutputFormat.txt ) {
-                System.err.println ("Semantic tagging only available in xml/json output")
+                System.err.println ("Disambiguation only available in xml/json output")
                 System.exit 1
             }
 

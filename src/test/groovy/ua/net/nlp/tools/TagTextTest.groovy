@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse
 import static ua.net.nlp.tools.tag.TagOptions.OutputFormat.json
 
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 import groovy.json.JsonSlurper
@@ -32,7 +33,7 @@ class TagTextTest {
 
 
 	@Test
-	public void test() {
+	public void testTxtFormat() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt))
 		TagResult tagged = tagText.tagText("Слово. Діло.")
 		def expected = "Слово[слово/noun:inanim:n:v_naz,слово/noun:inanim:n:v_zna].[./punct]\n" \
@@ -460,4 +461,32 @@ class TagTextTest {
         assertEquals expected5, tagged.tagged
     }
 
+    @Disabled
+    @Test
+    public void testAbbrevDotSeparate() {
+        tagText.setOptions(new TagOptions(singleTokenOnly: true, separateDotAbbreviation: true))
+
+        def expected =
+"""<sentence>
+  <token value="англ" lemma="англ" tags="adj:f:v_dav:nv:abbr" />
+  <token value="." lemma="." tags="punct" />
+  <token value="file" lemma="file" tags="unclass" />
+</sentence>
+<paragraph/>
+"""
+        TagResult tagged = tagText.tagText("англ. file")
+        assertEquals expected, tagged.tagged
+
+        expected =
+"""<sentence>
+  <token value="8" lemma="8" tags="number" />
+  <token value="." lemma="." tags="punct" />
+  <token value="1" lemma="1" tags="number" />
+  <token value="." lemma="." tags="punct" />
+</sentence>
+<paragraph/>
+"""
+        tagged = tagText.tagText("8.1.")
+        assertEquals expected, tagged.tagged
+    }
 }
