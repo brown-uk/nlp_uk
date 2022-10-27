@@ -111,8 +111,15 @@ class TagTextCore {
                         if( prevToken != null && (token.tokens[0].whitespaceBefore == null || token.tokens[0].whitespaceBefore == true) ) {
                             sb.append(" ")
                         }
-                        def lemmasAndTags = token.tokens.collect{ t -> "${t.lemma}/${t.tags}" }.join(",")
-                        sb.append("${token.tokens[0].value}[$lemmasAndTags]")
+                        if( options.lemmaOnly ) {
+                            sb.append(token.tokens[0].lemma)                    
+                        }
+                        else {
+                            def lemmasAndTags = token.tokens.collect{ t -> 
+                                    options.lemmaOnly ? t.lemma : "${t.lemma}/${t.tags}"
+                                }.join(",")
+                            sb.append("${token.tokens[0].value}[$lemmasAndTags]")
+                        }
                         prevToken = token
                     }
                 }
@@ -499,10 +506,10 @@ class TagTextCore {
 
         disambigStats.setOptions(options)
         if( options.disambiguate ) {
-            if( options.outputFormat == OutputFormat.txt ) {
-                System.err.println ("Disambiguation only available in xml/json output")
-                System.exit 1
-            }
+//            if( options.outputFormat == OutputFormat.txt ) {
+//                System.err.println ("Disambiguation only available in xml/json output")
+//                System.exit 1
+//            }
 
             disambigStats.loadDisambigStats()
         }

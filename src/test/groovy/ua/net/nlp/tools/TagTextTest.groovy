@@ -42,6 +42,17 @@ class TagTextTest {
 	}
 
     @Test
+    public void testTxtFormatLemmaOnly() {
+        tagText.setOptions(new TagOptions(lemmaOnly: true, disambiguationDebug: true))
+        TagResult tagged = tagText.tagText("І словом її мала. Ділами швидше № 1")
+        def expected = 
+"""і слово вона мати .
+діло швидше № 1
+"""
+        assertEquals expected, tagged.tagged
+    }
+
+    @Test
     public void testOmitMultiwordTag() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt))
         TagResult tagged = tagText.tagText("Де можна")

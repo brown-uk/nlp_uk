@@ -1,5 +1,7 @@
 package ua.net.nlp.tools.tag;
 
+import static ua.net.nlp.tools.tag.TagOptions.OutputFormat.txt
+
 import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
@@ -19,6 +21,8 @@ public class TagOptions {
     boolean xmlOutput
     @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt}", defaultValue = "xml")
     OutputFormat outputFormat
+    @Option(names = ["--lemmaOnly"], description = "Prints only lemmas, implies: --outputFormat=txt --disambiguate=true")
+    boolean lemmaOnly
 
     @Option(names = ["-sh", "--homonymStats"], description = "Collect homohym statistics")
     boolean homonymStats
@@ -39,6 +43,8 @@ public class TagOptions {
     boolean noTag
     @Option(names = ["--setLemmaForUnknown"], description = "Fill lemma for unknown words (default: empty lemma)")
     boolean setLemmaForUnknown
+    @Option(names = ["--separateDotAbbreviation"], description = "Will split the dot from abbreviation tokens into separate token")
+    boolean separateDotAbbreviation
 
     @Option(names = ["-t", "--tokenFormat"], description = "Use <token> format (instead of <tokenReading>)")
     boolean tokenFormat
@@ -86,6 +92,11 @@ public class TagOptions {
             }
             else {
                 outputFormat = OutputFormat.xml
+            }
+            if( lemmaOnly ) {
+                outputFormat = txt
+                disambiguate = true
+                singleTokenOnly = true
             }
         }
         if( singleTokenOnly ) {
