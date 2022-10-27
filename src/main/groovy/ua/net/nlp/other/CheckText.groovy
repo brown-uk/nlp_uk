@@ -2,8 +2,11 @@
 
 package ua.net.nlp.other
 
-@Grab(group='org.languagetool', module='language-uk', version='5.8')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.+')
+// This script checks the text with LanguageTool 
+// NOTE: it disables some rules, like spelling, double whitespace etc
+
+@Grab(group='org.languagetool', module='language-uk', version='5.9')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
 import org.languagetool.*
@@ -29,90 +32,73 @@ class CheckText {
 	final JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian());
 	final SRXSentenceTokenizer stokenizer = new SRXSentenceTokenizer(new Ukrainian());
 	final List<Rule> allRules = langTool.getAllRules()
-	int sentenceCount = 0;
 	
-	CheckText() {
-	}
 
-	def sentenceBuffer = []
-	
-	def check(text, force) {
-		if( ! force && text.trim().isEmpty() ) 
-			return
-		
-		List<String> sentences = stokenizer.tokenize(text)
-		
-		sentenceBuffer += sentences
-		
-		if( ! force && sentenceBuffer.size() < 50 )
-			return
-			
-		if( ! sentenceBuffer )
-			return
-		
-			
-		List<AnalyzedSentence> analyzedSentences = langTool.analyzeSentences(sentenceBuffer)
+    List<RuleMatch> check(String text, boolean force, List<String> errorLines) {
+        if( ! force && text.trim().isEmpty() ) 
+            return
+        
+        List<RuleMatch> matches = langTool.check(text);
+        
+        if( matches.size() > 0 ) {
+            printMatches(matches, text, errorLines)
+        }
+        
+        return matches
+    }
 
-		sentenceCount += sentenceBuffer.size()
-		
-		def annotatedText = new AnnotatedTextBuilder().addText(text).build()
-		List<RuleMatch> matches = langTool.performCheck(analyzedSentences, sentenceBuffer, allRules, ParagraphHandling.NORMAL, annotatedText)
 
-		if( matches.size() > 0 ) {
-			printMatches(matches, sentenceBuffer, text)
-		}
-		
-		sentenceBuffer.clear()
-	}
+    @CompileStatic    
+    void printMatches(List<RuleMatch> matches, String text, List<String> errorLines) {
 
-	
-	def printMatches(matches, sentences, text) {
+        def i = 0
+        def total = 0
+        
+        def lines = text.split("\n")
+        
+        for (RuleMatch match : matches) {
+            errorLines << "Rule ID:  ${match.getRule().getId()}".toString()
+            errorLines << "Message:  " + match.getMessage().replace("<suggestion>", "«").replace("</suggestion>", "»")
 
-		def sentPosMap = [:]
-		def i = 0
-		def total = 0
-		sentences.each { sent ->
-			sentPosMap[i++] = total..<total+sent.size()
-			total += sent.size()
-		}
-		
-		def lines = text.split("\n")
-		
-		def snt = sentences.size() <=1 ? " == " + sentences.join(" | ") : ""
-		
-		
-		for (RuleMatch match : matches) {
-			println "Message:  " + match.getMessage();
+            def chunkOffset = 0
+            def leftOff = 40
+            def rightOff = 40
+            def posInSent = match.getFromPos() - leftOff
+            def posToInSent = match.getToPos() + rightOff
 
-			def posEnt = sentPosMap.find { k,v -> match.fromPos in v }
-			def lineIdx = posEnt.key
-			def posInSent = match.getFromPos() - sentPosMap[lineIdx].from
-			def posToInSent = match.getToPos() - sentPosMap[lineIdx].from
-			
-			def sentence = sentences[lineIdx]
-			if( sentence.endsWith("\n") ) {
-				sentence = sentence.replaceAll("\n+", "")
-			}
-			if( sentence.size() > posToInSent + 20 ) {
-				sentence = sentence[0..posToInSent + 20] + "…"
-			}
-			if( sentence.contains("\n") ) {
-				sentence = sentence.replace('\n', '|')
-			}
-			
-			println "Sentence: " + sentence
-			println "Position: " + ' '.multiply(posInSent) + "^".multiply(match.toPos-match.fromPos)
-			
-			if( match.getSuggestedReplacements() ) {
-				println "Suggestn: " + match.getSuggestedReplacements().join("; ")
-			}
-			println ""
-		}
-	}
+            def prefix = ""
+            def suffix = ""
+            if( posInSent <= 0 ) {
+                posInSent = 0
+            }
+            else {
+                prefix = "…"
+                chunkOffset = 1
+            }
+            if( posToInSent >= text.length() ) {
+                posToInSent = text.length()
+            }
+            else {
+                suffix = "…"
+            }
+
+            def sample = text[posInSent..<posToInSent]
+            sample = "$prefix${sample}$suffix"
+            sample = sample.toString().replace("\n", ' ')
+            
+            errorLines << "Chunk   : " + sample
+            errorLines << "Position: " + ' '.multiply(match.getFromPos()-posInSent + chunkOffset) + "^".multiply(match.toPos-match.fromPos)
+            
+            if( match.getSuggestedReplacements() ) {
+                errorLines << "Suggestn: " + match.getSuggestedReplacements().join("; ")
+            }
+            errorLines << ""
+        }
+    }
 
 
     static class CheckOptions {
-        @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
+        @Option(names = ["-i", "--input"], arity="1", description = ["Input file"], required=true)
         String input
 //        @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .tagged.txt/.xml)"])
 //        String output
@@ -150,9 +136,6 @@ class CheckText {
 		nlpUk.langTool.disableRules(Arrays.asList(RULES_TO_IGNORE.split(",")))
 
 		def textToAnalyze = new File(options.input).text
-//		def outputFile = new File(options.output)
-
-//		outputFile.text = analyzed
 
 		def paragraphs = textToAnalyze.split("\n\n")
 		
@@ -160,15 +143,19 @@ class CheckText {
 		
 		
 		paragraphs.each { para ->
-			nlpUk.check(para, false)
+		    def errors = []
+			nlpUk.check(para, false, errors)
+			errors.each { println it }
 		}
 
-		nlpUk.check("", false)
+        def errors = []
+		nlpUk.check("", false, [])
+        errors.each { println it }
 		
 		long tm2 = System.currentTimeMillis()
 		
-		println String.format("Check time: %d ms, %d sentences (%d sent/sec), %d paragraphs", 
-			tm2-tm1, nlpUk.sentenceCount, (int)(nlpUk.sentenceCount*1000/(tm2-tm1)), paragraphs.size())
+		println String.format("Check time: %d ms, (%d chars/sec), %d paragraphs", 
+			tm2-tm1, (int)(textToAnalyze.length()*1000/(tm2-tm1)), paragraphs.size())
 	}
 
 }
