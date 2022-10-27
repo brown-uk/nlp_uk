@@ -461,21 +461,6 @@ class TagTextDisambigTest {
         assertEquals expected, tagged.tagged
     }
 
-    @Test
-    public void testFirstTokenOnlyByTagCtx3() {
-        tagText.setOptions(new TagOptions(xmlOutput: true, tokenFormat: true, singleTokenOnly: true, disambiguate: true, showDisambigRate: false))
-
-        TagResult tagged = tagText.tagText("вегетативне розмноження")
-
-        def expected =
-"""<sentence>
-  <token value="вегетативне" lemma="вегетативний" tags="adj:n:v_naz" />
-  <token value="розмноження" lemma="розмноження" tags="noun:inanim:n:v_naz" />
-</sentence>
-<paragraph/>
-"""
-        assertEquals expected, tagged.tagged
-    }
     
     @Test
     public void testFirstTokenOnlyByTagCtxVerbNoun1() {
@@ -514,17 +499,92 @@ class TagTextDisambigTest {
     public void testAdjNounLink() {
         tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, disambiguationDebug:true))
 
-        TagResult tagged = tagText.tagText("й зеленого відродження")
+        TagResult tagged = tagText.tagText("та зеленого відродження")
         
         def expected =
 """<sentence>
-  <token value="й" lemma="й" tags="part" />
+  <token value="та" lemma="та" tags="part" />
   <token value="зеленого" lemma="зелений" tags="adj:n:v_rod:compb" />
   <token value="відродження" lemma="відродження" tags="noun:inanim:n:v_rod" />
 </sentence>
 <paragraph/>
 """
         assertEquals expected, tagged.tagged
+
+        // стрільців і командирів
+    
+        tagged = tagText.tagText("кабінет міністрів")
+        
+        expected =
+"""<sentence>
+  <token value="кабінет" lemma="кабінет" tags="noun:inanim:m:v_naz" />
+  <token value="міністрів" lemma="міністр" tags="noun:anim:p:v_rod" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
     }
 
+    @Disabled
+    @Test
+    public void testAdjNounLinkBoots() {
+        tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, disambiguationDebug:true))
+        def tagged = tagText.tagText("тристоронні договори")
+        
+        def expected =
+"""<sentence>
+  <token value="тристоронні" lemma="тристоронній" tags="adj:p:v_naz" />
+  <token value="договори" lemma="договір" tags="noun:inanim:p:v_naz" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+        
+        tagged = tagText.tagText("вегетативне розмноження")
+        
+        expected =
+        """<sentence>
+  <token value="вегетативне" lemma="вегетативний" tags="adj:n:v_naz" />
+  <token value="розмноження" lemma="розмноження" tags="noun:inanim:n:v_naz" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
+    @Disabled
+    @Test
+    public void testIgnoreParts() {
+        tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, disambiguationDebug:true))
+        def tagged = tagText.tagText("перешкоджали б вільному")
+        
+        def expected =
+"""<sentence>
+    <token value="перешкоджали" lemma="перешкоджати" tags="verb:imperf:past:p" />
+    <token value="б" lemma="б" tags="part" />
+    <token value="вільному" lemma="вільний" tags="adj:m:v_dav:compb" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+    
+    // що нижче по схилу
+    // Дорога забрала
+    // , як карі
+    // 32-бітний
+    // повів їх назад
+    // 50-тих   50-той
+    // корені різні
+    // у розвиткові суспільства
+    // зрілого Франка
+
+
+    
+    // відповідають певним «стандартам»
+    // в цих супровідних
+    // ці лічильні засоби
+    // облікові жетони
+    // усвідомлювали значення та роль
+  
 }
