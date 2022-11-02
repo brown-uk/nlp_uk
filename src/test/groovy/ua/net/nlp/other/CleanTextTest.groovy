@@ -59,6 +59,7 @@ class CleanTextTest {
         assertEquals "по-турецьки", clean("по¬турецьки")
         assertEquals "10-11", clean("10¬11")
         assertEquals "о¬е", clean("о¬е")
+        assertEquals "екс-глава", clean("екс¬глава")
     }
 
 	@Test

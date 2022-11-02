@@ -25,7 +25,7 @@ package ua.net.nlp.other
 
 @GrabConfig(systemClassLoader=true)
 @Grab(group='org.languagetool', module='language-uk', version='5.9')
-//@Grab(group='org.languagetool', module='language-uk', version='5.10-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='6.0-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='5.9')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
@@ -456,9 +456,9 @@ class CleanText {
             text = text.replaceAll(/([0-9])\u00AC([а-яіїєґА-ЯІЇЄҐ0-9])/, '$1-$2')
             text = text.replaceAll(AC_HYPHEN_PATTERN1, { String all, w1, w2 ->
 //            text = AC_HYPHEN_PATTERN1.matcher(text).replaceAll({ String all, w1, w2 ->
-                def fix = "$w1$w2"
+                def fix = "$w1-$w2"
                 if( knownWord(fix) ) return fix
-                fix = "$w1-$w2"
+                fix = "$w1$w2"
                 if( knownWord(fix) ) return fix
                 return all
             })
