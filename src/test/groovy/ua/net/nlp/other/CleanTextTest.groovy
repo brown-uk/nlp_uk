@@ -101,6 +101,16 @@ class CleanTextTest {
         result = cleanText.cleanUp(orig, file(), new CleanOptions(), file())
         assert result != orig
         assert result == "чоловіка і жінки"
+
+        // latin y
+        orig = "з полком y поміч"
+        result = cleanText.cleanUp(orig, file(), new CleanOptions(), file())
+        assert result != orig
+        assert result == "з полком у поміч"
+
+        orig = "da y Вoreckomu"
+        result = cleanText.cleanUp(orig, file(), new CleanOptions(), file())
+        assert result == orig
 	}
 
 	@Test

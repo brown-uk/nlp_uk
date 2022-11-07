@@ -1116,11 +1116,12 @@ class CleanText {
             }
         }
 
-        // Latin a, o and i
-        text = text.replaceAll(/([а-яіїєґ]), a ([А-ЯІЇЄҐа-яіїєґ])/, '$1, а $2')
-        text = text.replaceAll(/([а-яіїєґ]) i ([А-ЯІЇЄҐа-яіїєґ])/, '$1 і $2')
-		text = text.replaceAll(/([а-яіїєґ]) o ([А-ЯІЇЄҐа-яіїєґ])/, '$1 о $2')
-		
+        // Latin a, o, i, and y
+        text = text.replaceAll(/([^a-z])[,;–—-] a ([А-ЯІЇЄҐа-яіїєґ])/, '$1, а $2')
+        text = text.replaceAll(/([^a-z]) i ([А-ЯІЇЄҐа-яіїєґ])/, '$1 і $2')
+		text = text.replaceAll(/([^a-z]) o ([А-ЯІЇЄҐа-яіїєґ])/, '$1 о $2')
+        text = text.replaceAll(/([^a-z]) y ([А-ЯІЇЄҐа-яіїєґ])/, '$1 у $2')
+        
         return text
     }
 
