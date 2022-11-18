@@ -118,7 +118,7 @@ class TokenizeText {
     
     
     static class TokenizeOptions {
-        @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
+        @Option(names = ["-i", "--input"], arity="1", description = ["Input file. Default: stdin"], defaultValue = "-")
         String input
         @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .tagged.txt/.json)"])
         String output
