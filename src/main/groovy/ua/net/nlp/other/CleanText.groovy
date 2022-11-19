@@ -41,13 +41,11 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
 import groovy.io.FileVisitResult
 import groovy.transform.CompileStatic
-import groovy.transform.Field
 
 import org.languagetool.tagging.uk.*
 import org.languagetool.tokenizers.SRXSentenceTokenizer
 import org.languagetool.tokenizers.uk.UkrainianWordTokenizer
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.languagetool.tagging.Tagger
 import org.languagetool.tagging.ru.RussianTagger
 import org.languagetool.AnalyzedToken
@@ -593,20 +591,32 @@ class CleanText {
 
     static final Pattern pattern = ~/(?s)<span lang="ru"( rate="[0-9.]+")?>(?!---<\/span>)(.*?)<\/span>/
     
+    @CompileStatic
 	String markRussian(String text, File file, File outFile) {
         
         // clean previous marks unless they are cut
         text = pattern.matcher(text).replaceAll('$2')
         
         // by paragraphs now
-		List<String> chunks = text.split(/\n\n/) // ukSentTokenizer.tokenize(text)
-		
+		String[] chunks = text.split(/\n\n/) // ukSentTokenizer.tokenize(text)
+
+        String ending = ""
+        if( text.endsWith("\n\n") ) {
+            Matcher m = text =~ /((\n\n)+)$/
+            m.find()
+            ending = m.group(0)
+        }
+
         def ruChunks = []
         
 		text = chunks
             .collect { String sent ->
-                float ukRate, ruRate
-                (ukRate, ruRate) = evalChunk(sent)
+                if( ! (sent =~ /[а-яіїєґёА-ЯІЇЄҐЁ]/) ) {
+                    return sent
+                }
+                
+                List<Double> vals = evalChunk(sent)
+                Double ukRate = vals[0], ruRate = vals[1]
                 
                 if( ukRate < ruRate ) {
                     ruRate = Math.round(ruRate * 100)/100
@@ -625,6 +635,10 @@ class CleanText {
         
             }
 			.join("\n\n")
+        
+        if( ending && ! text.endsWith("\n") ) {
+            text += ending
+        }
            
         if( options.markLanguages == MarkOption.cut ) {
             if( ruChunks ) {
@@ -643,6 +657,7 @@ class CleanText {
         text
     }
 
+    @CompileStatic
     List<Double> evalChunk(String text) {
         
 //        double ukCnt = 0
@@ -657,7 +672,14 @@ class CleanText {
 
         if( chunks.isEmpty() )
             return [(double)1.0, (double)0.0]
-            
+        
+        // Лариса ГУТОРОВА
+        if( chunks.size() < 10 ) {
+            if( ! (text =~ /[ыэъё]/) || text =~ /[ієїґ]/ ) {
+                return [(double)0.5, (double)0.1]
+            }
+        }
+                
         int ukSum = 0
         int ruSum = 0
         int ukSum10 = 0
@@ -895,13 +917,17 @@ class CleanText {
             return 10
         
         try {
-            List<AnalyzedToken> token = ukTagger.getAnalyzedTokens(word) 
-            if( token[0].hasNoTag() )
+            List<AnalyzedToken> tokenReadings = ukTagger.getAnalyzedTokens(word)
+            if( tokenReadings[0].hasNoTag() )
                 return 0
-            if( token.find { AnalyzedToken t ->
-                    t.getPOSTag().contains(":bad") && ! t.getPOSTag().contains("&adjp:actv") && ! (t.getLemma() =~ /(ння|ий)$/)
-                    } )
-                return 2
+
+            def badToken = tokenReadings.find { AnalyzedToken t ->
+                    t.getPOSTag().contains(":bad") && ! t.getPOSTag().contains("&adjp:actv") && ! (t.getLemma() =~ /(ння|ий)$/) }
+            if( badToken ) {
+                def nonBadToken = badToken = tokenReadings.find { AnalyzedToken t -> ! t.getPOSTag().contains(":bad") }
+                if( ! nonBadToken )
+                    return 2
+            }
 //            if( token.find { AnalyzedToken t -> t.getPOSTag() =~ /:prop:geo|noun:inanim:.:v_kly/ } )
 //                return 5
             return 8
@@ -922,6 +948,7 @@ class CleanText {
             throw e
         }
     }
+    
 
     @CompileStatic
     String removeMix(String text) {

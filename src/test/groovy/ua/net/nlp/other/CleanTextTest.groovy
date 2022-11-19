@@ -19,7 +19,7 @@ class CleanTextTest {
     def file() { return new File("/dev/null") }
 
     String clean(String str) {
-        println "---------"
+        // println "---------"
         str = str.replace('_', '')
         cleanText.cleanUp(str, file(), options, file())
     }
@@ -124,16 +124,24 @@ class CleanTextTest {
         options.markLanguages = MarkOption.mark 
         
         String expected=
-'''Десь там.
+'''<span lang="ru" rate="1.0">Выйдя из развозки, Дима остановился у кафе, раздумывая, а не посидеть ли ему тут с полчасика?.</span>
 
-<span lang="ru" rate="1.0">Где-то такой</span>
+<span lang="ru" rate="0.8">удерживала его теперь на месте, не позволяя голове принимать какие–либо резкие решения</span>
 
-<span lang="ru" rate="0.8">Да да</span> 
+<span lang="ru" rate="0.73">Да да, ему дали все, как положено все дали под розпись.</span>
 '''
         
-        assertEquals expected, clean("Десь там.\n\nГде-то такой\n\nДа да \n")
+        String text =
+"""Выйдя из развозки, Дима остановился у кафе, раздумывая, а не посидеть ли ему тут с полчасика?.
+
+удерживала его теперь на месте, не позволяя голове принимать какие–либо резкие решения
+
+Да да, ему дали все, как положено все дали под розпись.
+"""
+
+        assertEquals expected, clean(text)
         
-        assertEquals '<span lang="ru" rate="0.8">Кому я продался?</span>', clean("Кому я продался?")
+//        assertEquals '<span lang="ru" rate="0.64">Кому я продался в подмастерья?</span>', clean("Кому я продался в подмастерья?")
         
         def ukrSent = "Депутате Хмаро, я закликаю вас до порядку."
         assertEquals ukrSent, clean(ukrSent)
@@ -144,11 +152,11 @@ class CleanTextTest {
         def ukrSent2 = "Classmark Р 382.c.367.2."
         assertEquals ukrSent2, clean(ukrSent2)
 
-        def expectedRates = [(double)0.8, (double)0.0]
-        assertEquals(expectedRates, cleanText.evalChunk("дерзаючий"))
+        def expectedRates = [(double)0.5, (double)0.1]
+        assertEquals(expectedRates, cleanText.evalChunk("дерзаючий озером, а голова просто"))
 
-//        expectedRates = [(double)0.8, (double)0.0]
-        assertEquals(expectedRates, cleanText.evalChunk("енергозбереженню"))
+        expectedRates = [(double)0.8, (double)0.2]
+        assertEquals(expectedRates, cleanText.evalChunk("енергозбереженню прийшов повний розгром але зелений друг виручив його в складний момент"))
 
         def rates = cleanText.evalChunk("Arsenal по\u2013царськи")
         assertEquals(1.0, rates[0], 1E-2)
@@ -161,6 +169,20 @@ class CleanTextTest {
 //пересказанное предание о лесной волшебнице Турандине.'''
 //        assertEquals ukrSent3, clean(ukrSent3)
 
+        text = "Лариса ГУТОРОВА"
+        assertEquals text, clean(text)
+        
+        text = "(«Главком»)"
+        assertEquals text, clean(text)
+
+        text = "1939 — нар. Олександр Пороховщиков, рос. актор"
+        assertEquals text, clean(text)
+
+        text = "Танк «Оплот» поставлять «на рейки»"
+        assertEquals text, clean(text)
+        
+        text = "- Хай буде щедро!"
+        assertEquals text, clean(text)
     }
 
     @Test
@@ -168,7 +190,7 @@ class CleanTextTest {
         options.markLanguages = MarkOption.cut 
         
         String expected=
-'''Десь там.
+'''Десь там за горою.
 
 <span lang="ru">---</span>
 
@@ -177,7 +199,25 @@ class CleanTextTest {
 <span lang="ru">---</span>
 '''
 
-        assertEquals expected, clean("Десь там.\n\nГде-то такой\n\nДа да \n\n<span lang=\"ru\">---</span>\n")
+        String text =
+"""Десь там за горою.
+
+Выйдя из развозки, Дима остановился у кафе, раздумывая, а не посидеть ли ему тут с полчасика?.
+
+Да да, ему дали все, как положено все дали под розпись.
+
+<span lang=\"ru\">---</span>
+"""
+
+        assertEquals expected, clean(text)
+
+        options.markLanguages = MarkOption.mark
+        
+        text = new File("/home/arysin/work/ukr/spelling/media_new/201x/um/tmp/2010_1568_116_55223.txt").text
+        assertEquals text, clean(text)
+        
+        text = new File("/home/arysin/work/ukr/spelling/media_new/201x/um/txt-good/2010_1569_180_55246.txt").text
+        assertEquals text, clean(text)
     }
 
     @Test
