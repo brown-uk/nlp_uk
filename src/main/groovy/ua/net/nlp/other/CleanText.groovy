@@ -175,6 +175,8 @@ class CleanText {
         boolean debug
         @Option(names = ["-z", "--markLanguages"], description = ["Mark text in another language, modes: none, mark, cut (supported language: Russian)"], defaultValue="none")
         MarkOption markLanguages = none
+        @Option(names = ["-zp1"], description = ["Treat each new line as paragraph (for marking other languages)"])
+        boolean paragraphSingleLine
         @Option(names = ["-p", "--parallel"], description = ["Process files in parallel"])
         boolean parallel
         @Option(names = ["-m", "--modules"], description = ["Extra cleanup: remove footnotes, page numbers etc. (supported modules: nanu)"])
@@ -592,20 +594,46 @@ class CleanText {
     static final Pattern pattern = ~/(?s)<span lang="ru"( rate="[0-9.]+")?>(?!---<\/span>)(.*?)<\/span>/
     
     @CompileStatic
+    class ParaIterator implements Iterator<String> {
+        String text;
+        String delim;
+        int from = 0
+        
+        @Override
+        public boolean hasNext() {
+            return from < text.length()
+        }
+        
+        @Override
+        public String next() {
+            if( from == text.length()) throw new IllegalArgumentException()
+            
+            int pos = text.indexOf(delim, from)
+            if( pos == -1 ) pos = text.length()
+            def ret = pos == from ? delim : text[from..<pos];
+            from = pos
+//            println "new pos: $from (total: ${text.length()} ret: $ret"
+            if( ret == delim ) from += delim.length()
+            return ret
+        }
+    }
+    
+    @CompileStatic
 	String markRussian(String text, File file, File outFile) {
         
         // clean previous marks unless they are cut
         text = pattern.matcher(text).replaceAll('$2')
         
         // by paragraphs now
-		String[] chunks = text.split(/\n\n/) // ukSentTokenizer.tokenize(text)
+//		String[] chunks = text.split(/\n\n/) // ukSentTokenizer.tokenize(text)
+        def chunks = new ParaIterator(text: text, delim: options.paragraphSingleLine ? "\n" : "\n\n")
 
-        String ending = ""
-        if( text.endsWith("\n\n") ) {
-            Matcher m = text =~ /((\n\n)+)$/
-            m.find()
-            ending = m.group(0)
-        }
+//        String ending = ""
+//        if( text.endsWith("\n\n") ) {
+//            Matcher m = text =~ /((\n\n)+)$/
+//            m.find()
+//            ending = m.group(0)
+//        }
 
         def ruChunks = []
         
@@ -634,18 +662,27 @@ class CleanText {
                 }
         
             }
-			.join("\n\n")
+			.join("")
         
-        if( ending && ! text.endsWith("\n") ) {
-            text += ending
-        }
+//        if( ending && ! text.endsWith("\n") ) {
+//            text += ending
+//        }
            
         if( options.markLanguages == MarkOption.cut ) {
             if( ruChunks ) {
                 String ruText = ruChunks.join("\n\n")
                 def ruFile
                 if( outDirName ) {
-                    ruFile = new File(outDirName, file.name.replaceFirst(/\.txt/, '.ru.txt'))
+                    def ruFilename = file.name.replaceFirst(/\.txt/, '.ru.txt')
+
+                    def parentDir = outFile.getParentFile()
+                    def ruDir = new File(parentDir, "ru")
+                    ruDir.mkdirs()
+
+                    ruFile = new File(ruDir, ruFilename)
+                    
+//                    ruFile = new File(ruDir, file.name.replaceFirst(/\.txt/, '.ru.txt'))
+//                    ruFile.getParentFile()
                 }
                 else {
                     ruFile = new File(outFile.absolutePath.replaceFirst(/\.txt/, '.ru.txt'))
@@ -1166,7 +1203,7 @@ class CleanText {
             })
 
 			def first = null
-            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґ'ʼ’-]+)([,;.!?])?/, { List<String> it ->
+            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, { List<String> it ->
 				if( ! first )
 					first = it[0] ? it[0].replace('\n', "\\n") : it[0]
                 //            println "== " + (it[1] + "-" + it[3]) + ", known: " + knownWord(it[1] + "-" + it[3])

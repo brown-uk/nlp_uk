@@ -36,7 +36,20 @@ class CleanTextTest {
         assertEquals "п'яний", clean("п\\'яний")
         
 		assertEquals "on throughпортал в", clean("on throughпортал в")
-
+        
+        assertEquals "За віщо йому таке. Вул. Залізнична 3а.", clean("3а віщо йому таке. Вул. 3алізнична 3а.")
+        
+        assertEquals "концентрація CO та CO2", clean("концентрація СO та CО2")
+        
+        assertEquals "загальновідоме", clean("загальновідо¬ме")
+        assertEquals "по-турецьки", clean("по¬турецьки")
+        assertEquals "10-11", clean("10¬11")
+        assertEquals "о¬е", clean("о¬е")
+        assertEquals "екс-глава", clean("екс¬глава")
+	}
+    
+    @Test
+    public void testWrap() {
 		assertEquals "урахування\n", clean("ураху-\nвання")
         assertEquals "Прем’єр-ліги\n", clean("Прем’єр-\nліги")
 //        assertEquals "інформаційно\u2013звітний\n", clean("інформаційно\u2013\nзвітний")
@@ -50,30 +63,26 @@ class CleanTextTest {
 
         assertEquals "- архієпископ\n- Дитина", clean("-архієпископ\n-Дитина")
         assertEquals "-то ", clean("-то ")
+
+        assertEquals "Інтерфакс-Україна\n", clean("Інтерфакс-\nУкраїна")
+
+        def result = cleanText.cleanUp('просто-\nрово-часового', file(), new CleanOptions(), file())
+        assert result == "просторово-часового\n"
+        //result = cleanText.cleanUp('двох-\nсторонній', file, [])
+        //assert result == "двохсторонній\n"
         
-        assertEquals "За віщо йому таке. Вул. Залізнична 3а.", clean("3а віщо йому таке. Вул. 3алізнична 3а.")
-        
-        assertEquals "концентрація CO та CO2", clean("концентрація СO та CО2")
-        
-        assertEquals "загальновідоме", clean("загальновідо¬ме")
-        assertEquals "по-турецьки", clean("по¬турецьки")
-        assertEquals "10-11", clean("10¬11")
-        assertEquals "о¬е", clean("о¬е")
-        assertEquals "екс-глава", clean("екс¬глава")
+        //TODO:
+        result = cleanText.cleanUp("минулого-сучасного-май-\nбутнього", file(), new CleanOptions(), file())
+        assert result == "минулого-сучасного-майбутнього\n"
+
+        result = cleanText.cleanUp("благо-\nдійної", file(), new CleanOptions(), file())
+        assert result == "благодійної\n"
     }
 
+    
 	@Test
 	void test2() {
-		def result = cleanText.cleanUp('просто-\nрово-часового', file(), new CleanOptions(), file())
-		assert result == "просторово-часового\n"
-		//result = cleanText.cleanUp('двох-\nсторонній', file, [])
-		//assert result == "двохсторонній\n"
-		
-		//TODO:
-		result = cleanText.cleanUp("минулого-сучасного-май-\nбутнього", file(), new CleanOptions(), file())
-		assert result == "минулого-сучасного-майбутнього\n"
-        
-        result = cleanText.cleanUp("новоствореноі", file(), new CleanOptions(), file())
+        def result = cleanText.cleanUp("новоствореноі", file(), new CleanOptions(), file())
         assert result == "новоствореної"
 
         // don't touch abbreviations or short words
@@ -82,9 +91,6 @@ class CleanTextTest {
 
         result = cleanText.cleanUp("Північноірландські", file(), new CleanOptions(), file())
         assert result == "Північноірландські"
-
-        result = cleanText.cleanUp("благо-\nдійної", file(), new CleanOptions(), file())
-        assert result == "благодійної\n"
 
         result = cleanText.cleanUp("Нацполіціі", file(), new CleanOptions(), file())
         assert result == "Нацполіції"
@@ -196,6 +202,7 @@ class CleanTextTest {
 
 <span lang="ru">---</span>
 
+
 <span lang="ru">---</span>
 '''
 
@@ -206,20 +213,37 @@ class CleanTextTest {
 
 Да да, ему дали все, как положено все дали под розпись.
 
+
 <span lang=\"ru\">---</span>
 """
 
         assertEquals expected, clean(text)
 
         options.markLanguages = MarkOption.mark
-        
-        text = new File("/home/arysin/work/ukr/spelling/media_new/201x/um/tmp/2010_1568_116_55223.txt").text
-        assertEquals text, clean(text)
-        
-        text = new File("/home/arysin/work/ukr/spelling/media_new/201x/um/txt-good/2010_1569_180_55246.txt").text
-        assertEquals text, clean(text)
     }
 
+    @Test
+    public void testMarkLanguageCutSingleNlPara() {
+        options.markLanguages = MarkOption.cut
+        options.paragraphSingleLine = true
+        
+        String expected=
+'''Десь там за горою.
+<span lang="ru">---</span>
+<span lang="ru">---</span>
+<span lang="ru">---</span>
+'''
+
+        String text =
+"""Десь там за горою.
+Выйдя из развозки, Дима остановился у кафе, раздумывая, а не посидеть ли ему тут с полчасика?.
+Да да, ему дали все, как положено все дали под розпись.
+<span lang=\"ru\">---</span>
+"""
+
+        assertEquals expected, clean(text)
+    }
+    
     @Test
     public void testSplitHttp() {
         
