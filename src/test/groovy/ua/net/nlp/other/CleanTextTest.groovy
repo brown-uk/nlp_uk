@@ -5,6 +5,7 @@ package ua.net.nlp.other
 import org.junit.jupiter.api.Test
 import ua.net.nlp.other.CleanText.CleanOptions
 import ua.net.nlp.other.CleanText.MarkOption
+import ua.net.nlp.other.CleanText.ParagraphDelimiter
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals
 import static org.junit.jupiter.api.Assertions.assertEquals
@@ -192,6 +193,32 @@ class CleanTextTest {
     }
 
     @Test
+    public void testMarkLanguagePara() {
+        options.markLanguages = MarkOption.mark
+        options.paragraphDelimiter = ParagraphDelimiter.auto
+        
+        String expected=
+'''<span lang="ru" rate="1.0">Выйдя из развозки, Дима остановился у кафе, раздумывая, а не посидеть ли ему тут с полчасика?.</span>\r
+\r
+<span lang="ru" rate="0.8">удерживала его теперь на месте, не позволяя голове принимать какие–либо резкие решения.\r
+Да еще.</span>\r
+\r
+<span lang="ru" rate="0.73">Да да, ему дали все, как положено все дали под розпись.</span>\r
+'''
+        
+        String text =
+"""Выйдя из развозки, Дима остановился у кафе, раздумывая, а не посидеть ли ему тут с полчасика?.\r
+
+удерживала его теперь на месте, не позволяя голове принимать какие–либо резкие решения.\r
+Да еще.\r
+
+Да да, ему дали все, как положено все дали под розпись.\r
+"""
+
+        assertEquals expected, clean(text)
+    }
+    
+    @Test
     public void testMarkLanguageCut() {
         options.markLanguages = MarkOption.cut 
         
@@ -225,7 +252,7 @@ class CleanTextTest {
     @Test
     public void testMarkLanguageCutSingleNlPara() {
         options.markLanguages = MarkOption.cut
-        options.paragraphSingleLine = true
+        options.paragraphDelimiter = ParagraphDelimiter.single_nl
         
         String expected=
 '''Десь там за горою.

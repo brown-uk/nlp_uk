@@ -31,6 +31,7 @@ package ua.net.nlp.other
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
 import static ua.net.nlp.other.CleanText.MarkOption.none
+
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -133,7 +134,7 @@ class CleanText {
     }            
     
     
-    CleanText(def options) {
+    CleanText(CleanOptions options) {
         this.options = options
 
         latToCyrMap.each{ String k, String v -> cyrToLatMap[v] = k }
@@ -149,10 +150,26 @@ class CleanText {
     @CompileStatic
     void debug(str) {
         if( options.debug ) {
-            println "\tDEBUG: $str"
+            _println "\tDEBUG: $str"
         }
     }
 
+    // making println thread-safe
+    void _println(String txt) {
+        if( logger ) {
+            logger.info txt
+        }
+        else {
+            out.get().println(txt)
+        }
+    }
+
+    static enum ParagraphDelimiter {
+        double_nl,
+        single_nl,
+        auto
+    }
+    
     static class CleanOptions {
         //        @Parameters(arity="1", paramLabel="input", description="The file(s) whose checksum to calculate.")
         @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
@@ -175,8 +192,8 @@ class CleanText {
         boolean debug
         @Option(names = ["-z", "--markLanguages"], description = ["Mark text in another language, modes: none, mark, cut (supported language: Russian)"], defaultValue="none")
         MarkOption markLanguages = none
-        @Option(names = ["-zp1"], description = ["Treat each new line as paragraph (for marking other languages)"])
-        boolean paragraphSingleLine
+        @Option(names = ["--paragraph"], description = ["Tells if to split paragraph by single or double new line (for marking other languages)"], defaultValue = "double_nl")
+        ParagraphDelimiter paragraphDelimiter = ParagraphDelimiter.double_nl
         @Option(names = ["-p", "--parallel"], description = ["Process files in parallel"])
         boolean parallel
         @Option(names = ["-m", "--modules"], description = ["Extra cleanup: remove footnotes, page numbers etc. (supported modules: nanu)"])
@@ -234,15 +251,6 @@ class CleanText {
                     || "UTF-8".equals(java.nio.charset.Charset.defaultCharset()) ) {
                 System.setOut(new PrintStream(System.out,true,"UTF-8"))
             }
-        }
-    }
-
-    void println(String txt) {
-        if( logger ) {
-            logger.info txt
-        }
-        else {
-            out.get().println(txt)
         }
     }
 
@@ -364,7 +372,7 @@ class CleanText {
 				Path pathAbsolute = Paths.get(file.absolutePath)
 				Path pathBase = Paths.get(baseDir.absolutePath)
 				Path pathRelative = pathBase.relativize(pathAbsolute);
-                println "Looking at " + pathRelative
+                _println "Looking at " + pathRelative
             }
 
             
@@ -410,13 +418,13 @@ class CleanText {
             }
 
 
-//            println "\tGOOD: $file.name\n"
+//            _println "\tGOOD: $file.name\n"
 
 			if( text != null ) {
 				outFile.setText(text, UTF8)
 			}
 			else {
-				println "\tCopying file as is"
+				_println "\tCopying file as is"
 				outFile.setBytes(file.getBytes())
 			}
 
@@ -435,7 +443,7 @@ class CleanText {
     @CompileStatic
     String removeSoftHyphens(String text) {
         if( text.contains("\u00AD") ) {
-            println "\tremoving soft hyphens: "
+            _println "\tremoving soft hyphens: "
 //            text = text.replaceAll(/[ \t]*\u00AD[ \t]*([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, '$1$2')
 //            text = text.replaceAll(/\u00AD(?!\n {10,}[А-ЯІЇЄҐ])(\n?[ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, '$2$3$1')
             text = SOFT_HYPHEN_PATTERN1.matcher(text).replaceAll('$1$3$4$2')
@@ -452,7 +460,7 @@ class CleanText {
     @CompileStatic
     String remove00ACHyphens(String text) {
         if( text.contains("\u00AC") ) { // ¬
-            println "\tremoving U+00AC hyphens: "
+            _println "\tremoving U+00AC hyphens: "
             text = text.replaceAll(/([0-9])\u00AC([а-яіїєґА-ЯІЇЄҐ0-9])/, '$1-$2')
             text = text.replaceAll(AC_HYPHEN_PATTERN1, { String all, w1, w2 ->
 //            text = AC_HYPHEN_PATTERN1.matcher(text).replaceAll({ String all, w1, w2 ->
@@ -469,11 +477,11 @@ class CleanText {
     @CompileStatic
     String cleanUp(String text, File file, CleanOptions options, File outFile) {
         if( file.length() > 100 && file.bytes[0..3] == [0x50, 0x4B, 0x03, 0x04] ) {
-            println "\tERROR: found zip file, perhaps it's a Word document?"
+            _println "\tERROR: found zip file, perhaps it's a Word document?"
             return null
         }
         if( file.length() > 100 && text.startsWith("{\rtf") ) {
-            println "\tERROR: found \"{\rtf\", perhaps it's an RTF document?"
+            _println "\tERROR: found \"{\rtf\", perhaps it's an RTF document?"
             return null
         }
 
@@ -487,7 +495,7 @@ class CleanText {
         }
 
 		if( ! isUTF8(file.bytes) ) {
-            println "\tWARNING: file is not in UTF-8 encoding"
+            _println "\tWARNING: file is not in UTF-8 encoding"
 			text = fixEncoding(text, file)
 			if( text == null )
 				return null
@@ -579,15 +587,15 @@ class CleanText {
 		
 		checkForSpacing(text, file)
 		
+        if( options.markLanguages != none ) {
+            text = markRussian(text, file, outFile)
+        }
+
 		if( dosNlPresent ) {
-			println "\tFirst new line is DOS-style, using DOS new line for the whole text"
+			_println "\tFirst new line is DOS-style, using DOS new line for the whole text"
 			text = text.replaceAll(/(?!<\r)\n/, "\r\n")
 		}
 		
-		if( options.markLanguages != none ) {
-		    text = markRussian(text, file, outFile)
-		}
-
         text
     }
 
@@ -612,7 +620,7 @@ class CleanText {
             if( pos == -1 ) pos = text.length()
             def ret = pos == from ? delim : text[from..<pos];
             from = pos
-//            println "new pos: $from (total: ${text.length()} ret: $ret"
+//            debug "new pos: $from (total: ${text.length()} ret: $ret"
             if( ret == delim ) from += delim.length()
             return ret
         }
@@ -626,14 +634,16 @@ class CleanText {
         
         // by paragraphs now
 //		String[] chunks = text.split(/\n\n/) // ukSentTokenizer.tokenize(text)
-        def chunks = new ParaIterator(text: text, delim: options.paragraphSingleLine ? "\n" : "\n\n")
-
-//        String ending = ""
-//        if( text.endsWith("\n\n") ) {
-//            Matcher m = text =~ /((\n\n)+)$/
-//            m.find()
-//            ending = m.group(0)
-//        }
+        String delim
+        if( options.paragraphDelimiter == ParagraphDelimiter.auto ) {
+            delim = (text =~ /[^\s]\n\n+[^\s]/) ? "\n\n" : "\n"
+            int nls = delim.length()
+            _println "\tdetected paragraph type: $nls new lines" 
+        }
+        else {
+            delim = options.paragraphDelimiter == ParagraphDelimiter.single_nl ? "\n" : "\n\n"
+        }
+        def chunks = new ParaIterator(text: text, delim: delim)
 
         def ruChunks = []
         
@@ -664,10 +674,6 @@ class CleanText {
             }
 			.join("")
         
-//        if( ending && ! text.endsWith("\n") ) {
-//            text += ending
-//        }
-           
         if( options.markLanguages == MarkOption.cut ) {
             if( ruChunks ) {
                 String ruText = ruChunks.join("\n\n")
@@ -680,9 +686,6 @@ class CleanText {
                     ruDir.mkdirs()
 
                     ruFile = new File(ruDir, ruFilename)
-                    
-//                    ruFile = new File(ruDir, file.name.replaceFirst(/\.txt/, '.ru.txt'))
-//                    ruFile.getParentFile()
                 }
                 else {
                     ruFile = new File(outFile.absolutePath.replaceFirst(/\.txt/, '.ru.txt'))
@@ -798,7 +801,7 @@ class CleanText {
 	void checkForSpacing(text, file) {
 		def m = text =~ /([а-яіїєґА-ЯІЇЄҐ] ){5,}/
 		if( m.find() ) {
-			println "\tWARNING: Possible spacing in words, e.g \"" + m[0][0] + "\""
+			_println "\tWARNING: Possible spacing in words, e.g \"" + m[0][0] + "\""
 		}
 	}
 
@@ -822,7 +825,7 @@ class CleanText {
 			}
 		})
 		if( cnt ) {
-			println "\t$cnt word splits removed"
+			_println "\t$cnt word splits removed"
 		}
 		text
 	}
@@ -843,8 +846,8 @@ class CleanText {
                 && matchSize > text.count("\n") * 3 / 4
                 && matcher[0][1].length() == matcher[2][1].length()
                 && matcher[0][1].length() == matcher[4][1].length() ) {
-                    println "\tERROR: two columns detected, skipping...:"
-                    println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
+                    _println "\tERROR: two columns detected, skipping...:"
+                    _println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
                     return false
                 }
             }
@@ -861,7 +864,7 @@ class CleanText {
 
 //            def nonEmptyLines = text.getLines().findAll { it =~ /[^\s]/ }
 //            if( nonEmptyLines.count { it.length() > 120 } > 5 ) {
-//                println "\tVery long lines found, probably unwrapped paragraphs..."
+//                _println "\tVery long lines found, probably unwrapped paragraphs..."
 //                return true
 //            }
 
@@ -876,13 +879,13 @@ class CleanText {
 //            def matcher = text =~ /(?ius)[а-яїієґ0-9,—–-]\s*\n\n[а-яіїєґ0-9]/
             def matcher = text =~ /(?us)[а-яїієґА-ЯІЇЄҐ,:—–-]\s*\n\n[а-яіїєґ]/
 			if( matcher ) {
-				println "\tWARNING: Suspect empty lines inside the sentence"
+				_println "\tWARNING: Suspect empty lines inside the sentence"
 				return true
 			}
 
 //            def nonEmptyLineCnt = nonEmptyLines.size()
 //            if( matcher.size() > nonEmptyLineCnt / 7 ) {
-//                println "\tWARNING: Suspect empty lines between sentences: ${matcher.size()}, total non-empty: $nonEmptyLineCnt"
+//                _println "\tWARNING: Suspect empty lines between sentences: ${matcher.size()}, total non-empty: $nonEmptyLineCnt"
 //                return true
 //            }
         }
@@ -1073,7 +1076,7 @@ class CleanText {
             lat + cyrToLatMap[cyr] + lat2
         })
 
-        println "\tconverted $count1 lat->cyr, $count2 cyr->lat"
+        _println "\tconverted $count1 lat->cyr, $count2 cyr->lat"
 
         return text
     }
@@ -1096,12 +1099,12 @@ class CleanText {
     @CompileStatic
     String fixEncoding(String text, File file) {
         if( text.contains("\u008D\u00C3") ) { // completely broken encoding for «ій»
-            println "\tWARNING: nonfixable broken encoding found, garbage will be left in!"
+            _println "\tWARNING: nonfixable broken encoding found, garbage will be left in!"
 			return null
         }
 
         if( text.contains("éîãî") ) {
-            println "\tWARNING: broken encoding"
+            _println "\tWARNING: broken encoding"
 
             // some text (esp. converted from pdf) have broken encoding in some lines and good one in others
 
@@ -1121,32 +1124,32 @@ class CleanText {
 
 
             if( text.contains("éîãî") ) {
-                println "\tERROR: still broken: encoding mixed with good one"
+                _println "\tERROR: still broken: encoding mixed with good one"
                 return null
             }
 
             //        text = text.replaceAll(/([бвгґдзклмнпрстфхцшщ])\?([єїюя])/, '$1\'$2')
 
-            println "\tEncoding fixed (good lines: $goodLines, convertedLines: $convertedLines, text: " + getSample(text)
+            _println "\tEncoding fixed (good lines: $goodLines, convertedLines: $convertedLines, text: " + getSample(text)
         }
         else {
 			String cp1251Text = tryCp1251(file)
 			if( cp1251Text ) {
-                println "\tWARNING: cp1251 encoding found"
+                _println "\tWARNING: cp1251 encoding found"
 
                 text = cp1251Text
 
                 if( text.size() < 10 ) {
-                    println "\tFile size < 10 chars, probaby cp1251 conversion didn't work, skipping"
+                    _println "\tFile size < 10 chars, probaby cp1251 conversion didn't work, skipping"
                     return null
                 }
 
-                println "\tEncoding converted: " + getSample(text)
+                _println "\tEncoding converted: " + getSample(text)
 			}
         }
 
         if( text.contains("\uFFFD") ) {
-            println "\tERROR: File contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD)"
+            _println "\tERROR: File contains Unicode 'REPLACEMENT CHARACTER' (U+FFFD)"
             return null
         }
 
@@ -1166,12 +1169,12 @@ class CleanText {
             }
 
             if( MIX_1.matcher(text).find() ) {
-                println "\tlatin/cyrillic mix"
+                _println "\tlatin/cyrillic mix"
 
                 text = removeMix(text)
 
                 if( MIX_1.matcher(text).find() ) {
-                    println "\tWARNING: still Latin/Cyrillic mix"
+                    _println "\tWARNING: still Latin/Cyrillic mix"
                 }
             }
 
@@ -1192,7 +1195,7 @@ class CleanText {
 //    @CompileStatic
     String fixDanglingHyphens(String text, File file) {
         if( text.contains("-\n") && text =~ /[а-яіїєґА-ЯІЇЄҐ]-\n/ ) {
-            println "\tsuspect word wraps"
+            _println "\tsuspect word wraps"
             def cnt = 0
             int cntWithHyphen = 0
 
@@ -1222,16 +1225,16 @@ class CleanText {
                 }
             })
 
-            println "\t\t$cnt word wraps removed, $cntWithHyphen newlines after hyphen removed"
+            _println "\t\t$cnt word wraps removed, $cntWithHyphen newlines after hyphen removed"
             if( cnt == 0 && cntWithHyphen == 0 ) {
                 println "\t\tfirst match: \"$first\""
             }
         }
 
         if( text =~ /¬ *\n/ ) {
-            println "\tsuspect word wraps with ¬:"
+            _println "\tsuspect word wraps with ¬:"
             text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)¬ *\n([ \t]*)([а-яіїєґ'ʼ’-]+)/, '$1$3\n$2')
-            println "\t\t¬ word wraps removed"
+            _println "\t\t¬ word wraps removed"
         }
 
         return text
@@ -1248,7 +1251,6 @@ class CleanText {
         .collect { line ->
             def matcher = regex.matcher(line)
             if( matcher ) {
-              //println ":: ${matcher[0][1]}"
               def match = matcher[0]
                 if( knownWord(match[2]) ) {
                     converted += 1
@@ -1260,7 +1262,7 @@ class CleanText {
         .join("\n")
 
         if( converted ) {
-            println "\tConverted leading hyphens: ${converted}"
+            _println "\tConverted leading hyphens: ${converted}"
         }
 
         if( newLineEnd ) {
@@ -1277,34 +1279,33 @@ class CleanText {
 			.each { line ->
 				def matcher = regex2.matcher(line)
 				while( matcher.find() ) {
-					// println ":: " + line
 					cnt += 1
 					if( ! first )
 						first = matcher[0]
 				}
 			}
 			if( cnt ) {
-				println "\tWARNING: found $cnt suspicious hypens after space, e.g. \"$first\""
+				_println "\tWARNING: found $cnt suspicious hypens after space, e.g. \"$first\""
 			}
 		}
 		
         text
     }
 
-//    @CompileStatic
+    @CompileStatic
     private boolean verifyWordCounts(String text, int minUkrWordCount) {
         def ukrWords = text.split(/[^А-ЯІЇЄҐёа-яіїєґё'’ʼ-]+/).findAll{ it ==~ /[А-ЩЬЮЯІЇЄҐа-щьюяіїєґ][А-ЩЬЮЯІЇЄҐа-щьюяіїєґ'’ʼ-]+/ }
         int ukrWordCount = ukrWords.size()
         if( minUkrWordCount == 0 ) {
             if( ukrWordCount == 0 ) {
-				println "\tWARNING: 0 Ukrainian words: " + getSample(text) // + "\n\t" + ukrWords
+				_println "\tWARNING: 0 Ukrainian words: " + getSample(text) // + "\n\t" + ukrWords
             }
         }
         else if( ukrWordCount < minUkrWordCount ) {
-            println "\tERROR: Less than $minUkrWordCount Ukrainian words ($ukrWordCount): " + getSample(text) // + "\n\t" + ukrWords
+            _println "\tERROR: Less than $minUkrWordCount Ukrainian words ($ukrWordCount): " + getSample(text) // + "\n\t" + ukrWords
             return false
         }
-        println "\tUkrainian words: $ukrWordCount"
+        _println "\tUkrainian words: $ukrWordCount"
         //    if( ukrWordCount < 300 ) println "\t\t: " + ukrWords
 
         // for really big text counting chars takes long time
@@ -1316,12 +1317,12 @@ class CleanText {
 
         def minUkrainianLetters = minUkrWordCount >= 20 ? minUkrWordCount / 20 : 0
         if( ukrLetterCount < minUkrainianLetters ) {
-            println "\tERROR: Less than $minUkrainianLetters Ukrainian letters ($ukrLetterCount): " + getSample(text)
+            _println "\tERROR: Less than $minUkrainianLetters Ukrainian letters ($ukrLetterCount): " + getSample(text)
             return false
         }
 
         if( ukrLetterCount < rusLetterCount ) {
-            println "\tERROR: Less Ukrainian letters ($ukrLetterCount) than Russian ($rusLetterCount), probably russian text: " + getSample(text)
+            _println "\tERROR: Less Ukrainian letters ($ukrLetterCount) than Russian ($rusLetterCount), probably russian text: " + getSample(text)
             return false
         }
 
