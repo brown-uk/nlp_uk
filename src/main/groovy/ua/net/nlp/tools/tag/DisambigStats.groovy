@@ -278,7 +278,7 @@ public class DisambigStats {
             }
     
             if( total )
-                debugStats("      sfx$len rate: %f -> %f", round(oldRate), round(rate))
+                debugStats("      sfx$len rate: %f -> %f ($wordEnding / $normPostag)", round(oldRate), round(rate))
         }
         
         return rate
@@ -331,7 +331,7 @@ public class DisambigStats {
         rate
     } 
     
-    private static final Pattern POSTAG_NORM_PATTERN = ~ /:(xp[1-9]|ua_[0-9]{4}|comp.|&predic|&insert|coll|vulg)/
+    private static final Pattern POSTAG_NORM_PATTERN = ~ /:(xp[1-9]|ua_[0-9]{4}|comp.|&predic|&insert|vulg|coll)/
     
     @CompileStatic
     private static String normalizePostagForRate(String postag) {
