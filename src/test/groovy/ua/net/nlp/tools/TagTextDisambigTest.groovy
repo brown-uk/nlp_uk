@@ -493,6 +493,17 @@ class TagTextDisambigTest {
 <paragraph/>
 """
         assertEquals expected, tagged.tagged
+
+        tagged = tagText.tagText("з'являється коріння")
+        
+        expected =
+"""<sentence>
+  <token value="з'являється" lemma="з'являтися" tags="verb:rev:imperf:pres:s:3" />
+  <token value="коріння" lemma="коріння" tags="noun:inanim:n:v_naz" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
     }
     
     @Test

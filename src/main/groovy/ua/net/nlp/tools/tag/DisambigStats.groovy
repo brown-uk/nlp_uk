@@ -240,7 +240,7 @@ public class DisambigStats {
         
         def oldRate = rate
         if( rate ) {
-            rate = adjustByContext(rate, wordReading, r.ctxRates, tokens, idx, ctxQ, ContextMode.WORD)
+            rate = adjustByContext(rate, wordReading, r.ctxRates, tokens, idx, ctxQ, ContextMode.WORD, at.getPOSTag())
         }
         
         return rate
@@ -272,13 +272,16 @@ public class DisambigStats {
             assert rate <= 1.0, "total: $total"
 
             double oldRate = rate
-            
+
+            if( total )
+                debugStats("      sfx$len rate: %f ($wordEnding / $normPostag)", round(oldRate))
+
             if( rate && total ) {
-                rate = adjustByContext(rate, wordEnding, stat.ctxRates, tokens, idx, ctxQ, ContextMode.TAG)
+                rate = adjustByContext(rate, wordEnding, stat.ctxRates, tokens, idx, ctxQ, ContextMode.TAG, normPostag)
             }
     
-            if( total )
-                debugStats("      sfx$len rate: %f -> %f ($wordEnding / $normPostag)", round(oldRate), round(rate))
+        if( total && oldRate != rate )
+                debugStats("      sfx$len rate: -> %f", round(rate))
         }
         
         return rate
@@ -300,17 +303,20 @@ public class DisambigStats {
         assert rate <= 1.0
         
         double oldRate = rate
-        
+
+        if( total )
+            debugStats("      tag rate: %f", round(oldRate))
+
         if( rate && total ) {
-            rate = adjustByContext(rate, normPostag, stat.ctxRates, tokens, idx, ctxQ, ContextMode.TAG)
+            rate = adjustByContext(rate, normPostag, stat.ctxRates, tokens, idx, ctxQ, ContextMode.TAG, normPostag)
         }
 
         if( rate && withXp ) {
             rate = adjustByXp(rate, postag, reading)
         }        
         
-        if( total )
-            debugStats("      tag rate: %f -> %f", round(oldRate), round(rate))
+        if( total && oldRate != rate )
+            debugStats("      tag rate: -> %f", round(rate))
 //        debug(dbg, "  tag rate: $normPostag, idx: $idx: oldRate: ${round(oldRate)}, rate: ${round(rate)}")
 
         return rate
@@ -339,29 +345,39 @@ public class DisambigStats {
     }
 
     @CompileStatic
-    private static boolean contextMatches(WordContext wctx1, WordContext currContext, ContextMode ctxMode) {
+    private static boolean contextMatches(WordContext wctx1, WordContext currContext, ContextMode ctxMode, String normPostag) {
         wctx1.offset == currContext.offset \
                 && (
                     wctx1.contextToken.word == currContext.contextToken.word 
                     || (ctxMode == ContextMode.TAG
-                        && contextMatchesByTag(wctx1, currContext)) )
+                        && contextMatchesByTag(wctx1, currContext, normPostag)) )
     }
 
     @CompileStatic
-    private static boolean contextMatchesByTag(WordContext wctx1, WordContext currContext) {
-        (wctx1.contextToken.postag == currContext.contextToken.postag
-                            && currContext.contextToken.postag =~ /^(adj|noun|verb|advp)/)
-//        (wctx1.contextToken.postag == currContext.contextToken.postag 
-//                            && currContext.contextToken.postag =~ /^(adj|noun|advp)/) \
-//            || (wctx1.contextToken.lemma == currContext.contextToken.lemma
-//                            && currContext.contextToken.postag =~ /^(verb)/ 
-//                            && wctx1.contextToken.postag =~ /^(verb)/)
+    private static boolean contextMatchesByTag(WordContext wctx1, WordContext currContext, String normPostag) {
+        if( currContext.contextToken.postag =~ /^(adj|noun|verb|advp)/ ) {
+            return wctx1.contextToken.postag == currContext.contextToken.postag
+        }
+
+        return false
+    }
+    
+    @CompileStatic
+    private static boolean contextMatchesLemma(WordContext wctx1, WordContext currContext, String normPostag) {
+        if( normPostag =~ /^(adj|noun)(?!.*v_naz)/
+                && wctx1.contextToken.postag =~ /^(verb)/
+                && currContext.contextToken.postag =~ /^(verb)/ ) {
+//            if( wctx1.contextToken.lemma == currContext.contextToken.lemma )
+//                debugStats("      verb: $normPostag  for lemma ${wctx1.contextToken.lemma} ${wctx1.contextToken.lemma == currContext.contextToken.lemma}")
+            return wctx1.contextToken.lemma == currContext.contextToken.lemma
+        }
+        return false
     }
     
     enum ContextMode { WORD, TAG }
     
     @CompileStatic
-    private <T> double adjustByContext(double rate, T key, Map<WordContext, Double> ctxStats, AnalyzedTokenReadings[] tokens, int idx, double ctxCoeff, ContextMode ctxMode) {
+    private <T> double adjustByContext(double rate, T key, Map<WordContext, Double> ctxStats, AnalyzedTokenReadings[] tokens, int idx, double ctxCoeff, ContextMode ctxMode, String normPostag) {
         if( ! disambigByContext )
             return rate
         
@@ -371,12 +387,30 @@ public class DisambigStats {
         // TODO: limit previous tokens by ratings already applied?
         Map<WordContext, Double> matchedContexts = ctxStats
             .findAll {WordContext wc, Double v2 -> v2
-                currContextsPrev.find { currContext -> contextMatches(wc, currContext, ctxMode) } \
-                    || (useRightContext && currContextsNext.find { currContext -> contextMatches(wc, currContext, ctxMode) } )
+                currContextsPrev.find { currContext -> contextMatches(wc, currContext, ctxMode, normPostag) } \
+                    || (useRightContext && currContextsNext.find { currContext -> contextMatches(wc, currContext, ctxMode, normPostag) } )
             }
+
+        if( matchedContexts ) {
+            def str = matchedContexts.collect{ k,v -> "$k: $v"}.join("\n          ")
+            debugStats("        ctxs:\n          %s", str)
+        }
         
         // if any (previous) readings match the context add its context rate
         Double matchRateSum = (Double) matchedContexts.collect{k,v -> v}.sum(0.0) /// (double)matchedContexts.size()
+
+        
+        Map<WordContext, Double> matchedContextsLemma = ctxStats
+            .findAll {WordContext wc, Double v2 -> v2
+                currContextsPrev.find { currContext -> contextMatchesLemma(wc, currContext, normPostag) }
+            }
+
+        if( matchedContextsLemma ) {
+            def str = matchedContextsLemma.collect{ k,v -> "$k: $v"}.join("\n          ")
+            debugStats("        ctxsL:\n          %s", str)
+            
+            matchRateSum += ((Double) matchedContextsLemma.collect{k,v -> v}.sum(0.0)) * 100.0
+        }
         
         matchRateSum = adjustByContextAdjNoun(rate, key, tokens, idx, ctxMode, matchRateSum)
         
@@ -390,15 +424,16 @@ public class DisambigStats {
 //            rate *= adjust
             double adjust = matchRateSum * ctxCoeff
             rate += adjust
-            debugStats("        ↓ ctxs: ${matchedContexts.size()}, mrSum: $matchRateSum, adjust: ${round(adjust)} -> rate: ${rate}")
+            debugStats("        ctxs: ${matchedContexts.size()}, mrSum: $matchRateSum, adjust: ${round(adjust)} -> rate: ${rate}")
         }
         else {
-//            debugStats("        ↓ ctxs: 0")
+//            debugStats("        ctxs: 0")
         }
 
         rate
     }
 
+    
     @CompileStatic
     private <T> double adjustByContextAdjNoun(double rate, T key, AnalyzedTokenReadings[] tokens, int idx, ContextMode ctxMode, Double matchRateSum) {
         if( ctxMode == ContextMode.TAG 
