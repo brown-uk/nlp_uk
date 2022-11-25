@@ -58,6 +58,18 @@ public class TagTextUnknownTest {
 </sentence>
 """
         assertEquals expected, tagged.tagged
+        
+        
+        tagged = tagText.tagText("дентиносупергенезом")
+                
+        expected =
+"""<sentence>
+  <tokenReading>
+    <token value="дентиносупергенезом" lemma="дентиносупергенез" tags="noun:inanim:m:v_oru" q="-0.5" />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
     }
 
     @Test
@@ -79,11 +91,23 @@ public class TagTextUnknownTest {
         expected =
 """<sentence>
   <tokenReading>
-    <token value="Басуріна" lemma="Басурін" tags="noun:anim:m:v_rod:prop:lname" q="-0.6" />
+    <token value="Басуріна" lemma="Басурін" tags="noun:anim:m:v_rod:prop:lname" q="-0.5" />
   </tokenReading>
 </sentence>
 """
         assertEquals expected, tagged.tagged
+
+        tagged = tagText.tagText("змієвич")
+       
+        // the only suggestion is :prop:lname 
+        expected =
+        """<sentence>
+  <tokenReading>
+    <token value="змієвич" lemma="змієвич" tags="unknown" />
+  </tokenReading>
+</sentence>
+"""
+                assertEquals expected, tagged.tagged
         
         tagged = tagText.tagText("Андрій Гнідовський")
 

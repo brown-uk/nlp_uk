@@ -48,6 +48,7 @@ public class TagUnknown {
         def last3 = token[-lemmaSuffixLen..-1]
         
         def opToTagMap = lemmaSuffixStatsF[last3]
+        opToTagMap = opToTagMap.findAll { e -> getCoeff(e, token, idx, tokens) > 0 }
         if( opToTagMap ) {
             def wr = opToTagMap.max{ e -> getCoeff(e, token, idx, tokens) }.key
 //            println ":: ${opToTagMap}"
