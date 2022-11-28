@@ -60,6 +60,10 @@ public class TagUnknown {
             
             def q = opToTagMap.size() > 1 ? -0.5 : -0.6
             
+            if( ! wr.postag.contains(":prop") ) {
+                lemma = lemma.toLowerCase()
+            }
+            
             return new TaggedToken(value: token, lemma: lemma, tags: wr.postag, q: q)
         }
         return null

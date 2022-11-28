@@ -48,12 +48,12 @@ public class TagTextUnknownTest {
 """
         assertEquals expected, tagged.tagged
 
-        tagged = tagText.tagText("андерайтерка")
+        tagged = tagText.tagText("Біоміметикою")
                 
         expected =
 """<sentence>
   <tokenReading>
-    <token value="андерайтерка" lemma="андерайтерка" tags="noun:anim:f:v_naz" q="-0.5" />
+    <token value="Біоміметикою" lemma="біоміметика" tags="noun:inanim:f:v_oru" q="-0.5" />
   </tokenReading>
 </sentence>
 """
@@ -103,7 +103,7 @@ public class TagTextUnknownTest {
         expected =
         """<sentence>
   <tokenReading>
-    <token value="змієвич" lemma="змієвич" tags="unknown" />
+    <token value="змієвич" lemma="змієвич" tags="noun:anim:m:v_naz" q="-0.6" />
   </tokenReading>
 </sentence>
 """
