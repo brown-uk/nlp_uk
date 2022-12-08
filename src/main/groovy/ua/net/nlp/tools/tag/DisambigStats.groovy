@@ -1,5 +1,6 @@
 package ua.net.nlp.tools.tag;
 
+import java.util.function.Consumer
 import java.util.regex.Pattern
 
 import org.languagetool.AnalyzedToken
@@ -134,30 +135,40 @@ public class DisambigStats {
             debugStats("    %s / %s", anToken.getPOSTag(), anToken.getLemma())
             
             double ctxQ_ = 1e4
-            double rate = getRateByWord(anToken, cleanToken, statsForWord, tokens, idx, ctxQ_)
+            double wordRate = getRateByWord(anToken, cleanToken, statsForWord, tokens, idx, ctxQ_)
+            double rate = wordRate
 
             boolean wordEndingUsed = false
             if( disambigBySuffix ) {
                 boolean useNext3 = true || ! rate
                 if( useNext3 && sfx3RateSum ) {
                     double ctxQ = 6.0e7
-                    double wordEndingRate = getRateBySuffix(anToken, cleanToken, tokens, idx, sfx3RateSum, ctxQ, 3)
+                    double sfxRate = getRateBySuffix(anToken, cleanToken, tokens, idx, sfx3RateSum, ctxQ, 3)
                     
                     boolean useNext2 = USE_SUFFIX_2 // && ! wordEndingRate //|| ! rate
                     if( useNext2 && sfx2RateSum ) {
-                        wordEndingRate = getRateBySuffix(anToken, cleanToken, tokens, idx, sfx2RateSum, ctxQ, 2)
+                        sfxRate = getRateBySuffix(anToken, cleanToken, tokens, idx, sfx2RateSum, ctxQ, 2)
                     }
-                    
-                    rate += wordEndingRate / 6.1e3
-                    wordEndingUsed = true
+                    if( sfxRate ) {
+                        sfxRate /= 6.1e3
+                        debugStats("      sfx3 rate: -> %f", round(sfxRate))
+                        rate += sfxRate
+                        wordEndingUsed = true
+                    }
                 }
             }
             
+            boolean prevPrep = idx > 0 && hasPosTag(tokens[idx-1], "prep")
+            boolean unforceTag = ! prevPrep && tokens[idx].getCleanToken().endsWith("ів")
             boolean useNext = true || ! rate
             if( useNext && tagRateSum ) {
                 double ctxQ = 6.0e7 // 4.5e7
                 double postagRate = getRateByTag(anToken, tokens, idx, withXp, tagRateSum, ctxQ)
-                rate += postagRate /  6.1e3 // 5.8e3
+                if( postagRate ) {
+                    postagRate /= unforceTag ? 6.1e4 : 6.2e3
+                    debugStats("      tag rate: -> %f", round(postagRate))
+                    rate += postagRate
+                }
             }
             
             debugStats("    final: ${round(rate)}\n")
@@ -185,6 +196,11 @@ public class DisambigStats {
         return null
     }
 
+    @CompileStatic
+    static boolean hasPosTag(AnalyzedTokenReadings tokenReadings, String tag) {
+        tokenReadings.getReadings().find { it -> it.getPOSTag() != null && it.getPOSTag().startsWith(tag) } 
+    }
+    
     @CompileStatic    
     void updateDebugStats(List<AnalyzedToken> readings, String cleanToken, TagStats stats, Map<WordReading, Stat> statsForWord) {
         if( statsForWord != null ) {
@@ -241,6 +257,7 @@ public class DisambigStats {
         def oldRate = rate
         if( rate ) {
             rate = adjustByContext(rate, wordReading, r.ctxRates, tokens, idx, ctxQ, ContextMode.WORD, at.getPOSTag())
+            debugStats("      wrd rate -> %f", round(rate))
         }
         
         return rate
@@ -280,8 +297,8 @@ public class DisambigStats {
                 rate = adjustByContext(rate, wordEnding, stat.ctxRates, tokens, idx, ctxQ, ContextMode.TAG, normPostag)
             }
     
-        if( total && oldRate != rate )
-                debugStats("      sfx$len rate: -> %f", round(rate))
+//            if( total && oldRate != rate )
+//                debugStats("      sfx$len rate: -> %f", round(rate))
         }
         
         return rate
@@ -315,8 +332,8 @@ public class DisambigStats {
             rate = adjustByXp(rate, postag, reading)
         }        
         
-        if( total && oldRate != rate )
-            debugStats("      tag rate: -> %f", round(rate))
+//        if( total && oldRate != rate )
+//            debugStats("      tag rate: -> %f", round(rate))
 //        debug(dbg, "  tag rate: $normPostag, idx: $idx: oldRate: ${round(oldRate)}, rate: ${round(rate)}")
 
         return rate
@@ -392,8 +409,8 @@ public class DisambigStats {
             }
 
         if( matchedContexts ) {
-            def str = matchedContexts.collect{ k,v -> "$k: $v"}.join("\n          ")
-            debugStats("        ctxs:\n          %s", str)
+//            def str = matchedContexts.collect{ k,v -> "$k: $v"}.join("\n          ")
+//            debugStats("        ctxs:\n          %s", str)
         }
         
         // if any (previous) readings match the context add its context rate
