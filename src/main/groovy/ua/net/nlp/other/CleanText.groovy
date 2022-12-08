@@ -25,6 +25,7 @@ package ua.net.nlp.other
 
 @GrabConfig(systemClassLoader=true)
 @Grab(group='org.languagetool', module='language-uk', version='5.9')
+@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='5.9.2')
 //@Grab(group='org.languagetool', module='language-uk', version='6.0-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='5.9')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
@@ -331,7 +332,7 @@ class CleanText {
                 prevFiles.each { File f ->
                     boolean res = f.isDirectory() ? f.deleteDir() : f.delete()
                     if( ! res ) {
-                        System.err.println "Failed to delete $fn"
+                        System.err.println "Failed to delete ${f.name}"
                         System.exit 1
                     }
                 }
@@ -512,6 +513,7 @@ class CleanText {
         text = text.replace('\\"', '"')
         text = text.replaceAll(/([бвгґдзкмнпрстфхш])\\'([яєюї])/, '$1\'$2')
         
+        text = text.replace(/U+200B/, '')
         text = text.replace(/U+02BA/, '"')
 
         // SINGLE LOW-9 QUOTATION MARK sometimes used as a comma
