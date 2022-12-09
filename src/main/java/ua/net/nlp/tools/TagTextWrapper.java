@@ -21,6 +21,11 @@ public class TagTextWrapper {
 //    private static final String SCRIPT_DIR = "src/main/groovy/ua/net/nlp/tools";
 //    private static final String SCRIPT_DIR = "classpath://src/main/groovy/ua/net/nlp/tools";
 
+    /**
+     * @param filename The name of the file to tag
+     * @param outFilename Output file name
+     * @throws Exception if problems happen
+     */
     public void tag(String filename, String outFilename) throws Exception {
 
 //        Binding binding = new Binding();
@@ -52,6 +57,11 @@ public class TagTextWrapper {
         }
     }
 
+    /**
+     * main method to test
+     * @param args Arguments
+     * @throws Exception If problems happen
+     */
     public static void main(String[] args) throws Exception {
         new TagTextWrapper().tag(args[0], args[1]);
     }
