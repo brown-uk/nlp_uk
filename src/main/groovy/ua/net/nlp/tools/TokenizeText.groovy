@@ -30,7 +30,9 @@ class TokenizeText {
     static SCRIPT_DIR=new File(SOURCE_URI).parent
 
     // easy way to include a class without forcing classpath to be set
-    static textUtils = Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
+    static textUtils = Class.forName("ua.net.nlp.tools.TextUtils") != null
+            ? Class.forName("ua.net.nlp.tools.TextUtils").newInstance()
+            : Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
 
     def jsonUnicodeBuilder = new JsonGenerator.Options().disableUnicodeEscaping().build()
 
