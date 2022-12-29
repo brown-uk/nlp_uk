@@ -2,14 +2,14 @@
 
 package ua.net.nlp.other
 
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import ua.net.nlp.other.CleanText.CleanOptions
-import ua.net.nlp.other.CleanText.MarkOption
-import ua.net.nlp.other.CleanText.ParagraphDelimiter
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals
 import static org.junit.jupiter.api.Assertions.assertEquals
 
+import ua.net.nlp.other.CleanText.CleanOptions
+import ua.net.nlp.other.CleanText.MarkOption
+import ua.net.nlp.other.CleanText.ParagraphDelimiter
 
 
 class CleanTextTest {
@@ -119,6 +119,38 @@ class CleanTextTest {
         result = cleanText.cleanUp(orig, file(), new CleanOptions(), file())
         assert result == orig
 	}
+    
+    @Disabled
+    @Test
+    public void testStar() {
+        def result = cleanText.cleanUp("На ду*ку генерала", file(), new CleanOptions(), file())
+        assertEquals "На ду*ку генерала", result
+        
+        result = cleanText.cleanUp("Як*мій ум", file(), new CleanOptions(), file())
+        assertEquals "Як мій ум", result
+        
+        result = cleanText.cleanUp("мати*вдова", file(), new CleanOptions(), file())
+        assertEquals "мати-вдова", result
+        
+        result = cleanText.cleanUp("жив*е один хлопец", file(), new CleanOptions(), file())
+        assertEquals "живе один хлопец", result
+    }
+
+    @Disabled
+    @Test
+    public void testUnderscore() {
+        def result = cleanText.cleanUp("#сто_років_тому", file(), new CleanOptions(), file())
+        assertEquals "#сто_років_тому", result
+        
+        result = cleanText.cleanUp("Не твоє, а н_а_ш_е!", file(), new CleanOptions(), file())
+        assertEquals "Не твоє, а н_а_ш_е!", result
+
+        result = cleanText.cleanUp("https://uk.wikipedia.org/wiki/Список_аеропортів_України", file(), new CleanOptions(), file())
+        assertEquals "https://uk.wikipedia.org/wiki/Список_аеропортів_України", result
+
+        result = cleanText.cleanUp("особа, яка_укладає_документи", file(), new CleanOptions(), file())
+        assertEquals "особа, яка_укладає_документи", result
+    }
 
 	@Test
 	public void testDosNewline() {

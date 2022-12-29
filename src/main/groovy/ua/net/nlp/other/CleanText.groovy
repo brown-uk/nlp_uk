@@ -24,10 +24,10 @@ package ua.net.nlp.other
 // mark/rate or remove Russian paragraphs
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.9')
-@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='5.9.2')
-//@Grab(group='org.languagetool', module='language-uk', version='6.0-SNAPSHOT')
-@Grab(group='org.languagetool', module='language-ru', version='5.9')
+@Grab(group='org.languagetool', module='language-uk', version='6.0')
+//@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='6.1.0-SNAPSHOT')
+//@Grab(group='org.languagetool', module='language-uk', version='6.1-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-ru', version='6.0')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
@@ -346,7 +346,8 @@ class CleanText {
         return outDirName
     }
 
-    void processFiles(files, baseDir, outFilename, outDirName) {
+    @CompileStatic
+    void processFiles(List<File> files, File baseDir, String outFilename, String outDirName) {
         
         def stream = options.parallel ? files.parallelStream() : files.stream()
 
@@ -373,7 +374,7 @@ class CleanText {
 				Path pathAbsolute = Paths.get(file.absolutePath)
 				Path pathBase = Paths.get(baseDir.absolutePath)
 				Path pathRelative = pathBase.relativize(pathAbsolute);
-                _println "Looking at " + pathRelative
+                _println "Looking at $pathRelative"
             }
 
             
@@ -394,41 +395,8 @@ class CleanText {
                 outFile = new File(outFilename)
             }
 
+            doCleanFile(file, outFile)
             
-			String text = file.getText(UTF8)
-
-            text = cleanUp(text, file, options, outFile)
-            if( ! text ) {
-                if( options.parallel ) {
-                    out.get().flush()
-                    System.out.println(outSw.get().toString(UTF8))
-                }
-				
-				if( ! options.keepInvalidFiles ) 
-					return
-            }
-
-            // NOTE: only counting words with 2 or more letters to filter out noised texts
-            if( text && ! verifyWordCounts(text, minUkrWordCount) ) {
-                if( options.parallel ) {
-                    out.get().flush()
-                    System.out.println(outSw.get().toString(UTF8))
-                }
-				if( ! options.keepInvalidFiles ) 
-					return
-            }
-
-
-//            _println "\tGOOD: $file.name\n"
-
-			if( text != null ) {
-				outFile.setText(text, UTF8)
-			}
-			else {
-				_println "\tCopying file as is"
-				outFile.setBytes(file.getBytes())
-			}
-
             if( options.parallel ) {
                 out.get().flush()
                 System.out.println(outSw.get().toString(UTF8))
@@ -437,6 +405,35 @@ class CleanText {
 
 		println "\nDone"
     }
+    
+    
+    @CompileStatic
+    doCleanFile(File file, File outFile) {
+        String text = file.getText(UTF8)
+        
+        text = cleanUp(text, file, options, outFile)
+        if( ! text ) {
+            if( ! options.keepInvalidFiles )
+                return
+        }
+
+        // NOTE: only counting words with 2 or more letters to filter out noised texts
+        if( text && ! verifyWordCounts(text, minUkrWordCount) ) {
+            if( ! options.keepInvalidFiles )
+                return
+        }
+
+//            _println "\tGOOD: $file.name\n"
+
+        if( text != null ) {
+            outFile.setText(text, UTF8)
+        }
+        else {
+            _println "\tCopying file as is"
+            outFile.setBytes(file.getBytes())
+        }
+    }
+    
 
     private final Pattern SOFT_HYPHEN_PATTERN1 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’]\]\)]?)\u00AD+(\n[ \t]*)([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’-]+)([,;.!?])?/)
     private final Pattern SOFT_HYPHEN_PATTERN2 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’:. ])\u00AD+([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’ -])/)

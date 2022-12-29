@@ -4,6 +4,7 @@ plugins {
     id 'eclipse'
     id 'maven-publish'
     id 'signing'
+    id 'application'
 }
 
 compileJava.options.encoding = 'UTF-8'
@@ -125,6 +126,16 @@ task copyRuntimeLibs(type: Copy) {
     }
 }
 
+application {
+    mainClass = "ua.net.nlp.tools.tag.TagTextCore"
+    
+//    def args = ['-Dgroovy.grape.enable=false', '-i', '../media_main/td.txt', '-o', 'td.xml']
+//    applicationDefaultJvmArgs = ['-Dgroovy.grape.enable=false']
+//    applicationDefaultJvmArgs = ['-Dgroovy.grape.enable=false', '-i', '../../media_main/td.txt', '-o', 'td.xml', "-XX:+FlightRecorder", "-XX:StartFlightRecording=disk=true,dumponexit=true,filename=recording.jfr"]
+    applicationDefaultJvmArgs = ['-Dgroovy.grape.enable=false', "-XX:+FlightRecorder", "-XX:StartFlightRecording=disk=true,dumponexit=true,filename=recording.jfr"]
+    //applicationDefaultJvmArgs = args
+}
+
 //compileJava.enabled = false
 
 jar {
@@ -203,9 +214,14 @@ publishing {
         mavenLocal()
         if( ! project.hasProperty("local") ) {
             maven {
-                credentials {
-                    username = getProperty('ossrhUsername')
-                    password = getProperty('ossrhPassword')
+                if( project.hasProperty("ossrhUsername") ) {
+                    credentials {
+                        username = getProperty('ossrhUsername')
+                        password = getProperty('ossrhPassword')
+                    }
+                }
+                else {
+                    logger.lifecycle "Not ossrh username/password found, remote pushing is disabled"
                 }
 
                 url =  version.contains("SNAPSHOT")
