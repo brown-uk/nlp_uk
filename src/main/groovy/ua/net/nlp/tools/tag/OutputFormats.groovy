@@ -107,7 +107,7 @@ class OutputFormats {
                 taggedSentence.each { tr -> tr
                     'tokenReading'() {
                         tr.tokens.each { t ->
-                           'token'(value: t.value, lemma: t.lemma, tags: t.tags, whitespaceBefore: t.whitespaceBefore, semtags: t.semtags)
+                           'token'(value: t.value, lemma: t.lemma, tags: t.tags/*, whitespaceBefore: t.whitespaceBefore*/, semtags: t.semtags)
                         }
                     }
                 }
@@ -156,7 +156,7 @@ class OutputFormats {
                 taggedSentence.each { tr -> tr
                     'tokenReading'() {
                         tr.tokens.each { t ->
-                            'token'(value: t.value, lemma: t.lemma, tags: t.tags, whitespaceBefore: t.whitespaceBefore, semtags: t.semtags)
+                            'token'(value: t.value, lemma: t.lemma, tags: t.tags/*, whitespaceBefore: t.whitespaceBefore*/, semtags: t.semtags)
                         }
                     }
                 }
@@ -206,11 +206,11 @@ class OutputFormats {
         if( t.tags ) {
             sb.append(" tags=\"").append(quoteXml(t.tags, false)).append("\"")
 
-            if( ! options.tokenFormat ) {
-                if( t.tags == "punct" ) {
-                    sb.append(" whitespaceBefore=\"").append(t.whitespaceBefore).append("\"")
-                }
-            }
+//            if( ! options.tokenFormat ) {
+//                if( t.tags == "punct" ) {
+//                    sb.append(" whitespaceBefore=\"").append(t.whitespaceBefore).append("\"")
+//                }
+//            }
         }
         if( t.semtags ) {
             sb.append(" semtags=\"").append(quoteXml(t.semtags, false)).append("\"")

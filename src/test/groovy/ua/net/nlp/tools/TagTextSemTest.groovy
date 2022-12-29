@@ -67,7 +67,7 @@ class TagTextSemTest {
     <token value="один-другий" lemma="один-другий" tags="adj:m:v_zna:rinanim:&amp;numr" semtags="1:abst:quantity" />
   </tokenReading>
   <tokenReading>
-    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
+    <token value="." lemma="." tags="punct" />
   </tokenReading>
 </sentence>
 """
