@@ -560,6 +560,7 @@ class TagTextCore {
     
     void download() {
         disambigStats.download()
+        tagUnknown.download()
         semTags.download()
     }
     

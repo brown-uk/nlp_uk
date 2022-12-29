@@ -19,7 +19,7 @@ public class DisambigStats {
     private static final Pattern UPPERCASED_PATTERN = Pattern.compile(/[А-ЯІЇЄҐ][а-яіїєґ'-]+/)
     private static final boolean USE_SUFFIX_2 = false
     private static final String statsFile = "/ua/net/nlp/tools/stats/lemma_freqs_hom.txt"
-    private static final String statsVersion = "3.1.0"
+    static final String statsVersion = "3.1.0"
     private static final boolean useRightContext = false
     
 

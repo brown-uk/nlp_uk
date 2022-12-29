@@ -12,6 +12,13 @@ import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 public class TagUnknown {
     private static final String statsFile = "/ua/net/nlp/tools/stats/lemma_suffix_freqs.txt"
 
+    @groovy.transform.SourceURI
+    static SOURCE_URI
+    // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
+    static File SCRIPT_DIR = SOURCE_URI.scheme == "data"
+        ? null // new File("src/main/groovy/ua/net/nlp/tools/tag")
+        : new File(SOURCE_URI).getParentFile()
+
     Map<String, Map<WordReading, Integer>> lemmaSuffixStatsF = [:].withDefault { [:].withDefault { 0 } }
     int lemmaSuffixLenB = 4
         
@@ -128,4 +135,25 @@ public class TagUnknown {
         }
         return e.value
     }
+    
+    void download() {
+        if( SCRIPT_DIR == null ) { // should not happen - jar will bundle the stats
+            System.err.println "Can't download from inside the jar"
+            System.exit 1
+        }
+        
+        def targetDir = new File(SCRIPT_DIR, "../../../../../../resources/")
+        targetDir.mkdirs()
+        assert targetDir.isDirectory()
+
+        File targetFile = new File(targetDir, statsFile)
+        targetFile.parentFile.mkdirs()
+        
+        def remoteStats = "https://github.com/brown-uk/nlp_uk/releases/download/v${DisambigStats.statsVersion}/lemma_suffix_freqs.txt"
+        System.err.println("Downloading $remoteStats...");
+        def statTxt = new URL(remoteStats).getText('UTF-8')
+        
+        targetFile.setText(statTxt, 'UTF-8')
+    }
+
 }
