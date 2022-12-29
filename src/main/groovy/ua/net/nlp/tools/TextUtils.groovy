@@ -8,8 +8,12 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
+import java.util.function.Function
 import java.util.regex.Pattern
-
+import ua.net.nlp.tools.tag.TagOptions
+import ua.net.nlp.tools.tag.TagTextCore.TagResult
+import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 
 class TextUtils {
@@ -17,30 +21,31 @@ class TextUtils {
     static int BUFFER_SIZE = 4*1024
     static int MAX_PARAGRAPH_SIZE = 200*1024
 
-    static def processByParagraph(options, Closure closure, Closure resultClosure) {
+    @CompileStatic
+    static def processByParagraph(TagOptions options, Closure closure, Closure resultClosure) {
 
 //        if( options.output == "-" || options.input == "-" ) {
 //            warnOnWindows();
 //        }
 
-        def outputFile
+        PrintStream outputFile
 
         if( options.output == "-" ) {
             outputFile = System.out
         }
         else {
             if( ! options.noTag ) {
-                outputFile = new File(options.output)
-                outputFile.setText('')    // to clear out output file
-                outputFile = new PrintStream(outputFile, "UTF-8")
+                def of = new File(options.output)
+                of.setText('')    // to clear out output file
+                outputFile = new PrintStream(of, "UTF-8")
             }
         }
-
+        
         if( ! options.quiet && options.input == "-" ) {
-            System.err.println ("reading from stdin...")
+            System.err.println("Reading from stdin...")
         }
 
-        def inputFile = options.input == "-" ? System.in : new File(options.input)
+        InputStream inputFile = options.input == "-" ? System.in : new File(options.input).newInputStream()
 
         if( ! options.quiet ) {
             if( options.noTag ) {
@@ -81,7 +86,7 @@ class TextUtils {
 		}
 		if( ! options.quiet ) {
 			long tm2 = System.currentTimeMillis()
-			System.err.println "Time: " + (tm2-tm1) + " ms"
+			System.err.println "Time: ${(tm2-tm1)} ms"
 		}
 
         if ( ! options.noTag ) {
@@ -100,13 +105,17 @@ class TextUtils {
         return outputFile
     }
 
+    @CompileStatic
     static class OutputHandler {
         PrintStream outputFile
-        def options
+        TagOptions options
         boolean outStarted = false
         boolean jsonStarted = false
 
-        void print(analyzed) {
+        void print(TagResult analyzed) {
+            if( options.noTag )
+                return
+            
             if( jsonStarted ) {
                 outputFile.print(",\n")
             }
@@ -126,12 +135,13 @@ class TextUtils {
     }
     
 
-	static void processFile(def inputFile, PrintStream outputFile, options, Closure closure, Closure postProcessClosure) {
+    @CompileStatic
+	static void processFile(InputStream inputFile, PrintStream outputFile, TagOptions options, Function<String, TagResult> closure, Consumer<TagResult> postProcessClosure) {
         StringBuilder buffer = new StringBuilder(BUFFER_SIZE)
         boolean notEmpty = false
         OutputHandler outputHandler = new OutputHandler(outputFile: outputFile, options: options)
         
-        inputFile.eachLine('UTF-8', 0, { line ->
+        inputFile.eachLine('UTF-8', 0, { String line ->
             buffer.append(line).append("\n")
             notEmpty |= line.trim().length() > 0
 
@@ -141,7 +151,7 @@ class TextUtils {
                 def str = buffer.toString()
 
 				try {
-					def analyzed = closure(str)
+					TagResult analyzed = closure.apply(str)
                     outputHandler.print(analyzed)
 					postProcessClosure(analyzed)
 				}
@@ -162,31 +172,34 @@ class TextUtils {
         }
     }
 
-	static void processFileParallel(def inputFile, PrintStream outputFile, options, Closure processClosure, int cores, Closure postProcessClosure) {
+    @CompileStatic
+	static void processFileParallel(InputStream inputFile, PrintStream outputFile, TagOptions options, Function<String, TagResult> processClosure, int cores, Consumer<TagResult> postProcessClosure) {
 		ExecutorService executor = Executors.newFixedThreadPool(cores + 1) 	// +1 for consumer
 		BlockingQueue<Future> futures = new ArrayBlockingQueue<>(cores*2)	// we need to poll for futures in order to keep the queue busy
         OutputHandler outputHandler = new OutputHandler(outputFile: outputFile, options: options)
         
-		executor.submit {
-            for(Future f = futures.poll(5, TimeUnit.MINUTES); ; f = futures.poll(5, TimeUnit.MINUTES)) {
-                if( f == null ) {
-                    continue
+		executor.submit(new Callable() {
+            def call() {
+                for(Future<TagResult> f = futures.poll(5, TimeUnit.MINUTES); ; f = futures.poll(5, TimeUnit.MINUTES)) {
+                    if( f == null ) {
+                        continue
+                    }
+    
+    //              println "queue size: " + futures.size()
+                    try {
+                        TagResult analyzed = f.get()
+                        if( analyzed == null ) break;
+                        outputHandler.print(analyzed)
+                        postProcessClosure.accept(analyzed)
+                    }
+                    catch(e) {
+                        e.printStackTrace()
+                        System.exit(1)
+                    }
                 }
-
-//              println "queue size: " + futures.size()
-                try {
-                    def analyzed = f.get()
-                    if( analyzed == null ) break;
-                    outputHandler.print(analyzed)
-                    postProcessClosure(analyzed)
-                }
-                catch(e) {
-                    e.printStackTrace()
-                    System.exit(1)
-                }
-            }
 //          println "done polling"
-		} as Callable
+            }
+		})
 
 	
 		StringBuilder buffer = new StringBuilder(BUFFER_SIZE)
