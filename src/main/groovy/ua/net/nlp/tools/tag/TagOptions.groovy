@@ -61,6 +61,8 @@ public class TagOptions {
     boolean disambiguationDebug
     @Option(names = ["-u", "--tagUnknown"], description = "Use statistics to tag unknown words")
     boolean tagUnknown
+    @Option(names = ["-ur", "--tagUnknownWithRate"], description = "Use statistics to tag unknown words and print the rate")
+    boolean unknownRate
 
     boolean partsSeparate = true
     
@@ -104,6 +106,9 @@ public class TagOptions {
         }
         if( showDisambigRate || disambiguationDebug ) {
             disambiguate = true
+        }
+        if( unknownRate ) {
+            tagUnknown = true
         }
         if( outputFormat == OutputFormat.txt ) {
             setLemmaForUnknown = true

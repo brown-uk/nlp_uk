@@ -3,16 +3,14 @@
 package ua.net.nlp.tools.tag
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.9')
-//@Grab(group='org.languagetool', module='language-uk', version='6.0-SNAPSHOT')
-//@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='5.9.1-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='6.0')
+//@Grab(group='org.languagetool', module='language-uk', version='6.1-SNAPSHOT')
+//@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='6.1.0-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
 import java.math.RoundingMode
 import java.util.regex.Pattern
-import java.util.stream.Collectors
-import org.apache.commons.lang3.mutable.MutableInt
 
 import org.languagetool.AnalyzedSentence
 import org.languagetool.AnalyzedToken
@@ -21,9 +19,6 @@ import org.languagetool.JLanguageTool
 import org.languagetool.MultiThreadedJLanguageTool
 import org.languagetool.language.Ukrainian
 
-import ua.net.nlp.bruk.ContextToken
-import ua.net.nlp.bruk.WordContext
-import ua.net.nlp.bruk.WordReading
 import ua.net.nlp.tools.TextUtils
 import ua.net.nlp.tools.tag.DisambigStats
 import ua.net.nlp.tools.tag.ModZheleh
@@ -35,12 +30,8 @@ import ua.net.nlp.tools.tag.TagOptions.OutputFormat
 
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
-import groovy.util.Eval
-
 import picocli.CommandLine
-import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
-import picocli.CommandLine.Parameters
 
 
 class TagTextCore {
@@ -64,7 +55,7 @@ class TagTextCore {
     TagOptions options
     
 	@Canonical
-	static class TagResult {
+	public static class TagResult {
 		String tagged
 		TagStats stats
 	}
@@ -100,8 +91,6 @@ class TagTextCore {
                     def s = outputFormats.outputSentenceJson(taggedSent)
                     if( sb.length() > 0 ) sb.append(",\n");
                     sb.append(s)
-
-                    //                    sb.append(",\n{}")
                 }
                 else { // legacy text
                     if( sb.length() > 0 ) sb.append("\n")
@@ -127,6 +116,41 @@ class TagTextCore {
         }
         
         return new TagResult(sb.toString(), stats)
+    }
+
+    @CompileStatic
+    void tagTextStream(InputStream input, OutputStream output) {
+
+        def stats = new TagStats()
+        stats.options = options
+
+        def outputFormats = new OutputFormats(options)
+        outputFormats.init()
+
+        TextUtils.processFile(input, new PrintStream(output, true, "UTF-8"), options, { String buffer ->
+            
+            List<List<TTR>> taggedSentences = tagTextCore(buffer, stats)
+
+            def sb = new StringBuilder()
+
+            for(List<TTR> taggedSent: taggedSentences) {
+                if ( ! options.noTag ) {
+                    if( options.outputFormat == OutputFormat.xml ) {
+                        CharSequence x = outputFormats.outputSentenceXml(taggedSent)
+                        sb.append(x).append("\n")
+                    }
+                    else if( options.outputFormat == OutputFormat.json ) {
+                        def s = outputFormats.outputSentenceJson(taggedSent)
+                        if( sb.length() > 0 ) sb.append(",\n");
+                        sb.append(s)
+                    }
+                }
+            }
+
+            output.flush()
+            return new TagResult(sb.toString(), stats)
+            
+        }, {} )
     }
 
     @CompileStatic
@@ -242,7 +266,7 @@ class TagTextCore {
                     return tokenReadingsT
     
                 if( PUNCT_PATTERN.matcher(theToken).matches() ) {
-                    def tkn = options.tokenFormat 
+                    def tkn = /*options.tokenFormat ||*/ options.outputFormat != OutputFormat.txt
                         ? new TaggedToken(value: theToken, lemma: cleanToken, tags: 'punct')
                         : new TaggedToken(value: theToken, lemma: cleanToken, tags: 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore())
                     tokenReadingsT << new TTR(tokens: [tkn])
@@ -271,6 +295,9 @@ class TagTextCore {
                         if( options.tagUnknown ) {
                             TaggedToken taggedToken = tagUnknown.tag(theToken, idx, tokens)
                             if( taggedToken ) {
+                                if( ! options.unknownRate ) {
+                                    taggedToken.q = null
+                                }
                                 tokenReadingsT << new TTR(tokens: [taggedToken])
                                 return tokenReadingsT
                             }

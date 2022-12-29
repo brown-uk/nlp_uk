@@ -43,10 +43,10 @@ class TagTextTest {
 
     @Test
     public void testTxtFormatLemmaOnly() {
-        tagText.setOptions(new TagOptions(lemmaOnly: true, disambiguationDebug: true))
+        tagText.setOptions(new TagOptions(lemmaOnly: true, disambiguate: true))
         TagResult tagged = tagText.tagText("І словом її мала. Ділами швидше № 1")
         def expected = 
-"""і слово вона мати .
+"""і словом вона малий.
 діло швидше № 1
 """
         assertEquals expected, tagged.tagged
@@ -80,7 +80,7 @@ class TagTextTest {
     <token value="раза" lemma="раз" tags="noun:inanim:m:v_rod" />
   </tokenReading>
   <tokenReading>
-    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
+    <token value="." lemma="." tags="punct" />
   </tokenReading>
 </sentence>
 """
@@ -103,13 +103,13 @@ class TagTextTest {
     <token value="Україна" lemma="Україна" tags="noun:inanim:f:v_naz:prop:geo" />
   </tokenReading>
   <tokenReading>
-    <token value="—" lemma="—" tags="punct" whitespaceBefore="true" />
+    <token value="—" lemma="—" tags="punct" />
   </tokenReading>
   <tokenReading>
     <token value="Іспанія" lemma="Іспанія" tags="noun:inanim:f:v_naz:prop:geo" />
   </tokenReading>
   <tokenReading>
-    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
+    <token value="." lemma="." tags="punct" />
   </tokenReading>
 </sentence>
 """
@@ -150,7 +150,7 @@ class TagTextTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value="," lemma="," tags="punct" whitespaceBefore="false" />
+    <token value="," lemma="," tags="punct" />
   </tokenReading>
   <tokenReading>
     <token value="€" lemma="€" tags="symb" />
@@ -270,7 +270,7 @@ class TagTextTest {
     <token value="X" lemma="X" tags="number:latin" />
   </tokenReading>
   <tokenReading>
-    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
+    <token value="." lemma="." tags="punct" />
   </tokenReading>
 </sentence>
 
@@ -280,10 +280,10 @@ class TagTextTest {
     <token value="Діло" lemma="діло" tags="noun:inanim:n:v_zna" />
   </tokenReading>
   <tokenReading>
-    <token value="'" lemma="'" tags="punct" whitespaceBefore="false" />
+    <token value="'" lemma="'" tags="punct" />
   </tokenReading>
   <tokenReading>
-    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
+    <token value="." lemma="." tags="punct" />
   </tokenReading>
 </sentence>
 
@@ -295,7 +295,7 @@ class TagTextTest {
     <token value="кх" lemma="" tags="unknown" />
   </tokenReading>
   <tokenReading>
-    <token value="." lemma="." tags="punct" whitespaceBefore="false" />
+    <token value="." lemma="." tags="punct" />
   </tokenReading>
 </sentence>
 
@@ -303,6 +303,12 @@ class TagTextTest {
 </text>
 """
 		assertEquals expected, outFile.getText("UTF-8")
+
+        // make sure we're ok with streams
+                
+        tagText.setOptions(new TagOptions(xmlOutput: true, input: file.path, output: '-'))
+        
+        tagText.process()
 	}
 
 	
@@ -367,18 +373,18 @@ class TagTextTest {
   ]},   {"tokens":[
             {"value":"X","tags":"number:latin","lemma":"X"}]},
         {"tokens":[
-            {"value":".","whitespaceBefore":false,"tags":"punct","lemma":"."}]}]},
+            {"value":".","tags":"punct","lemma":"."}]}]},
   {"tokenReadings":[{"tokens":[
             {"value":"Діло","tags":"noun:inanim:n:v_naz","lemma":"діло"},
             {"value":"Діло","tags":"noun:inanim:n:v_zna","lemma":"діло"}]},
         {"tokens":[
-            {"value":"\\"","whitespaceBefore":false,"tags":"punct","lemma":"\\""}]},
+            {"value":"\\"","tags":"punct","lemma":"\\""}]},
         {"tokens":[
-            {"value":".","whitespaceBefore":false,"tags":"punct","lemma":"."}]}]},
+            {"value":".","tags":"punct","lemma":"."}]}]},
   {"tokenReadings":[{"tokens":[
             {"value":"Швидко","tags":"adv:compb","lemma":"швидко"}]},
         {"tokens":[
-            {"value":".","whitespaceBefore":false,"tags":"punct","lemma":"."}]}]}
+            {"value":".","tags":"punct","lemma":"."}]}]}
   ]
 }
 """)
@@ -499,5 +505,45 @@ class TagTextTest {
 """
         tagged = tagText.tagText("8.1.")
         assertEquals expected, tagged.tagged
+    }
+
+    @Test
+    public void testTagTextStream() {
+        def bas = new ByteArrayOutputStream(1024)
+        def os = new BufferedOutputStream(bas)
+        
+        tagText.tagTextStream(new ByteArrayInputStream("Від малку. Дня.\n\nДесь".getBytes()), os)
+        
+        def expected =
+"""<sentence>
+  <tokenReading>
+    <token value="Від" lemma="від" tags="prep" />
+  </tokenReading>
+  <tokenReading>
+    <token value="малку" lemma="малку" tags="noninfl" />
+    <token value="малку" lemma="малка" tags="noun:inanim:f:v_zna" />
+  </tokenReading>
+  <tokenReading>
+    <token value="." lemma="." tags="punct" />
+  </tokenReading>
+</sentence>
+<sentence>
+  <tokenReading>
+    <token value="Дня" lemma="день" tags="noun:inanim:m:v_rod" />
+  </tokenReading>
+  <tokenReading>
+    <token value="." lemma="." tags="punct" />
+  </tokenReading>
+</sentence>
+
+<sentence>
+  <tokenReading>
+    <token value="Десь" lemma="десь" tags="adv:&amp;pron:ind" />
+    <token value="Десь" lemma="десь" tags="part" />
+  </tokenReading>
+</sentence>
+
+"""
+        assertEquals expected, new String(bas.toByteArray(), "UTF-8")
     }
 }

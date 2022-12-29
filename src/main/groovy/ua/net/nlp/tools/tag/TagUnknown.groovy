@@ -1,6 +1,7 @@
 package ua.net.nlp.tools.tag;
 
-import org.codehaus.groovy.util.StringUtil
+import java.util.regex.Pattern
+
 import org.languagetool.AnalyzedTokenReadings
 import org.languagetool.tools.StringTools
 
@@ -48,9 +49,24 @@ public class TagUnknown {
         def last3 = token[-lemmaSuffixLen..-1]
         
         def opToTagMap = lemmaSuffixStatsF[last3]
+
         opToTagMap = opToTagMap.findAll { e -> getCoeff(e, token, idx, tokens) > 0 }
         if( opToTagMap ) {
             def wr = opToTagMap.max{ e -> getCoeff(e, token, idx, tokens) }.key
+
+//        Map.Entry<WordReading, Integer> wre = null
+//        Map<Map<WordReading, Integer>, Integer> opToTagMapRated = opToTagMap.collectEntries { e ->
+//            def coeff = getCoeff(e, token, idx, tokens)
+////            if( coeff > 0 && (wre == null || coeff > wre.value) ) wre = e
+////            coeff > 0
+//            [(e): coeff]
+//        }
+//        .findAll { e -> e.value > 0 }
+//        
+//        println "${opToTagMap} / ${wre}"
+//        
+//        if( wre != null ) {
+//            def wr = wre.key
 //            println ":: ${opToTagMap}"
 //            println ":: max: ${wr}"
             def parts = wr.lemma.split("/")
@@ -69,16 +85,39 @@ public class TagUnknown {
         return null
     }
     
+    static Pattern mascPrefix = ~/пан|містер|гер|сеньйор|монсеньйор|добродій/
+    static Pattern femPrefix = ~/пані|міс|місіс|фрау|сеньора|сеньйоріта|мадам|маде?муазель|добродійка/
+
+    @CompileStatic
+    private static String gen(String postag) {
+        def m = postag =~ /:[mf]:/
+        return m[0]
+    }
+
+        
     @CompileStatic
     private static int getCoeff(Map.Entry<WordReading, Integer> e, String token, int idx, AnalyzedTokenReadings[] tokens) {
         if( e.key.postag.contains("prop") ) {
             if( ! StringTools.isCapitalizedWord(token) ) {
                 return 0
             }
-            else if( idx > 0 ) {
-                if( e.key.postag.contains("lname")
-                        && tokens[idx-1].getReadings().find{ it.getPOSTag() != null && it.getPOSTag().contains("fname")} ) {
-                    return e.value * 500
+            
+            if( idx > 0 ) {
+                if( e.key.postag.contains("lname") ) {
+                    def eGen = gen(e.key.postag)
+//                    println "${e} / $eGen" 
+                    if( tokens[idx-1].getReadings().find {
+                        def tag = it.getPOSTag()
+                        if( tag == null ) return false
+                        if( tag.contains("fname") && gen(tag) == eGen ) return true
+                        
+                        it.getLemma() != null &&
+                        ((eGen == ":m:" && mascPrefix.matcher(it.getLemma()).matches()) ||
+                        (eGen == ":f:" && femPrefix.matcher(it.getLemma()).matches()))
+                    } ) {
+//                    println "-> ${e.value * 5000}"
+                        return e.value * 10000
+                    }
                 }
                 return e.value * 100
             }

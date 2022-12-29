@@ -3,6 +3,7 @@
 package ua.net.nlp.tools
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
 
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -19,7 +20,7 @@ public class TagTextUnknownTest {
 	
 	@BeforeAll
 	static void before() {
-        tagText.setOptions(new TagOptions(tagUnknown: true, disambiguate: true, setLemmaForUnknown: true))
+        tagText.setOptions(new TagOptions(tagUnknown: true, unknownRate: true, disambiguate: true, singleTokenOnly:true, setLemmaForUnknown: true))
 	}
 
 
@@ -30,10 +31,9 @@ public class TagTextUnknownTest {
         
         def expected =
 """<sentence>
-  <tokenReading>
-    <token value="адюльтерівськими" lemma="адюльтерівський" tags="adj:p:v_oru" q="-0.6" />
-  </tokenReading>
+  <token value="адюльтерівськими" lemma="адюльтерівський" tags="adj:p:v_oru" q="-0.6" />
 </sentence>
+<paragraph/>
 """
         assertEquals expected, tagged.tagged
 
@@ -41,10 +41,9 @@ public class TagTextUnknownTest {
                 
         expected =
 """<sentence>
-  <tokenReading>
-    <token value="аквамарафон" lemma="аквамарафон" tags="noun:inanim:m:v_zna" q="-0.5" />
-  </tokenReading>
+  <token value="аквамарафон" lemma="аквамарафон" tags="noun:inanim:m:v_zna" q="-0.5" />
 </sentence>
+<paragraph/>
 """
         assertEquals expected, tagged.tagged
 
@@ -52,10 +51,9 @@ public class TagTextUnknownTest {
                 
         expected =
 """<sentence>
-  <tokenReading>
-    <token value="Біоміметикою" lemma="біоміметика" tags="noun:inanim:f:v_oru" q="-0.5" />
-  </tokenReading>
+  <token value="Біоміметикою" lemma="біоміметика" tags="noun:inanim:f:v_oru" q="-0.5" />
 </sentence>
+<paragraph/>
 """
         assertEquals expected, tagged.tagged
         
@@ -64,10 +62,9 @@ public class TagTextUnknownTest {
                 
         expected =
 """<sentence>
-  <tokenReading>
-    <token value="дентиносупергенезом" lemma="дентиносупергенез" tags="noun:inanim:m:v_oru" q="-0.5" />
-  </tokenReading>
+  <token value="дентиносупергенезом" lemma="дентиносупергенез" tags="noun:inanim:m:v_oru" q="-0.5" />
 </sentence>
+<paragraph/>
 """
         assertEquals expected, tagged.tagged
     }
@@ -79,10 +76,9 @@ public class TagTextUnknownTest {
 
         def expected =
 """<sentence>
-  <tokenReading>
-    <token value="Арешонков" lemma="Арешонков" tags="noun:anim:m:v_naz:prop:lname" q="-0.6" />
-  </tokenReading>
+  <token value="Арешонков" lemma="Арешонков" tags="noun:anim:m:v_naz:prop:lname" q="-0.6" />
 </sentence>
+<paragraph/>
 """
         assertEquals expected, tagged.tagged
         
@@ -90,10 +86,9 @@ public class TagTextUnknownTest {
 
         expected =
 """<sentence>
-  <tokenReading>
-    <token value="Басуріна" lemma="Басурін" tags="noun:anim:m:v_rod:prop:lname" q="-0.5" />
-  </tokenReading>
+  <token value="Басуріна" lemma="Басурін" tags="noun:anim:m:v_rod:prop:lname" q="-0.5" />
 </sentence>
+<paragraph/>
 """
         assertEquals expected, tagged.tagged
 
@@ -101,11 +96,10 @@ public class TagTextUnknownTest {
        
         // the only suggestion is :prop:lname 
         expected =
-        """<sentence>
-  <tokenReading>
-    <token value="змієвич" lemma="змієвич" tags="noun:anim:m:v_naz" q="-0.6" />
-  </tokenReading>
+"""<sentence>
+  <token value="змієвич" lemma="змієвич" tags="noun:anim:m:v_naz" q="-0.6" />
 </sentence>
+<paragraph/>
 """
                 assertEquals expected, tagged.tagged
         
@@ -113,13 +107,10 @@ public class TagTextUnknownTest {
 
         expected =
 """<sentence>
-  <tokenReading>
-    <token value="Андрій" lemma="Андрій" tags="noun:anim:m:v_naz:prop:fname" />
-  </tokenReading>
-  <tokenReading>
-    <token value="Гнідовський" lemma="Гнідовський" tags="noun:anim:m:v_naz:prop:lname" q="-0.5" />
-  </tokenReading>
+  <token value="Андрій" lemma="Андрій" tags="noun:anim:m:v_naz:prop:fname" />
+  <token value="Гнідовський" lemma="Гнідовський" tags="noun:anim:m:v_naz:prop:lname" q="-0.5" />
 </sentence>
+<paragraph/>
 """
         assertEquals expected, tagged.tagged
         
@@ -127,13 +118,10 @@ public class TagTextUnknownTest {
 
         expected =
 """<sentence>
-  <tokenReading>
-    <token value="Тетяни" lemma="Тетяна" tags="noun:anim:f:v_rod:prop:fname" />
-  </tokenReading>
-  <tokenReading>
-    <token value="Дихановської" lemma="Дихановська" tags="noun:anim:f:v_rod:prop:lname" q="-0.5" />
-  </tokenReading>
+  <token value="Тетяни" lemma="Тетяна" tags="noun:anim:f:v_rod:prop:fname" />
+  <token value="Дихановської" lemma="Дихановська" tags="noun:anim:f:v_rod:prop:lname" q="-0.5" />
 </sentence>
+<paragraph/>
 """
         assertEquals expected, tagged.tagged
         
@@ -141,16 +129,35 @@ public class TagTextUnknownTest {
 
         expected =
 """<sentence>
-  <tokenReading>
-    <token value="Натан" lemma="Натан" tags="noun:anim:m:v_naz:prop:fname" />
-  </tokenReading>
-  <tokenReading>
-    <token value="Кунсель" lemma="Кунсель" tags="noun:anim:m:v_naz:prop:lname" q="-0.5" />
-  </tokenReading>
+  <token value="Натан" lemma="Натан" tags="noun:anim:m:v_naz:prop:fname" />
+  <token value="Кунсель" lemma="Кунсель" tags="noun:anim:m:v_naz:prop:lname" q="-0.5" />
 </sentence>
+<paragraph/>
 """
         assertEquals expected, tagged.tagged
+        
+        tagged = tagText.tagText("пані Ференцовій")
 
+        expected =
+"""<sentence>
+  <token value="пані" lemma="паня" tags="noun:anim:p:v_naz:xp2" />
+  <token value="Ференцовій" lemma="Ференцова" tags="noun:anim:f:v_mis:prop:lname" q="-0.5" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+        
+        tagged = tagText.tagText("Наталія Галібаренко")
+        
+                expected =
+        """<sentence>
+  <token value="Наталія" lemma="Наталія" tags="noun:anim:f:v_naz:prop:fname" />
+  <token value="Галібаренко" lemma="Галібаренко" tags="noun:anim:f:v_naz:nv:prop:lname" q="-0.5" />
+</sentence>
+<paragraph/>
+"""
+                assertEquals expected, tagged.tagged
+        
         // Вісьньовському -> lname
 
 //        tagged = tagText.tagText("Вілінська-Маркович")
@@ -171,10 +178,9 @@ public class TagTextUnknownTest {
 
         def expected =
 """<sentence>
-  <tokenReading>
-    <token value="АУФТ" lemma="АУФТ" tags="noninfl:abbr" q="-0.7" />
-  </tokenReading>
+  <token value="АУФТ" lemma="АУФТ" tags="noninfl:abbr" q="-0.7" />
 </sentence>
+<paragraph/>
 """
 
         assertEquals expected, tagged.tagged
@@ -186,16 +192,11 @@ public class TagTextUnknownTest {
 
         def expected =
 """<sentence>
-  <tokenReading>
-    <token value="І." lemma="І." tags="noninf:abbr" />
-  </tokenReading>
-  <tokenReading>
-    <token value="В." lemma="В." tags="noninf:abbr" />
-  </tokenReading>
-  <tokenReading>
-    <token value="Збарськ" lemma="Збарськ" tags="noun:inanim:m:v_naz:prop:geo" q="-0.5" />
-  </tokenReading>
+  <token value="І." lemma="І." tags="noninf:abbr" />
+  <token value="В." lemma="В." tags="noninf:abbr" />
+  <token value="Збарськ" lemma="Збарськ" tags="noun:inanim:m:v_naz:prop:geo" q="-0.5" />
 </sentence>
+<paragraph/>
 """
 
         assertEquals expected, tagged.tagged
@@ -208,10 +209,9 @@ public class TagTextUnknownTest {
 
         def expected =
 """<sentence>
-  <tokenReading>
-    <token value="популяв" lemma="популяти" tags="verb:imperf:past:m" q="-0.6" />
-  </tokenReading>
+  <token value="популяв" lemma="популяти" tags="verb:imperf:past:m" q="-0.6" />
 </sentence>
+<paragraph/>
 """
 
         assertEquals expected, tagged.tagged
@@ -221,10 +221,9 @@ public class TagTextUnknownTest {
 
         expected =
 """<sentence>
-  <tokenReading>
-    <token value="популявся" lemma="популятися" tags="verb:rev:imperf:past:m" q="-0.5" />
-  </tokenReading>
+  <token value="популявся" lemma="популятися" tags="verb:rev:imperf:past:m" q="-0.5" />
 </sentence>
+<paragraph/>
 """
 
         assertEquals expected, tagged.tagged
@@ -233,13 +232,26 @@ public class TagTextUnknownTest {
 
         expected =
 """<sentence>
-  <tokenReading>
-    <token value="популяється" lemma="популятися" tags="verb:rev:imperf:pres:s:3" q="-0.6" />
-  </tokenReading>
+  <token value="популяється" lemma="популятися" tags="verb:rev:imperf:pres:s:3" q="-0.6" />
 </sentence>
+<paragraph/>
 """
 
         assertEquals expected, tagged.tagged
     }
 
+    
+    @Test
+    public void testUnknown() {
+
+        def uknowns = getClass().getClassLoader().getResource("tag/unknown.txt").readLines()
+            .findAll { it -> ! it.startsWith('#') }
+
+        uknowns.each { word ->
+        
+            TagResult tagged = tagText.tagText(word)
+        
+            assertTrue tagged.tagged.contains('tags=\"unknown\"'), tagged.tagged
+        }
+    }
 }
