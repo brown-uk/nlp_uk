@@ -72,7 +72,7 @@ class TagTextSemTest {
 </sentence>
 """
 
-        tagText.setOptions(new TagOptions(semanticTags: true, xmlOutput: true))
+        tagText.setOptions(new TagOptions(semanticTags: true))
         TagResult tagged = tagText.tagText("Слово усе голова аахенська Вашингтон акту один-другий.")
         assertEquals expected, tagged.tagged
     }

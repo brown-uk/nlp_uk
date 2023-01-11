@@ -1,26 +1,16 @@
 package ua.net.nlp.tools.tag;
 
-import static ua.net.nlp.tools.tag.TagOptions.OutputFormat.txt
+import groovy.transform.CompileStatic
 
-import picocli.CommandLine
 import picocli.CommandLine.Option
-import picocli.CommandLine.ParameterException
 import picocli.CommandLine.Parameters
+import ua.net.nlp.tools.TextUtils.OptionsBase
+import ua.net.nlp.tools.TextUtils.OutputFormat
 
+public class TagOptions extends OptionsBase {
 
-public class TagOptions {
-    enum OutputFormat { txt, xml, json }
-
-    @Option(names = ["-i", "--input"], arity="1", description = "Input file. Default: stdin")
-    String input
     @Parameters(index = "0", description = "Input files. Default: stdin", arity="0..")
     List<String> inputFiles
-    @Option(names = ["-o", "--output"], arity="1", description = "Output file (default: <input file base name> + .tagged.txt/.xml/.json) or stdout if input is stdin")
-    String output
-    @Option(names = ["-x", "--xmlOutput"], description = "Output in xml format (deprecated: use --outputFormat)")
-    boolean xmlOutput
-    @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt}", defaultValue = "xml")
-    OutputFormat outputFormat
     @Option(names = ["--lemmaOnly"], description = "Prints only lemmas, implies: --outputFormat=txt --disambiguate=true")
     boolean lemmaOnly
 
@@ -64,39 +54,23 @@ public class TagOptions {
     @Option(names = ["-ur", "--tagUnknownWithRate"], description = "Use statistics to tag unknown words and print the rate")
     boolean unknownRate
 
-    boolean partsSeparate = true
-    
     @Option(names = ["-m", "--module"], arity="1", description = "Alternative spelling module (only 1 at a time), supported modules: [zheleh, lesya]")
     List<String> modules
     
     @Option(names = ["--singleThread"], description = "Always use single thread (default is to use multithreading if > 2 cpus are found)")
     boolean singleThread
-    @Option(names = ["-q", "--quiet"], description = "Less output")
-    boolean quiet
     @Option(names = ["--timing"], description = "Pring timing information", hidden = true)
     boolean timing
-    @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
-    boolean helpRequested
     @Option(names = ["--download"], description = "Download file with disambiguation statistics and semantic tags (for tagging from CLI only)")
     boolean download
 
     
-//    public enum DisambigModule {
-//        frequency,
-//        wordEnding,
-//        context
-//    }
-    
     void adjust() {
         if( ! outputFormat ) {
-            if( xmlOutput ) {
-                outputFormat = OutputFormat.xml
-            }
-            else {
-                outputFormat = OutputFormat.xml
-            }
+            outputFormat = outputFormat.xml
+
             if( lemmaOnly ) {
-                outputFormat = txt
+                outputFormat = OutputFormat.txt
                 disambiguate = true
                 singleTokenOnly = true
             }

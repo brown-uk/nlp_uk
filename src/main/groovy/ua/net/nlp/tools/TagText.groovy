@@ -2,6 +2,13 @@
 
 package ua.net.nlp.tools
 
+@GrabConfig(systemClassLoader=true)
+@Grab(group='org.languagetool', module='language-uk', version='6.0')
+//@Grab(group='org.languagetool', module='language-uk', version='6.1-SNAPSHOT')
+//@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='6.1.0-SNAPSHOT')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
+@Grab(group='info.picocli', module='picocli', version='4.6.+')
+
 import java.nio.charset.StandardCharsets
 
 // A wrapper to load tag/TagTextCore.groovy with all related classes and resources without complicating CLI
@@ -19,6 +26,7 @@ class TagText {
         
         def cl = new GroovyClassLoader()
         cl.addClasspath(SCRIPT_DIR + "/../../../../")
+
         def resourceDir = SCRIPT_DIR + "/../../../../../resources"
         if( ! new File(resourceDir).isDirectory() ) {
 //            println "making missing dir: $resourceDir"

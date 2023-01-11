@@ -4,7 +4,6 @@ package ua.net.nlp.tools
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
-import static ua.net.nlp.tools.tag.TagOptions.OutputFormat.json
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
@@ -12,11 +11,11 @@ import org.junit.jupiter.api.Test
 
 import groovy.json.JsonSlurper
 import ua.net.nlp.tools.tag.TagOptions
-import ua.net.nlp.tools.tag.TagOptions.OutputFormat
 import ua.net.nlp.tools.tag.TagStats
 import ua.net.nlp.tools.tag.TagTextCore
 import ua.net.nlp.tools.tag.TagTextCore.TTR
 import ua.net.nlp.tools.tag.TagTextCore.TagResult
+import ua.net.nlp.tools.TextUtils.OutputFormat
 
 
 class TagTextTest {
@@ -43,12 +42,11 @@ class TagTextTest {
 
     @Test
     public void testTxtFormatLemmaOnly() {
-        tagText.setOptions(new TagOptions(lemmaOnly: true, disambiguate: true))
+        tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt, lemmaOnly: true, disambiguate: true))
         TagResult tagged = tagText.tagText("І словом її мала. Ділами швидше № 1")
         def expected = 
 """і словом вона малий.
-діло швидше № 1
-"""
+діло швидше № 1"""
         assertEquals expected, tagged.tagged
     }
 
@@ -63,7 +61,7 @@ class TagTextTest {
 
 	@Test
 	public void testXml() {
-		tagText.setOptions(new TagOptions(xmlOutput: true))
+		tagText.setOptions(new TagOptions())
 
 		TagResult tagged = tagText.tagText("Слово 1,5 раза.")
 
@@ -90,7 +88,7 @@ class TagTextTest {
     
     @Test
     public void testXml2() {
-        tagText.setOptions(new TagOptions(xmlOutput: true))
+        tagText.setOptions(new TagOptions())
 
         TagResult tagged = tagText.tagText("На Україна — Іспанія.")
 
@@ -119,7 +117,7 @@ class TagTextTest {
 	
 	@Test
 	public void testUnclass() {
-		tagText.setOptions(new TagOptions(xmlOutput: true))
+		tagText.setOptions(new TagOptions())
 
 		TagResult tagged = tagText.tagText("Crow")
 		def expected =
@@ -144,7 +142,7 @@ class TagTextTest {
     
     @Test
     public void testSymbols() {
-        tagText.setOptions(new TagOptions(xmlOutput: true))
+        tagText.setOptions(new TagOptions())
 
         TagResult tagged = tagText.tagText(", €")
         def expected =
@@ -177,7 +175,7 @@ class TagTextTest {
 
     @Test
     public void testNoMultiword() {
-        tagText.setOptions(new TagOptions(xmlOutput: true))
+        tagText.setOptions(new TagOptions())
 
         TagResult tagged = tagText.tagText("від малку")
         def expected =
@@ -196,7 +194,7 @@ class TagTextTest {
 
     @Test
     public void testUnknown() {
-        tagText.setOptions(new TagOptions(xmlOutput: true))
+        tagText.setOptions(new TagOptions())
 
         TagResult tagged = tagText.tagText("житєє")
         def expected =
@@ -253,7 +251,7 @@ class TagTextTest {
 		outFile.text = ''
 
 		
-		tagText.setOptions(new TagOptions(xmlOutput: true, input: file.path, output: outFile.path))
+		tagText.setOptions(new TagOptions(input: file.path, output: outFile.path))
 		
 		tagText.process()
 
@@ -306,7 +304,7 @@ class TagTextTest {
 
         // make sure we're ok with streams
                 
-        tagText.setOptions(new TagOptions(xmlOutput: true, input: file.path, output: '-'))
+        tagText.setOptions(new TagOptions(input: file.path, output: '-'))
         
         tagText.process()
 	}
@@ -409,7 +407,7 @@ class TagTextTest {
     
     @Test
     public void testPartsSeparate() {
-        tagText.setOptions(new TagOptions(xmlOutput: true))
+        tagText.setOptions(new TagOptions())
 
         def expected =
 """<sentence>

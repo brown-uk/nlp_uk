@@ -3,6 +3,7 @@
 package ua.net.nlp.tools
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 import org.checkerframework.framework.qual.IgnoreInWholeProgramInference
 import org.junit.jupiter.api.BeforeAll
@@ -15,7 +16,9 @@ import ua.net.nlp.tools.tag.TagTextCore.TagResult
 
 
 class TagTextDisambigTest {
-	def options = new TagOptions()
+    final NEW_TESTS = Boolean.getBoolean("ua.net.nlp.tests.new")
+
+    def options = new TagOptions()
 
 	static TagTextCore tagText = new TagTextCore()
 	
@@ -127,6 +130,8 @@ class TagTextDisambigTest {
     
     @Test
     public void testWithCtxAndXp() {
+        assumeTrue(NEW_TESTS)
+
         tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, showDisambigRate: false)) // [DisambigModule.context]
 
         // by tag stats
@@ -287,6 +292,8 @@ class TagTextDisambigTest {
     
     @Test
     public void testWithCtx7() {
+        assumeTrue(NEW_TESTS)
+
         tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, disambiguationDebug:true))
 
         TagResult tagged = tagText.tagText("блискуче")
@@ -302,6 +309,8 @@ class TagTextDisambigTest {
     
     @Test
     public void testWithCtx8() {
+        assumeTrue(NEW_TESTS)
+
         tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, disambiguationDebug:true))
 
         TagResult tagged = tagText.tagText("Спала")
@@ -317,6 +326,8 @@ class TagTextDisambigTest {
     
     @Test
     public void testWithCtx9() {
+        assumeTrue(NEW_TESTS)
+
         tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, disambiguationDebug:true))
 
         TagResult tagged = tagText.tagText("селищному голові")
@@ -334,6 +345,8 @@ class TagTextDisambigTest {
     
     @Test
     public void testWithCapitalProp() {
+        assumeTrue(NEW_TESTS)
+
         tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, disambiguationDebug:true))
 
         TagResult tagged = tagText.tagText("село Сосни")
@@ -584,6 +597,25 @@ class TagTextDisambigTest {
         assertEquals expected, tagged.tagged
     }
     
+
+    @Test
+    public void testDoty() {
+        assumeTrue(NEW_TESTS)
+        
+        tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, disambiguationDebug:true))
+
+        TagResult tagged = tagText.tagText("ослаблюються доти")
+        
+        def expected =
+"""<sentence>
+  <token value="ослаблюються" lemma="ослаблюватися" tags="verb:rev:imperf:pres:p:3" />
+  <token value="доти" lemma="доти" tags="adv:&amp;pron:dem" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
     // що нижче по схилу
     // Дорога забрала
     // , як карі

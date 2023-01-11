@@ -18,7 +18,7 @@ class TagTextModZhelehTest {
 	
 	@BeforeEach
 	void before() {
-        tagText.setOptions(new TagOptions(xmlOutput: true, modules: ["zheleh"]))
+        tagText.setOptions(new TagOptions(modules: ["zheleh"]))
 	}
 
 

@@ -6,14 +6,12 @@ import groovy.json.DefaultJsonGenerator
 import groovy.json.JsonGenerator
 import groovy.transform.CompileStatic
 import groovy.xml.MarkupBuilder
-
+import ua.net.nlp.tools.TextUtils.OutputFormat
 import ua.net.nlp.tools.tag.TagOptions
-import ua.net.nlp.tools.tag.TagOptions.OutputFormat
 import ua.net.nlp.tools.tag.TagTextCore.TTR
 import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 
-//@CompileStatic
-class OutputFormats {
+class OutputFormatter {
     static final boolean useXmlBuilder = false
     
     final TagOptions options
@@ -24,7 +22,7 @@ class OutputFormats {
     JsonGenerator jsonGenerator
     
     
-    OutputFormats(TagOptions options) {
+    OutputFormatter(TagOptions options) {
         this.options = options
     }
     

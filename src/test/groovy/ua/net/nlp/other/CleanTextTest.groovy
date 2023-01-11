@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import static org.junit.jupiter.api.Assertions.assertArrayEquals
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 import ua.net.nlp.other.CleanText.CleanOptions
 import ua.net.nlp.other.CleanText.MarkOption
@@ -13,6 +14,8 @@ import ua.net.nlp.other.CleanText.ParagraphDelimiter
 
 
 class CleanTextTest {
+    final NEW_TESTS = Boolean.getBoolean("ua.net.nlp.tests.new")
+    
     CleanOptions options = [ "wordCount": 0, "debug": true ]
 
     CleanText cleanText = new CleanText( options )
@@ -281,6 +284,7 @@ class CleanTextTest {
         options.markLanguages = MarkOption.mark
     }
 
+    
     @Test
     public void testMarkLanguageCutSingleNlPara() {
         options.markLanguages = MarkOption.cut
@@ -300,6 +304,11 @@ class CleanTextTest {
 <span lang=\"ru\">---</span>
 """
 
+        assertEquals expected, clean(text)
+        
+        assumeTrue(NEW_TESTS)
+        
+        text = "ГРАЧЕВ О.О."
         assertEquals expected, clean(text)
     }
     

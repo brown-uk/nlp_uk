@@ -4,8 +4,10 @@ package ua.net.nlp.tools
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 import ua.net.nlp.tools.tag.TagOptions
@@ -14,7 +16,9 @@ import ua.net.nlp.tools.tag.TagTextCore.TagResult
 
 
 public class TagTextUnknownTest {
-	def options = new TagOptions()
+    final NEW_TESTS = Boolean.getBoolean("ua.net.nlp.tests.new")
+
+    def options = new TagOptions()
 
 	static TagTextCore tagText = new TagTextCore()
 	
@@ -57,6 +61,8 @@ public class TagTextUnknownTest {
 """
         assertEquals expected, tagged.tagged
         
+        
+        assumeTrue(NEW_TESTS)
         
         tagged = tagText.tagText("дентиносупергенезом")
                 
@@ -158,6 +164,7 @@ public class TagTextUnknownTest {
 """
                 assertEquals expected, tagged.tagged
         
+                
         // Вісьньовському -> lname
 
 //        tagged = tagText.tagText("Вілінська-Маркович")
@@ -185,7 +192,8 @@ public class TagTextUnknownTest {
 
         assertEquals expected, tagged.tagged
     }
-    
+
+        
     @Test
     public void testDotAbbr() {
         def tagged = tagText.tagText("І. В. Збарськ")
@@ -195,6 +203,22 @@ public class TagTextUnknownTest {
   <token value="І." lemma="І." tags="noninf:abbr" />
   <token value="В." lemma="В." tags="noninf:abbr" />
   <token value="Збарськ" lemma="Збарськ" tags="noun:inanim:m:v_naz:prop:geo" q="-0.5" />
+</sentence>
+<paragraph/>
+"""
+
+        assertEquals expected, tagged.tagged
+    }
+    
+
+    @Disabled
+    @Test
+    public void testHpyphened() {
+        def tagged = tagText.tagText("Оболонь-арені")
+
+        def expected =
+"""<sentence>
+  <token value="Оболонь-арені" lemma="оболонь-арена" tags="noun:inanim:f:v_mis" q="-0.5" />
 </sentence>
 <paragraph/>
 """

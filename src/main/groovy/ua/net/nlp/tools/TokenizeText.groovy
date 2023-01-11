@@ -3,197 +3,68 @@
 package ua.net.nlp.tools
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='5.9')
+@Grab(group='org.languagetool', module='language-uk', version='6.0')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
+import java.nio.charset.StandardCharsets
 
-import java.util.regex.Pattern
-import groovy.json.JsonGenerator
-
-import org.languagetool.JLanguageTool
-import org.languagetool.language.*
-import org.languagetool.tokenizers.*
-import org.languagetool.tokenizers.uk.*
-
-import groovy.transform.CompileStatic
-import picocli.CommandLine
-import picocli.CommandLine.Option
-import picocli.CommandLine.ParameterException
-
+// A wrapper to load tag/TagTextCore.groovy with all related classes and resources without complicating CLI
 
 class TokenizeText {
-    enum OutputFormat { txt, json }
 
     @groovy.transform.SourceURI
     static SOURCE_URI
     static SCRIPT_DIR=new File(SOURCE_URI).parent
 
-    // easy way to include a class without forcing classpath to be set
-    static textUtils = getTextUtils()
-
-    static Object getTextUtils() {
-        classForName("ua.net.nlp.tools.TextUtils") != null
-            ? Class.forName("ua.net.nlp.tools.TextUtils").newInstance()
-            : Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
-    }
-            
-    static Class classForName(String className) {
-        try {
-            return Class.forName(className)
-        }
-        catch(ClassNotFoundException e) {
-        }
-        return null
-    }
-            
-    def jsonUnicodeBuilder = new JsonGenerator.Options().disableUnicodeEscaping().build()
-
-
-    Pattern WORD_PATTERN = ~/[а-яіїєґА-ЯІЇЄҐa-zA-Z0-9]/
-    Pattern FOOTER_PATTERN = ~/\[[0-9]{1,3}\]/
-    
-    def language = new Ukrainian() {
-        @Override
-        protected synchronized List<?> getPatternRules() { return [] }
-    }
-
-    SRXSentenceTokenizer sentTokenizer = new SRXSentenceTokenizer(language)
-    UkrainianWordTokenizer wordTokenizer = new UkrainianWordTokenizer()
-    TokenizeOptions options
-
-    TokenizeText(options) {
-        this.options = options
-    }
-
-    def splitSentences(String text) {
-        List<String> tokenized = sentTokenizer.tokenize(text).collect { sent ->
-            sent.replace("\n", options.newLine)
-        };
-
-        switch (options.outputFormat) {
-            case OutputFormat.txt: 
-                return tokenized.join("\n") + "\n"
-            case OutputFormat.json:
-                return jsonUnicodeBuilder.toJson(tokenized).trim()[1..-2]
-        } 
-    }
-
-    def getAnalyzed(String textToAnalyze) {
-        String processed
-        if( options.words ) {
-            processed = splitWords(textToAnalyze, options.onlyWords)
-        }
-        else {
-            processed = splitSentences(textToAnalyze)
-        }
-        return ['tagged': processed]
-    }
-
-    def process() {
-        textUtils.processByParagraph(options, { buffer ->
-            return getAnalyzed(buffer)
-        }, {})
-    }
-
-    def splitWords(String text, boolean onlyWords) {
-        if( onlyWords ) {
-            text = FOOTER_PATTERN.matcher(text).replaceAll('')
-        }
+    static void main(String[] args) {
+        warnForEncoding()
         
-        List<String> sentences = sentTokenizer.tokenize(text);
-
-//        ParallelEnhancer.enhanceInstance(sentences)
-
-        List<List<String>> processedSentences = sentences.collect { sent ->
-            def words = wordTokenizer.tokenize(sent)
-
-            if ( onlyWords ) {
-                words = words.collect { it.replace('\u0301', '') } 
-                words = words.findAll { WORD_PATTERN.matcher(it) }
-                TextUtils.adjustTokens(words, true)
-            }
-            else {
-                TextUtils.adjustTokens(words, true).collect { word ->
-                    word.replace("\n", options.newLine).replace("\t", " ")
-                };
-            }
-        }
-
-        switch (options.outputFormat ) {
-            case OutputFormat.txt:
-                return processedSentences.collect { sent -> 
-                    sent.join(onlyWords ? " " : "|")
-                }.join("\n") + "\n"
-
-            case OutputFormat.json:
-                return jsonUnicodeBuilder.toJson(processedSentences).trim()[1..-2]
-        }
-    }
-    
-    
-    static class TokenizeOptions {
-        @Option(names = ["-i", "--input"], arity="1", description = ["Input file. Default: stdin"], defaultValue = "-")
-        String input
-        @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .tagged.txt/.json)"])
-        String output
-        @Option(names = ["-w", "--words"], description = ["Tokenize into words"])
-        boolean words
-        @Option(names = ["-u", "--onlyWords"], description = ["Remove non-words (assumes \"-w\")"])
-        boolean onlyWords
-        @Option(names = ["-s", "--sentences"], description = "Tokenize into sentences (default)")
-        boolean sentences
-        @Option(names = ["-q", "--quiet"], description = ["Less output"])
-        boolean quiet
-        @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
-        boolean helpRequested
-        @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {txt (default), json}", defaultValue = "txt")
-        OutputFormat outputFormat = "txt"
-        // just stubs
-        boolean noTag
-        boolean singleThread = true
-
-        boolean splitHyphenParts = true
+        long tm1 = System.currentTimeMillis()
         
-        // internal for now
-        String newLine = ' '
+        def cl = new GroovyClassLoader()
+        cl.addClasspath("$SCRIPT_DIR/../../../../")
+
+//        def resourceDir = SCRIPT_DIR + "/../../../../../resources"
+//        if( ! new File(resourceDir).isDirectory() ) {
+//            new File(resourceDir).mkdirs()
+//        }
+//        cl.addClasspath(resourceDir)
+        
+        def basePkg = TokenizeText.class.getPackageName()
+        def tagTextClass = cl.loadClass("${basePkg}.tokenize.TokenizeTextCore")
+        def m = tagTextClass.getMethod("main", String[].class)
+        def mArgs = [args].toArray() // new Object[]{args} - Eclips chokes on this
+
+        long tm2 = System.currentTimeMillis()
+
+        if( "--timing" in args ) {        
+            System.err.println("Loaded classes in ${tm2-tm1} ms")
+        }
+        m.invoke(null, mArgs)
+    }
+
+    private static void warnForEncoding() {
+        String osName = System.getProperty("os.name").toLowerCase();
+        if ( osName.contains("windows")) {
+            if( ! "UTF-8".equals(System.getProperty("file.encoding"))
+                    || ! StandardCharsets.UTF_8.equals(java.nio.charset.Charset.defaultCharset()) ) {
+                System.setOut(new PrintStream(System.out,true,"UTF-8"))
+        
+                println "file.encoding: " + System.getProperty("file.encoding")
+                println "defaultCharset: " + java.nio.charset.Charset.defaultCharset()
+        
+                println "On Windows to get unicode handled correctly you need to set environment variable before running expand:"
+                println "\tbash:"
+                println "\t\texport JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
+                println "\tPowerShell:"
+                println "\t\t\$env:JAVA_TOOL_OPTIONS=\"-Dfile.encoding=UTF-8\""
+                println "\tcmd:"
+                println "\t\t(change Font to 'Lucida Console' in cmd window properties)"
+                println "\t\tchcp 65001"
+                println "\t\tset JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
+            }
+        }
     }
     
-    @CompileStatic
-    static TokenizeOptions parseOptions(String[] argv) {
-        TokenizeOptions options = new TokenizeOptions()
-        CommandLine commandLine = new CommandLine(options)
-        try {
-            commandLine.parseArgs(argv)
-            if (options.helpRequested) {
-                commandLine.usage(System.out)
-                System.exit 0
-            }
-        } catch (ParameterException ex) {
-            println ex.message
-            commandLine.usage(System.out)
-            System.exit 1
-        }
-
-        if( ! options.output ) {
-            String fileExt = "." + options.outputFormat
-            String outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tokenized" + fileExt
-            options.output = outfile
-        }
-        if( options.onlyWords && ! options.words ) {
-            options.words = true
-        }
-        options
-    }
-
-
-    static void main(String[] argv) {
-
-        TokenizeOptions options = parseOptions(argv)
-
-        def nlpUk = new TokenizeText(options)
-
-        nlpUk.process()
-    }
-
 }

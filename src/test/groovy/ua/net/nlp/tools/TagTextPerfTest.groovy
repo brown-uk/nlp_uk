@@ -7,9 +7,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import ua.net.nlp.tools.tag.TagOptions
-import ua.net.nlp.tools.tag.TagOptions.OutputFormat
 import ua.net.nlp.tools.tag.TagTextCore
 import ua.net.nlp.tools.tag.TagTextCore.TagResult
+import ua.net.nlp.tools.TextUtils.OutputFormat
 
 
 public class TagTextPerfTest {

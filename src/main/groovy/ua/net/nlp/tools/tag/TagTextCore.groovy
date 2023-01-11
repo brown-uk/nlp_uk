@@ -2,14 +2,9 @@
 
 package ua.net.nlp.tools.tag
 
-@GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='6.0')
-//@Grab(group='org.languagetool', module='language-uk', version='6.1-SNAPSHOT')
-//@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='6.1.0-SNAPSHOT')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
-@Grab(group='info.picocli', module='picocli', version='4.6.+')
-
 import java.math.RoundingMode
+import java.util.function.Consumer
+import java.util.function.Function
 import java.util.regex.Pattern
 
 import org.languagetool.AnalyzedSentence
@@ -20,13 +15,14 @@ import org.languagetool.MultiThreadedJLanguageTool
 import org.languagetool.language.Ukrainian
 
 import ua.net.nlp.tools.TextUtils
+import ua.net.nlp.tools.TextUtils.OutputFormat
+import ua.net.nlp.tools.TextUtils.ResultBase
 import ua.net.nlp.tools.tag.DisambigStats
 import ua.net.nlp.tools.tag.ModZheleh
-import ua.net.nlp.tools.tag.OutputFormats
+import ua.net.nlp.tools.tag.OutputFormatter
 import ua.net.nlp.tools.tag.SemTags
 import ua.net.nlp.tools.tag.TagStats
 import ua.net.nlp.tools.tag.TagOptions
-import ua.net.nlp.tools.tag.TagOptions.OutputFormat
 
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
@@ -35,8 +31,6 @@ import picocli.CommandLine.ParameterException
 
 
 class TagTextCore {
-    
-    def textUtils = new TextUtils()
     
     static final Pattern PUNCT_PATTERN = Pattern.compile(/[,.:;!?\/()\[\]{}«»„“"'…\u2013\u2014\u201D\u201C•■♦-]+/)
     static final Pattern SYMBOL_PATTERN = Pattern.compile(/[%&@$*+=<>\u00A0-\u00BF\u2000-\u20CF\u2100-\u218F\u2200-\u22FF]+/)
@@ -55,9 +49,13 @@ class TagTextCore {
     TagOptions options
     
 	@Canonical
-	public static class TagResult {
-		String tagged
+	public static class TagResult extends ResultBase {
 		TagStats stats
+        
+        TagResult(String str, TagStats stats) {
+            super(str);
+            this.stats = stats
+        }
 	}
 	
 	TagStats stats = new TagStats()
@@ -76,7 +74,7 @@ class TagTextCore {
 
         List<List<TTR>> taggedSentences = tagTextCore(text, stats)
 
-        def outputFormats = new OutputFormats(options)
+        def outputFormats = new OutputFormatter(options)
         outputFormats.init()
 
         def sb = new StringBuilder()
@@ -124,10 +122,12 @@ class TagTextCore {
         def stats = new TagStats()
         stats.options = options
 
-        def outputFormats = new OutputFormats(options)
+        def outputFormats = new OutputFormatter(options)
         outputFormats.init()
+        
+        def printStream = new PrintStream(output, true, "UTF-8")
 
-        TextUtils.processFile(input, new PrintStream(output, true, "UTF-8"), options, { String buffer ->
+        TextUtils.processFile(input, printStream, options, { String buffer ->
             
             List<List<TTR>> taggedSentences = tagTextCore(buffer, stats)
 
@@ -150,7 +150,8 @@ class TagTextCore {
             output.flush()
             return new TagResult(sb.toString(), stats)
             
-        }, {} )
+        } as Function<String, TagResult>, 
+        { } as Consumer<TagResult>)
     }
 
     @CompileStatic
@@ -333,7 +334,7 @@ class TagTextCore {
             
             TTR item = new TTR(tokens: [])
             
-            List<String> splitPart = options.isPartsSeparate() ? TextUtils.splitWithPart(cleanToken) : null
+            List<String> splitPart = options.splitHyphenParts ? TextUtils.splitWithPart(cleanToken) : null
             if( splitPart ) {
                 cleanToken = splitPart[0]
             }
@@ -448,7 +449,7 @@ class TagTextCore {
         stats = new TagStats()
         stats.options = options
         
-        def outputFile = textUtils.processByParagraph(options, { buffer ->
+        def outputFile = TextUtils.processByParagraph(options, { buffer ->
             return tagText(buffer)
         },
 		{ TagResult result ->

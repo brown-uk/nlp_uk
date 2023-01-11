@@ -105,6 +105,11 @@ task tagText(type: JavaExec) {
 }
 
 
+task testScripts(type: Exec) {
+    commandLine 'echo "я ти" | groovy src/main/groovy/ua/net/nlp/tools/TokenizeText.groovy -i -'
+}
+
+
 // fatJar does not work due to LT having same file in different language modules
 task fatJar(type: Jar) {
     manifest {

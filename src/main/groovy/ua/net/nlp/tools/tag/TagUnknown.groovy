@@ -42,9 +42,23 @@ public class TagUnknown {
         }
     }
         
+//    private static Pattern DASHED = ~/(?iu)([а-яіїєґ']{4,})-([а-яіїєґ']{4,})/
+    
     @CompileStatic
     TaggedToken tag(String token, int idx, AnalyzedTokenReadings[] tokens) {
-        
+//        def m = DASHED.matcher(token)
+//        m.find()
+//        if( m ) {
+//            String part1 = m.group(1)
+//            String part2 = m.group(2)
+//            
+//            return tagInternal(part1, idx, tokens)
+//        }
+        return tagInternal(token, idx, tokens)
+    }
+    
+    @CompileStatic
+    TaggedToken tagInternal(String token, int idx, AnalyzedTokenReadings[] tokens) {
         if( token ==~ /[А-ЯІЇЄҐ]{2,6}/ )
             return new TaggedToken(value: token, lemma: token, tags: 'noninfl:abbr', q: -0.7)
     
