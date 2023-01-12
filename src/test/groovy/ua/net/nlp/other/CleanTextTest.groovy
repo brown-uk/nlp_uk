@@ -308,8 +308,8 @@ class CleanTextTest {
         
         assumeTrue(NEW_TESTS)
         
-        text = "ГРАЧЕВ О.О."
-        assertEquals expected, clean(text)
+        text = "ГОЛОВА. Борис Райков, будь ласка."
+        assertEquals text, clean(text)
     }
     
     @Test
