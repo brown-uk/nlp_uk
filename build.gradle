@@ -154,6 +154,7 @@ jar {
 
     includeEmptyDirs false
     exclude("ua/net/nlp/tools/TagText.class")
+    exclude("ua/net/nlp/tools/TokenizeText.class")
 }
 
 
