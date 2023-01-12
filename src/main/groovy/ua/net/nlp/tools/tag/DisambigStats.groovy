@@ -138,6 +138,9 @@ public class DisambigStats {
             double wordRate = getRateByWord(anToken, cleanToken, statsForWord, tokens, idx, ctxQ_)
             double rate = wordRate
 
+            boolean prevPrep = idx > 0 && hasPosTag(tokens[idx-1], "prep")
+            boolean unforceTag = ! prevPrep && tokens[idx].getCleanToken().endsWith("ів")
+
             boolean wordEndingUsed = false
             if( disambigBySuffix ) {
                 boolean useNext3 = true || ! rate
@@ -151,6 +154,7 @@ public class DisambigStats {
                     }
                     if( sfxRate ) {
                         sfxRate /= 6.1e3
+//                        sfxRate /= unforceTag ? 6.1e4 : 6.1e3
                         debugStats("      sfx3 rate: -> %f", round(sfxRate))
                         rate += sfxRate
                         wordEndingUsed = true
@@ -158,8 +162,6 @@ public class DisambigStats {
                 }
             }
             
-            boolean prevPrep = idx > 0 && hasPosTag(tokens[idx-1], "prep")
-            boolean unforceTag = ! prevPrep && tokens[idx].getCleanToken().endsWith("ів")
             boolean useNext = true || ! rate
             if( useNext && tagRateSum ) {
                 double ctxQ = 6.0e7 // 4.5e7
@@ -171,7 +173,7 @@ public class DisambigStats {
                 }
             }
             
-            debugStats("    final: ${round(rate)}\n")
+            debugStats("    final: %f\n", round(rate))
             
             [idx: i++, rate: rate, reading: anToken]
         }
