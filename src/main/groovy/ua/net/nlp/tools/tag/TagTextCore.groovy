@@ -235,6 +235,11 @@ class TagTextCore {
         Boolean whitespaceBefore
         BigDecimal q
         List<TaggedToken> alts
+
+        @Override
+        public String toString() {
+            "[$value / $lemma / $tags]";
+        }
     }
     
     @CompileStatic
@@ -294,12 +299,30 @@ class TagTextCore {
                     if( ! hasTag ) {
                         
                         if( options.tagUnknown ) {
-                            TaggedToken taggedToken = tagUnknown.tag(theToken, idx, tokens)
-                            if( taggedToken ) {
+                            List<TaggedToken> taggedTokens = tagUnknown.tag(theToken, idx, tokens)
+                            if( taggedTokens ) {
                                 if( ! options.unknownRate ) {
-                                    taggedToken.q = null
+                                    taggedTokens.each{ it.q = null }
                                 }
-                                tokenReadingsT << new TTR(tokens: [taggedToken])
+                                if( options.disambiguate ) {
+                                    if( options.disambiguate && taggedTokens.size() > 1 ) {
+                                        // use left context to disambiguate unknown - after "prep" only for now
+                                        if( idx > 0 && tokens[idx-1].getReadings().find{ it.getPOSTag() != null && it.getPOSTag().startsWith("prep") } ) {
+                                            Map<AnalyzedToken, TaggedToken> readingsMap = taggedTokens.collectEntries{
+                                                def at = new AnalyzedToken(it.value, it.tags, it.lemma)
+                                                [(at): it]
+                                            }
+                                            List<AnalyzedToken> readings = readingsMap.keySet() as List
+                                            disambigStats.orderByStats(readings, cleanToken, tokens, idx, stats)
+                                            taggedTokens = readings.collect { readingsMap[it] }
+                                        }
+                                    }
+                                }
+                                if( options.singleTokenOnly ) {
+                                    taggedTokens = taggedTokens.take(1)
+                                }
+
+                                tokenReadingsT << new TTR(tokens: taggedTokens)
                                 return tokenReadingsT
                             }
                         }

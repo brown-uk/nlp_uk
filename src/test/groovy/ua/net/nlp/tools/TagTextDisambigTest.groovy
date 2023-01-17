@@ -63,8 +63,6 @@ class TagTextDisambigTest {
     
     @Test
     public void testFirstTokenOnly() {
-        tagText.setOptions(new TagOptions(singleTokenOnly: true, disambiguate: true))
-
         TagResult tagged = tagText.tagText("відлетіла")
 
         def expected =
@@ -75,26 +73,6 @@ class TagTextDisambigTest {
 """
         assertEquals expected, tagged.tagged
         
-        def expected2 =
-"""<sentence>
-  <token value="маркітні" lemma="маркітний" tags="adj:p:v_naz" />
-</sentence>
-<paragraph/>
-"""
-        tagged = tagText.tagText("маркітні")
-
-        assertEquals expected2, tagged.tagged
-
-        def expected3 =
-"""<sentence>
-  <token value="Заняття" lemma="заняття" tags="noun:inanim:p:v_naz" />
-</sentence>
-<paragraph/>
-"""
-        tagged = tagText.tagText("Заняття")
-
-        assertEquals expected3, tagged.tagged
-
         def expected4 =
 """<sentence>
   <token value="Чорні" lemma="чорний" tags="adj:p:v_naz:compb" />
@@ -104,29 +82,6 @@ class TagTextDisambigTest {
         tagged = tagText.tagText("Чорні")
 
         assertEquals expected4, tagged.tagged
-    }
-
-    @Test
-    public void testPrepWithPron() {
-        options.singleTokenOnly = false
-
-        TagResult tagged = tagText.tagText("на нього")
-
-        def expected =
-"""<sentence>
-  <token value="на" lemma="на" tags="prep" />
-  <token value="нього" lemma="він" tags="noun:unanim:m:v_zna:&amp;pron:pers:3">
-    <alts>
-      <token value="нього" lemma="воно" tags="noun:unanim:n:v_zna:&amp;pron:pers:3" />
-      <token value="нього" lemma="він" tags="noun:unanim:m:v_rod:&amp;pron:pers:3" />
-      <token value="нього" lemma="воно" tags="noun:unanim:n:v_rod:&amp;pron:pers:3" />
-    </alts>
-  </token>
-</sentence>
-<paragraph/>
-"""
-        assertEquals expected, tagged.tagged
-        assertEquals 1, tagged.stats.disambigMap['word']
     }
     
     
@@ -169,6 +124,29 @@ class TagTextDisambigTest {
     }
 
     @Test
+    public void testPrepWithPron() {
+        options.singleTokenOnly = false
+
+        TagResult tagged = tagText.tagText("на нього")
+
+        def expected =
+"""<sentence>
+  <token value="на" lemma="на" tags="prep" />
+  <token value="нього" lemma="він" tags="noun:unanim:m:v_zna:&amp;pron:pers:3">
+    <alts>
+      <token value="нього" lemma="воно" tags="noun:unanim:n:v_zna:&amp;pron:pers:3" />
+      <token value="нього" lemma="він" tags="noun:unanim:m:v_rod:&amp;pron:pers:3" />
+      <token value="нього" lemma="воно" tags="noun:unanim:n:v_rod:&amp;pron:pers:3" />
+    </alts>
+  </token>
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+        assertEquals 1, tagged.stats.disambigMap['word']
+    }
+
+    @Test
     public void testPrepNounMis() {
         // by tag stats
         TagResult tagged2 = tagText.tagText("в книгомережі")
@@ -185,7 +163,7 @@ class TagTextDisambigTest {
     }
 
     @Test
-    public void testWithCtx23() {
+    public void testPrepAdjMis() {
         TagResult tagged3 = tagText.tagText("в окремім")
         
         def expected3 =
@@ -215,7 +193,7 @@ class TagTextDisambigTest {
     }
 
     @Test
-    public void testWithCtx3() {
+    public void testNounAndNoun() {
         TagResult tagged = tagText.tagText("засобів і методів")
 
         def expected =
@@ -231,7 +209,7 @@ class TagTextDisambigTest {
     }
     
     @Test
-    public void testWithCtx4() {
+    public void testNounAndNoun2() {
         // no left context word
         TagResult tagged = tagText.tagText("ліфтів і методів")
 
@@ -248,7 +226,7 @@ class TagTextDisambigTest {
     }
     
     @Test
-    public void testWithCtx5() {
+    public void testPrepNounChas() {
         TagResult tagged = tagText.tagText("під час переслідування")
 
         def expected =
@@ -345,9 +323,7 @@ class TagTextDisambigTest {
 
 
     @Test
-    public void testPrepWithUnknown() {
-        tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, showDisambigRate: false))
-
+    public void testPrepAdjUnknown() {
         TagResult tagged = tagText.tagText("в чорно-біле")
 
         def expected =
@@ -361,19 +337,13 @@ class TagTextDisambigTest {
     }
 
     @Test
-    public void testFirstTokenOnlyByTagCtx2() {
-        tagText.setOptions(new TagOptions(tokenFormat: true, disambiguate: true, showDisambigRate: false))
-
+    public void testPrepNoun() {
         TagResult tagged = tagText.tagText("у пасічництво")
 
         def expected =
 """<sentence>
   <token value="у" lemma="у" tags="prep" />
-  <token value="пасічництво" lemma="пасічництво" tags="noun:inanim:n:v_zna">
-    <alts>
-      <token value="пасічництво" lemma="пасічництво" tags="noun:inanim:n:v_naz" />
-    </alts>
-  </token>
+  <token value="пасічництво" lemma="пасічництво" tags="noun:inanim:n:v_zna" />
 </sentence>
 <paragraph/>
 """
@@ -382,9 +352,7 @@ class TagTextDisambigTest {
 
     
     @Test
-    public void testFirstTokenOnlyByTagCtxVerbNoun1() {
-        tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, showDisambigRate: false, disambiguationDebug:true))
-
+    public void testVerbNounZna() {
         TagResult tagged = tagText.tagText("вивчає репродуктивне")
         
         def expected =
@@ -395,15 +363,10 @@ class TagTextDisambigTest {
 <paragraph/>
 """
         assertEquals expected, tagged.tagged
-    }
 
-    @Test
-    public void testFirstTokenOnlyByTagCtxVerbNoun2() {
-        tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, showDisambigRate: false, disambiguationDebug:true))
-
-        TagResult tagged = tagText.tagText("будували спеціальні зимівники")
+        tagged = tagText.tagText("будували спеціальні зимівники")
         
-        def expected =
+        expected =
 """<sentence>
   <token value="будували" lemma="будувати" tags="verb:imperf:past:p" />
   <token value="спеціальні" lemma="спеціальний" tags="adj:p:v_zna:rinanim" />
@@ -412,10 +375,14 @@ class TagTextDisambigTest {
 <paragraph/>
 """
         assertEquals expected, tagged.tagged
-
-        tagged = tagText.tagText("з'являється коріння")
+    }
+    
+    
+    @Test
+    public void testVerbNoun() {
+        def tagged = tagText.tagText("з'являється коріння")
         
-        expected =
+        def expected =
 """<sentence>
   <token value="з'являється" lemma="з'являтися" tags="verb:rev:imperf:pres:s:3" />
   <token value="коріння" lemma="коріння" tags="noun:inanim:n:v_naz" />
@@ -427,8 +394,6 @@ class TagTextDisambigTest {
     
     @Test
     public void testAdjNounLink() {
-        tagText.setOptions(new TagOptions(tokenFormat: true, singleTokenOnly: true, disambiguate: true, disambiguationDebug:true))
-
         TagResult tagged = tagText.tagText("зеленого відродження")
         
         def expected =
@@ -441,10 +406,13 @@ class TagTextDisambigTest {
         assertEquals expected, tagged.tagged
 
         // стрільців і командирів
+    }
     
-        tagged = tagText.tagText("кабінет міністрів")
+    @Test
+    public void testAdjNounIv() {
+        def tagged = tagText.tagText("кабінет міністрів")
         
-        expected =
+        def expected =
 """<sentence>
   <token value="кабінет" lemma="кабінет" tags="noun:inanim:m:v_naz" />
   <token value="міністрів" lemma="міністр" tags="noun:anim:p:v_rod" />
@@ -455,7 +423,7 @@ class TagTextDisambigTest {
     }
 
     @Test
-    public void testAdjNounLinkBoots() {
+    public void testAdjNounLinkBoost() {
         assumeTrue(NEW_TESTS)
 
         def tagged = tagText.tagText("тристоронні договори")

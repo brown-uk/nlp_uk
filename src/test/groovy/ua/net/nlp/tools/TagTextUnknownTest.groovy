@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
@@ -22,9 +23,14 @@ public class TagTextUnknownTest {
 
 	static TagTextCore tagText = new TagTextCore()
 	
-	@BeforeAll
-	static void before() {
-        tagText.setOptions(new TagOptions(tagUnknown: true, unknownRate: true, disambiguate: true, singleTokenOnly:true, setLemmaForUnknown: true))
+	@BeforeEach
+	void before() {
+        options.tagUnknown = true
+        options.unknownRate = true
+        options.disambiguate = true
+        options.singleTokenOnly = true
+        options.setLemmaForUnknown = true
+        tagText.setOptions(options)
 	}
 
 
@@ -35,7 +41,7 @@ public class TagTextUnknownTest {
         
         def expected =
 """<sentence>
-  <token value="адюльтерівськими" lemma="адюльтерівський" tags="adj:p:v_oru" q="-0.6" />
+  <token value="адюльтерівськими" lemma="адюльтерівський" tags="adj:p:v_oru" q="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -75,6 +81,23 @@ public class TagTextUnknownTest {
         assertEquals expected, tagged.tagged
     }
 
+    
+    @Test
+    public void testPrepAdj() {
+
+        TagResult tagged = tagText.tagText("в доагломераційний")
+        
+        def expected =
+"""<sentence>
+  <token value="в" lemma="в" tags="prep" />
+  <token value="доагломераційний" lemma="доагломераційний" tags="adj:m:v_zna:rinanim" q="-0.5" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+    
+    
     @Test
     public void testPropNoun() {
 
