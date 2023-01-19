@@ -4,6 +4,7 @@
 .classpath
 .project
 .settings
+.launch
 _bin
 .settings
 .gradle
@@ -12,7 +13,7 @@ tmp/
 *.bak
 *.jfr
 **/semtags/*.csv
-**/lemma_freqs_hom.txt
+**/*freqs*.txt
 stats_dbg*
 stress
 settings.gradle
