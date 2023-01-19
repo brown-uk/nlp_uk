@@ -266,6 +266,16 @@ class TagTextCore {
                 hasTag = hasPosTag(tokenReadings)
             }
             
+//            if( hasTag ) {
+//                // TODO: tmp workaround, remove after LT 6.1
+//                if( theToken.startsWith("+") && theToken =~ /^\+[0-9]/ ) {
+//                    tokenReadingsT << new TTR(tokens: [new TaggedToken('value': '+', lemma: '+', tags: 'symb')])
+//                    String tags = theToken ==~ /\+[0-9]+([-,.][0-9]+)?/ ? 'number' : 'unclass'
+//                    tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken[1..-1], lemma: theToken[1..-1], tags: tags)])
+//                    return tokenReadingsT
+//                }
+//            }
+            
             // TODO: ugly workaround for disambiguator problem
             if( ! hasTag || "\u2014".equals(theToken) ) {
                 if( tokenReadings.isLinebreak() )
@@ -333,15 +343,6 @@ class TagTextCore {
                     }
                 }
                 else { // if( UNCLASS_PATTERN.matcher(theToken).matches() ) {
-                    // TODO: tmp workaround, remove after LT 6.0
-                    if( theToken.startsWith("№") && theToken =~ /^№[0-9XХVIІ]/ ) {
-                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': '№', lemma: '№', tags: 'symb')])
-                        String tags = theToken ==~ /№[0-9]+/ ? 'number'
-                             : theToken ==~ /№[XХVIІ]+/ ? 'number:latin' : 'unclass'
-                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken[1..-1], lemma: theToken[1..-1], tags: tags)])
-                        return tokenReadingsT
-                    }
-
 //                    if( theToken ==~ /[0-9]+\.[0-9]+/ ) {
 //                        def parts = theToken.split(/\./)
 //                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': parts[0], lemma: parts[0], tags: 'number')])
