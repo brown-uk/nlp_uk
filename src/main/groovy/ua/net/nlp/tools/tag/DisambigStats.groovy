@@ -19,7 +19,7 @@ public class DisambigStats {
     private static final Pattern UPPERCASED_PATTERN = Pattern.compile(/[А-ЯІЇЄҐ][а-яіїєґ'-]+/)
     private static final boolean USE_SUFFIX_2 = false
     private static final String statsFile = "/ua/net/nlp/tools/stats/lemma_freqs_hom.txt"
-    static final String statsVersion = "3.1.0"
+    static final String statsVersion = "3.1.1"
     private static final boolean useRightContext = false
     
 
@@ -519,7 +519,8 @@ public class DisambigStats {
                 .collect { AnalyzedToken tokenReading ->
                     String postag = getTag(token.getCleanToken(), tokenReading.getPOSTag())
                     def normalizedTokenValue = ContextToken.normalizeContextString(token.getCleanToken(), tokenReading.getLemma(), postag)
-                    contextToken = new ContextToken(normalizedTokenValue, tokenReading.getLemma(), postag)
+                    def normalizedTokenLemma = ContextToken.normalizeContextString(tokenReading.getLemma(), '', postag)
+                    contextToken = new ContextToken(normalizedTokenValue, normalizedTokenLemma, postag)
                     new WordContext(contextToken, offset)
                 } as Set
         }

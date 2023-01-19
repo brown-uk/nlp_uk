@@ -60,6 +60,9 @@ class ContextToken {
 
     @CompileStatic
     static String normalizeContextString(String w, String lemma, String postag) {
+        if( ! w ) // possible for lemmas from AnalyzedToken
+            return w
+        
         if( postag == "number" ) {
             def m0 = Pattern.compile(/([12][0-9]{3}[-–—])?[12][0-9]{3}/).matcher(w) // preserve a year - often works as adj
             if( m0.matches() )
@@ -77,6 +80,10 @@ class ContextToken {
                 return m2.replaceFirst('0$10')
         }
 
+        String w1 = normalizeWord(w, lemma, postag)
+        if( w1 != w )
+            return w1
+        
         if( postag == "punct" ) {
             if( w.length() == 3 )
                 return w.replaceFirst(/^\.\.\.$/, '…')
@@ -104,6 +111,19 @@ class ContextToken {
 //                return "і"
 //        }
             
+        return w
+    }
+    
+    @CompileStatic
+    static String normalizeWord(String w, String lemma, String postag) {
+        w = w.replace('\u2013', '-')
+        // 2000-го -> 0-го
+        // 101-річчя -> 101-річчя
+        if( w.indexOf('-') > 0 && postag =~ /^(adj|noun)/ ) {
+            def m1 = Pattern.compile(/[0-9-]*([0-9])-([а-яіїєґ]+)/).matcher(w)
+            if( m1.matches() )
+                return m1.replaceFirst('$1-$2')
+        }
         return w
     }
 }
