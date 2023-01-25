@@ -167,9 +167,11 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
-signing {
-    sign configurations.archives
-    sign publishing.publications
+if( project.hasProperty("ossrhUsername") ) {
+    signing {
+        sign configurations.archives
+        sign publishing.publications
+    }
 }
 
 publishing {
@@ -217,6 +219,7 @@ publishing {
 
     repositories {
         mavenLocal()
+
         if( ! project.hasProperty("local") ) {
             maven {
                 if( project.hasProperty("ossrhUsername") ) {
