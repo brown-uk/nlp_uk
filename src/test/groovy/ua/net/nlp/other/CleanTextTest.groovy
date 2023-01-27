@@ -4,6 +4,9 @@ package ua.net.nlp.other
 
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+
+import groovy.transform.CompileStatic
+
 import static org.junit.jupiter.api.Assertions.assertArrayEquals
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assumptions.assumeTrue
@@ -14,18 +17,24 @@ import ua.net.nlp.other.CleanText.ParagraphDelimiter
 
 
 class CleanTextTest {
-    final NEW_TESTS = Boolean.getBoolean("ua.net.nlp.tests.new")
+    final boolean NEW_TESTS = Boolean.getBoolean("ua.net.nlp.tests.new")
     
     CleanOptions options = [ "wordCount": 0, "debug": true ]
 
     CleanText cleanText = new CleanText( options )
 
-    def file() { return new File("/dev/null") }
-
+    File file(String text) { 
+        def f = new File("/tmp/nlp_uk_clean_text_test.txt")
+        f.text = text 
+        f
+    }
+    File outFile() {
+        new File("/dev/null")
+    }
+        
     String clean(String str) {
-        // println "---------"
         str = str.replace('_', '')
-        cleanText.cleanUp(str, file(), options, file())
+        cleanText.cleanUp(file(str), options, outFile())
     }
 
 	
@@ -70,88 +79,88 @@ class CleanTextTest {
 
         assertEquals "Інтерфакс-Україна\n", clean("Інтерфакс-\nУкраїна")
 
-        def result = cleanText.cleanUp('просто-\nрово-часового', file(), new CleanOptions(), file())
+        def result = clean('просто-\nрово-часового')
         assert result == "просторово-часового\n"
-        //result = cleanText.cleanUp('двох-\nсторонній', file, [])
+        //result = clean('двох-\nсторонній', file, [])
         //assert result == "двохсторонній\n"
         
         //TODO:
-        result = cleanText.cleanUp("минулого-сучасного-май-\nбутнього", file(), new CleanOptions(), file())
+        result = clean("минулого-сучасного-май-\nбутнього")
         assert result == "минулого-сучасного-майбутнього\n"
 
-        result = cleanText.cleanUp("благо-\nдійної", file(), new CleanOptions(), file())
+        result = clean("благо-\nдійної")
         assert result == "благодійної\n"
     }
 
     
 	@Test
 	void test2() {
-        def result = cleanText.cleanUp("новоствореноі", file(), new CleanOptions(), file())
+        def result = clean("новоствореноі")
         assert result == "новоствореної"
 
         // don't touch abbreviations or short words
-        result = cleanText.cleanUp("МОІ", file(), new CleanOptions(), file())
+        result = clean("МОІ")
         assert result == "МОІ"
 
-        result = cleanText.cleanUp("Північноірландські", file(), new CleanOptions(), file())
+        result = clean("Північноірландські")
         assert result == "Північноірландські"
 
-        result = cleanText.cleanUp("Нацполіціі", file(), new CleanOptions(), file())
+        result = clean("Нацполіціі")
         assert result == "Нацполіції"
 
         //TODO:
-//        result = cleanText.cleanUp("Зе- ленський", file(), new CleanOptions())
+//        result = clea("Зе- ленський", file(), new CleanOptions())
 //        assert result == "Зеленський"
 
-        result = cleanText.cleanUp("чоло-віка", file(), new CleanOptions(), file())
+        result = clean("чоло-віка")
         assert result == "чоловіка"
 
         // latin i
         def orig = "чоловіка i жінки"
-        result = cleanText.cleanUp(orig, file(), new CleanOptions(), file())
+        result = clean(orig)
         assert result != orig
         assert result == "чоловіка і жінки"
 
         // latin y
         orig = "з полком y поміч"
-        result = cleanText.cleanUp(orig, file(), new CleanOptions(), file())
+        result = clean(orig)
         assert result != orig
         assert result == "з полком у поміч"
 
         orig = "da y Вoreckomu"
-        result = cleanText.cleanUp(orig, file(), new CleanOptions(), file())
+        result = clean(orig)
         assert result == orig
 	}
     
     @Disabled
     @Test
     public void testStar() {
-        def result = cleanText.cleanUp("На ду*ку генерала", file(), new CleanOptions(), file())
+        def result = clean("На ду*ку генерала")
         assertEquals "На ду*ку генерала", result
         
-        result = cleanText.cleanUp("Як*мій ум", file(), new CleanOptions(), file())
+        result = clean("Як*мій ум")
         assertEquals "Як мій ум", result
         
-        result = cleanText.cleanUp("мати*вдова", file(), new CleanOptions(), file())
+        result = clean("мати*вдова")
         assertEquals "мати-вдова", result
         
-        result = cleanText.cleanUp("жив*е один хлопец", file(), new CleanOptions(), file())
+        result = clean("жив*е один хлопец")
         assertEquals "живе один хлопец", result
     }
 
     @Disabled
     @Test
     public void testUnderscore() {
-        def result = cleanText.cleanUp("#сто_років_тому", file(), new CleanOptions(), file())
+        def result = clean("#сто_років_тому")
         assertEquals "#сто_років_тому", result
         
-        result = cleanText.cleanUp("Не твоє, а н_а_ш_е!", file(), new CleanOptions(), file())
+        result = clean("Не твоє, а н_а_ш_е!")
         assertEquals "Не твоє, а н_а_ш_е!", result
 
-        result = cleanText.cleanUp("https://uk.wikipedia.org/wiki/Список_аеропортів_України", file(), new CleanOptions(), file())
+        result = clean("https://uk.wikipedia.org/wiki/Список_аеропортів_України")
         assertEquals "https://uk.wikipedia.org/wiki/Список_аеропортів_України", result
 
-        result = cleanText.cleanUp("особа, яка_укладає_документи", file(), new CleanOptions(), file())
+        result = clean("особа, яка_укладає_документи")
         assertEquals "особа, яка_укладає_документи", result
     }
 

@@ -34,6 +34,7 @@ package ua.net.nlp.other
 import static ua.net.nlp.other.CleanText.MarkOption.none
 
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.regex.Matcher
@@ -409,9 +410,8 @@ class CleanText {
     
     @CompileStatic
     doCleanFile(File file, File outFile) {
-        String text = file.getText(UTF8)
-        
-        text = cleanUp(text, file, options, outFile)
+        String text = cleanUp(file, options, outFile)
+
         if( ! text ) {
             if( ! options.keepInvalidFiles )
                 return
@@ -473,34 +473,81 @@ class CleanText {
     }
 
     @CompileStatic
-    String cleanUp(String text, File file, CleanOptions options, File outFile) {
-        if( file.length() > 100 && file.bytes[0..3] == [0x50, 0x4B, 0x03, 0x04] ) {
-            _println "\tERROR: found zip file, perhaps it's a Word document?"
-            return null
+    String cleanUp(File file, CleanOptions options, File outFile) {
+        String text = null
+        
+        if( file.length() > 100 ) {
+            FileInputStream fis = new FileInputStream(file)
+            byte[] bytes = new byte[1024]
+            fis.read(bytes);
+            fis.close()
+
+            if( file.bytes[0..3] == [0x50, 0x4B, 0x03, 0x04] ) {
+                _println "\tERROR: found zip file, perhaps it's a Word document?"
+                return null
+            }
+            
+            if( ! isUTF8(bytes) ) {
+                _println "\tWARNING: file is not in UTF-8 encoding"
+                text = file.getText(UTF8)
+                text = fixEncoding(text, file)
+                if( text == null )
+                    return null
+            }
+
+            if( new String(bytes).startsWith("{\rtf") ) {
+                _println "\tERROR: found \"{\rtf\", perhaps it's an RTF document?"
+                return null
+            }
+            
+            if( file.length() > 100*1024*1024 ) {
+                System.err.println "\tWARNING: It's highly recommended to keep your files for cleanup under 100MB"
+                System.err.println "\tThis way you prevent out of memory condition and can use parallel processing (via -p argument) better"
+            }
         }
-        if( file.length() > 100 && text.startsWith("{\rtf") ) {
-            _println "\tERROR: found \"{\rtf\", perhaps it's an RTF document?"
-            return null
+        
+        if( text == null ) {
+            text = file.getText(UTF8)
         }
 
-		int nlIdx = text.indexOf("\n")
-		int dosNlIdx = text.indexOf("\r\n")
-		boolean dosNlPresent = dosNlIdx >= 0 && dosNlIdx+1 == nlIdx
-		
+        int nlIdx = text.indexOf("\n")
+        int dosNlIdx = text.indexOf("\r\n")
+        boolean dosNlPresent = dosNlIdx >= 0 && dosNlIdx+1 == nlIdx
+        String newPara = dosNlPresent ? "\r\n\r\n" : "\n\n"
+        if( dosNlPresent ) {
+            _println "\tFirst new line is DOS-style, using DOS new line for the whole text"
+        }
+
+        return cleanText(text, file, outFile, dosNlPresent)
+    }
+
+    @CompileStatic
+    String fixOi(String text) {
+
+        if( ! options.disabledRules.contains("oi") ) {
+            // промисловоі
+            text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ])(о[іi])\b/, { all, w1, w2 ->
+                String fix = "${w1}ої"
+                knownWord(fix) ? fix : all
+            })
+             
+            // Нацполіціі
+            text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ][стц])([іi][іi])\b/, { all, w1, w2 ->
+                String fix = "${w1}ії"
+                knownWord(fix) ? fix : all
+            })
+        }
+        text
+    }
+    
+    @CompileStatic
+    String cleanText(String text, File file, File outFile, dosNlPresent) {
         if( text.contains("\r") ) {
-//            println "\tRemoving \\r"
             text = text.replace("\r", "")
         }
 
-		if( ! isUTF8(file.bytes) ) {
-            _println "\tWARNING: file is not in UTF-8 encoding"
-			text = fixEncoding(text, file)
-			if( text == null )
-				return null
-		}
-
         if( ! checkEmptyLines(text) )
-            return null             
+            return null
         
         if( text.contains("''") ) {
             text = text.replaceAll(/(?<!')''(?!')/, '"')
@@ -522,19 +569,7 @@ class CleanText {
         text = text.replaceAll(/[ІI]\u0308/, 'Ї')
         text = text.replace(/И\u0306/, 'Й')
 
-        if( ! options.disabledRules.contains("oi") ) {
-            // промисловоі
-            text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ])(о[іi])\b/, { all, w1, w2 ->
-                String fix = "${w1}ої"
-                knownWord(fix) ? fix : all
-            })
-    
-            // Нацполіціі
-            text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ][стц])([іi][іi])\b/, { all, w1, w2 ->
-                String fix = "${w1}ії"
-                knownWord(fix) ? fix : all
-            })
-        }
+        text = fixOi(text)
 
         // fix weird apostrophes
         text = text.replaceAll(/(?iu)([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384\u0092´`?*]([єїюя])/, /$1'$2/) // "
@@ -562,7 +597,7 @@ class CleanText {
         text = text.replaceAll(/\b[\u00B0\u00BA][СC]\b/, '\u00B0C')
 
         text = text.replaceAll(/(чоло|Людо)[ -](в[іі]к)/, '$1$2')
-        
+
 
         text = fixCyrLatMix(text, file)
         if( ! text )
@@ -582,19 +617,18 @@ class CleanText {
 
         text = fixDanglingHyphens(text, file)
 
-		text = fixSplitWords(text, file)
-		
-		checkForSpacing(text, file)
-		
+        text = fixSplitWords(text, file)
+        
+        checkForSpacing(text, file)
+        
         if( options.markLanguages != none ) {
             text = markRussian(text, file, outFile)
         }
 
-		if( dosNlPresent ) {
-			_println "\tFirst new line is DOS-style, using DOS new line for the whole text"
-			text = text.replaceAll(/(?!<\r)\n/, "\r\n")
-		}
-		
+        if( dosNlPresent ) {
+            text = text.replaceAll(/(?!<\r)\n/, "\r\n")
+        }
+        
         text
     }
 
@@ -656,7 +690,7 @@ class CleanText {
                 Double ukRate = vals[0], ruRate = vals[1]
                 
                 if( ukRate < ruRate ) {
-                    ruRate = Math.round(ruRate * 100)/100
+                    ruRate = Math.round(ruRate * 100d)/100d
                     String marked = "<span lang=\"ru\" rate=\"${ruRate}\">$sent</span>".replaceFirst(/(?s)([\h\v]+)(<\/span>)$/, '$2$1')
                     if( options.markLanguages == MarkOption.mark ) {
                         marked
@@ -989,29 +1023,29 @@ class CleanText {
     }
     
 
+    
     @CompileStatic
-    String removeMix(String text) {
-        int count1 = 0
-        int count2 = 0
-
-        // latin digits
-
+    String fixLatinDigits(String text, int[] counts) {
         while( text =~ /[XVI][ХІ]|[ХІ][XVI]/ ) {
             text = text.replaceAll(/([XVI])([ХІ])/, { all, lat, cyr ->
                 lat + cyrToLatMap[cyr]
+                counts[1]++
             })
             text = text.replaceAll(/([ХІ])([XVI])/, { all, cyr, lat ->
                 cyrToLatMap[cyr] + lat
+                counts[1]++
             })
         }
+        text
+    }
 
-        // 1st tier
-
+    @CompileStatic
+    String fixReliableCyr(String text, int[] counts) {
         // exclusively cyrillic letter followed by latin looking like cyrillic
 
         text = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
             debug "mix: 1.1"
-            count1 += 1
+            counts[0] += 1
             cyr + latToCyrMap[lat]
         })
 
@@ -1019,28 +1053,52 @@ class CleanText {
 
         text = text.replaceAll(/([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
             debug "mix: 1.2"
-            count1 += 1
+            counts[0] += 1
             latToCyrMap[lat] + cyr
         })
+    }
 
-
+    @CompileStatic
+    String fixReliableLat(String text, int[] counts) {
+        
         text = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
             debug "mix: 1.3"
-            count2 += 2
+            counts[1] += 2
             lat + cyrToLatMap[cyr]
         })
 
         text = text.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
             debug "mix: 1.4"
-            count2 += 2
+            counts[1] += 2
             cyrToLatMap[cyr] + lat
         })
+        
+        text
+    }
+    
+    @CompileStatic
+    String fixCharBetweenOthers(String text, int[] counts) {
+        // latin letter that looks like Cyrillic between 2 Cyrillics
 
+        text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ]['’ʼ]?)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[а-яіїєґА-ЯІЇЄҐ])/, { all, cyr, lat, cyr2 ->
+            counts[0] += 1
+            cyr + latToCyrMap[lat] + cyr2
+        })
 
+        // Cyrillic letter that looks like Latin between 2 Latin
+
+        text = text.replaceAll(/([a-zA-Z]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[a-zA-Z])/, { all, lat, cyr, lat2 ->
+            counts[1] += 2
+            lat + cyrToLatMap[cyr] + lat2
+        })
+    }
+    
+    @CompileStatic
+    String fixToAllCyrillic(String text, int[] counts) {
         // 2nd tier - try all Cyrillic
         // if we convert all Latin to Cyrillic and find it in the dictionary use conversion
 
-        text = text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-ZáÁéÉíÍḯḮóÓúýÝ-]+/, { String it ->
+        text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-ZáÁéÉíÍḯḮóÓúýÝ-]+/, { String it ->
 
             if( it =~ /[а-яіїєґА-ЯІЇЄҐ]['’ʼ]?[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/
             || it =~ /[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]['’ʼ]?[а-яіїєґА-ЯІЇЄҐ]/ ) {
@@ -1050,32 +1108,35 @@ class CleanText {
                     def fixedCleaned = fixed.replace('\u0301', '')
                     //                println "\tfixed $fixed known to LT: " + knownWord(fixedCleaned)
                     if( knownWord(fixedCleaned) ) {
-                        count1 += 1
+                        counts[0] += 1
                         return fixed
                     }
                 }
             }
             return it
         })
+    }
+        
+    @CompileStatic
+    String removeMix(String text) {
+        int[] counts = [0, 0]
 
+        // latin digits
+        text = fixLatinDigits(text, counts)
+        // 1st tier
+
+        text = fixReliableCyr(text, counts)
+        text = fixReliableLat(text, counts)
+        
+        // 2nd tier
+
+        text = fixToAllCyrillic(text, counts)
 
         // 3nd tier - least reliable
 
-        // latin letter that looks like Cyrillic between 2 Cyrillics
-
-        text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ]['’ʼ]?)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[а-яіїєґА-ЯІЇЄҐ])/, { all, cyr, lat, cyr2 ->
-            count1 += 1
-            cyr + latToCyrMap[lat] + cyr2
-        })
-
-        // Cyrillic letter that looks like Latin between 2 Latin
-
-        text = text.replaceAll(/([a-zA-Z]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[a-zA-Z])/, { all, lat, cyr, lat2 ->
-            count2 += 2
-            lat + cyrToLatMap[cyr] + lat2
-        })
-
-        _println "\tconverted $count1 lat->cyr, $count2 cyr->lat"
+        text = fixCharBetweenOthers(text, counts)
+        
+        _println "\tconverted ${counts[0]} lat->cyr, ${counts[1]} cyr->lat"
 
         return text
     }
