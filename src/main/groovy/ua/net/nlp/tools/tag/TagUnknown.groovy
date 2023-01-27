@@ -120,7 +120,7 @@ public class TagUnknown {
     @CompileStatic
     private static String gen(String postag) {
         def m = postag =~ /:[mf]:/
-        return m[0]
+        return m ? m[0] : null
     }
 
         
@@ -134,18 +134,18 @@ public class TagUnknown {
             if( idx > 0 ) {
                 if( e.key.postag.contains("lname") ) {
                     def eGen = gen(e.key.postag)
-//                    println "${e} / $eGen" 
-                    if( tokens[idx-1].getReadings().find {
-                        def tag = it.getPOSTag()
-                        if( tag == null ) return false
-                        if( tag.contains("fname") && gen(tag) == eGen ) return true
-                        
-                        it.getLemma() != null &&
-                        ((eGen == ":m:" && mascPrefix.matcher(it.getLemma()).matches()) ||
-                        (eGen == ":f:" && femPrefix.matcher(it.getLemma()).matches()))
-                    } ) {
-//                    println "-> ${e.value * 5000}"
-                        return e.value * 10000
+                    if( eGen ) { 
+                        if( tokens[idx-1].getReadings().find {
+                            def tag = it.getPOSTag()
+                            if( tag == null ) return false
+                            if( tag.contains("fname") && gen(tag) == eGen ) return true
+                            
+                            it.getLemma() != null &&
+                            ((eGen == ":m:" && mascPrefix.matcher(it.getLemma()).matches()) ||
+                            (eGen == ":f:" && femPrefix.matcher(it.getLemma()).matches()))
+                        } ) {
+                            return e.value * 10000
+                        }
                     }
                 }
                 return e.value * 100
