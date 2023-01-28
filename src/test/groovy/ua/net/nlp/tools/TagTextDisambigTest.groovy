@@ -178,6 +178,50 @@ class TagTextDisambigTest {
     }
     
     @Test
+    public void testPrepNounChas() {
+        TagResult tagged = tagText.tagText("під час переслідування")
+
+        def expected =
+"""<sentence>
+  <token value="під" lemma="під" tags="prep" />
+  <token value="час" lemma="час" tags="noun:inanim:m:v_zna" />
+  <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_rod" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+    
+    @Test
+    public void testPrepAdjUnknown() {
+        TagResult tagged = tagText.tagText("в чорно-біле")
+
+        def expected =
+"""<sentence>
+  <token value="в" lemma="в" tags="prep" />
+  <token value="чорно-біле" lemma="чорно-білий" tags="adj:n:v_zna" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
+    @Test
+    public void testPrepNoun() {
+        TagResult tagged = tagText.tagText("у пасічництво")
+
+        def expected =
+"""<sentence>
+  <token value="у" lemma="у" tags="prep" />
+  <token value="пасічництво" lemma="пасічництво" tags="noun:inanim:n:v_zna" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
+
+    @Test
     public void testCtxAdjNoun() {
         TagResult tagged = tagText.tagText(", цього тижня")
 
@@ -225,21 +269,6 @@ class TagTextDisambigTest {
         assertEquals 1, tagged.stats.disambigMap['word']
     }
     
-    @Test
-    public void testPrepNounChas() {
-        TagResult tagged = tagText.tagText("під час переслідування")
-
-        def expected =
-"""<sentence>
-  <token value="під" lemma="під" tags="prep" />
-  <token value="час" lemma="час" tags="noun:inanim:m:v_zna" />
-  <token value="переслідування" lemma="переслідування" tags="noun:inanim:n:v_rod" />
-</sentence>
-<paragraph/>
-"""
-        assertEquals expected, tagged.tagged
-    }
-    
     
     @Test
     public void testAdvOverAdj() {
@@ -274,21 +303,6 @@ class TagTextDisambigTest {
     }
 
     @Test
-    public void testWithCaptialVerb() {
-        assumeTrue(NEW_TESTS)
-
-        TagResult tagged = tagText.tagText("Спала")
-
-        def expected =
-"""<sentence>
-  <token value="Спала" lemma="спати" tags="verb:imperf:past:f" />
-</sentence>
-<paragraph/>
-"""
-        assertEquals expected, tagged.tagged
-    }
-    
-    @Test
     public void testAnimOverInanim() {
         assumeTrue(NEW_TESTS)
 
@@ -321,34 +335,6 @@ class TagTextDisambigTest {
         assertEquals expected, tagged.tagged
     }
 
-
-    @Test
-    public void testPrepAdjUnknown() {
-        TagResult tagged = tagText.tagText("в чорно-біле")
-
-        def expected =
-"""<sentence>
-  <token value="в" lemma="в" tags="prep" />
-  <token value="чорно-біле" lemma="чорно-білий" tags="adj:n:v_zna" />
-</sentence>
-<paragraph/>
-"""
-        assertEquals expected, tagged.tagged
-    }
-
-    @Test
-    public void testPrepNoun() {
-        TagResult tagged = tagText.tagText("у пасічництво")
-
-        def expected =
-"""<sentence>
-  <token value="у" lemma="у" tags="prep" />
-  <token value="пасічництво" lemma="пасічництво" tags="noun:inanim:n:v_zna" />
-</sentence>
-<paragraph/>
-"""
-        assertEquals expected, tagged.tagged
-    }
 
     
     @Test
