@@ -286,6 +286,8 @@ public class DisambigStats {
                 
             rate = stat.rate
             if( total ) {
+                rate /= 3.5d
+                ctxQ *= 2d
                 rate /= total
             }
             assert rate <= 1.0, "total: $total"
@@ -318,7 +320,11 @@ public class DisambigStats {
         }
         
         double rate = stat.rate
-        if( total ) rate /= total
+        if( total ) {
+            rate /= 3.5d
+            ctxQ *= 2d
+            rate /= total
+        }
         assert rate <= 1.0
         
         double oldRate = rate
