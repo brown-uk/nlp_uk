@@ -407,7 +407,43 @@ class TagTextDisambigTest {
 """
         assertEquals expected, tagged.tagged
     }
+    
 
+    @Test
+    public void testPropNoun() {
+        assumeTrue(NEW_TESTS)
+
+        def tagged = tagText.tagText("сміху Котляревського")
+        
+        def expected =
+"""<sentence>
+  <token value="сміху" lemma="сміх" tags="noun:inanim:m:v_rod" />
+  <token value="Котляревського" lemma="Котляревський" tags="noun:anim:m:v_rod:prop:lname" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+    
+    
+        @Test
+        public void testPropCountryNoun() {
+            assumeTrue(NEW_TESTS)
+    
+            def tagged = tagText.tagText("і Чилі, Перу")
+            
+            def expected =
+    """<sentence>
+  <token value="і" lemma="і" tags="part" />
+  <token value="Чилі" lemma="Чилі" tags="noun:inanim:f:v_rod:nv:prop:geo" />
+  <token value="," lemma="," tags="punct" />
+  <token value="Перу" lemma="Перу" tags="noun:inanim:f:v_rod:nv:prop:geo" />
+</sentence>
+<paragraph/>
+"""
+            assertEquals expected, tagged.tagged
+        }
+    
     @Test
     public void testAdjNounLinkBoost() {
         assumeTrue(NEW_TESTS)

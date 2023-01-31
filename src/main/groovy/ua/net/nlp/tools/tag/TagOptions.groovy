@@ -1,5 +1,6 @@
 package ua.net.nlp.tools.tag;
 
+import groovy.transform.AutoClone
 import groovy.transform.CompileStatic
 
 import picocli.CommandLine.Option

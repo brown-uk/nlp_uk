@@ -129,7 +129,7 @@ public class TagStats {
                  Map<String, List<AnalyzedToken>> lemmas = tokenReadings.getReadings()
                     .findAll { it.getLemma() \
                         && tokenReadings.getCleanToken() ==~ ONLY_CYR_LETTER \
-                        && ! (it.getPOSTag() =~ IGNORE_TAGS_FOR_LEMMA) 
+                        && ! (it.getPOSTag() =~ /unknown|unclass|symb/ ) //IGNORE_TAGS_FOR_LEMMA) 
                     }
                     .groupBy{ it.getLemma() }
                 
@@ -254,6 +254,8 @@ public class TagStats {
     }
 
     def printLemmaFrequencyStats() {
+
+        println "Unique lemmas: ${lemmaFrequencyMap.size()}"
 
         def printStream
         if( options.output == "-" ) {

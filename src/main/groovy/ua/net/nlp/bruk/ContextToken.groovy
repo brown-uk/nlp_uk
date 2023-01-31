@@ -75,7 +75,7 @@ class ContextToken {
             if( m1.matches() )
                 return m1.replaceFirst('$2')
 
-            def m2 = Pattern.compile(/[0-9]+([,.])[0-9]+/).matcher(w) // we only care that it's decimal
+            def m2 = Pattern.compile(/([0-9,]+[–-])?[0-9]+([,.])[0-9]+/).matcher(w) // we only care that it's decimal
             if( m2.matches() )
                 return m2.replaceFirst('0$10')
         }
@@ -126,4 +126,11 @@ class ContextToken {
         }
         return w
     }
+    
+    @CompileStatic
+    static boolean useRightContext(String token) {
+//        token.toLowerCase() ==~ /це|його|її|їх|як|є|саме/
+        token.toLowerCase() ==~ /є|її|це|саме|всередині|перед/
+    }
+    
 }

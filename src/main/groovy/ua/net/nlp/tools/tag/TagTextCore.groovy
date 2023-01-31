@@ -32,12 +32,12 @@ import picocli.CommandLine.ParameterException
 
 class TagTextCore {
     
-    static final Pattern PUNCT_PATTERN = Pattern.compile(/[,.:;!?\/()\[\]{}«»„“"'…\u2013\u2014\u201D\u201C•■♦-]+/)
-    static final Pattern SYMBOL_PATTERN = Pattern.compile(/[%&@$*+=<>\u00A0-\u00BF\u2000-\u20CF\u2100-\u218F\u2200-\u22FF]+/)
+    public static final Pattern PUNCT_PATTERN = Pattern.compile(/[,.:;!?\/()\[\]{}«»„“"'…\u2013\u2014\u201D\u201C•■♦-]+/)
+    public static final Pattern SYMBOL_PATTERN = Pattern.compile(/[%&@$*+=<>\u00A0-\u00BF\u2000-\u20CF\u2100-\u218F\u2200-\u22FF]+/)
     static final Pattern UNKNOWN_PATTERN = Pattern.compile(/(.*-)?[а-яіїєґА-ЯІЇЄҐ][а-яіїєґА-ЯІЇЄҐ'\u02BC\u2019]+(-.*)?/)
     static final Pattern NON_UK_PATTERN = Pattern.compile(/^[\#№u2013-]|[\u2013-]$|[ыэъё]|[а-яіїєґ][a-z]|[a-z][а-яіїєґ]/, Pattern.CASE_INSENSITIVE|Pattern.UNICODE_CASE)
     static final Pattern UNCLASS_PATTERN = Pattern.compile(/\p{IsLatin}[\p{IsLatin}\p{IsDigit}-]*|[0-9]+-?[а-яіїєґА-ЯІЇЄҐ]+|[а-яіїєґА-ЯІЇЄҐ]+-?[0-9]+/)
-    static final Pattern XML_TAG_PATTERN = Pattern.compile(/<\/?[a-zA-Z_0-9]+>/)
+    public static final Pattern XML_TAG_PATTERN = Pattern.compile(/<\/?[a-zA-Z_0-9]+>/)
     
     def language = new Ukrainian() {
         @Override
@@ -247,6 +247,15 @@ class TagTextCore {
     static class TTR {
         List<TaggedToken> tokens
     }
+    
+    @CompileStatic
+    static class TokenInfo {
+        String cleanToken
+        String cleanToken2
+        AnalyzedTokenReadings[] tokens
+        int idx
+        List<TTR> taggedTokens
+    }
 
     @CompileStatic
     private List<TTR> tagAsObject(AnalyzedTokenReadings[] tokens, TagStats stats) {
@@ -265,6 +274,9 @@ class TagTextCore {
                 tokenReadings = modZheleh.adjustTokens(tokenReadings, tokens, idx)
                 hasTag = hasPosTag(tokenReadings)
             }
+            
+            TokenInfo ti = new TokenInfo(cleanToken: tokenReadings.getCleanToken(), tokens: tokens, idx: idx, taggedTokens: tokenReadingsT,
+                cleanToken2: tokenReadings.getCleanToken())
             
 //            if( hasTag ) {
 //                // TODO: tmp workaround, remove after LT 6.1
@@ -323,7 +335,7 @@ class TagTextCore {
                                                 [(at): it]
                                             }
                                             List<AnalyzedToken> readings = readingsMap.keySet() as List
-                                            disambigStats.orderByStats(readings, cleanToken, tokens, idx, stats)
+                                            disambigStats.orderByStats(readings, ti, stats)
                                             taggedTokens = readings.collect { readingsMap[it] }
                                         }
                                     }
@@ -360,7 +372,7 @@ class TagTextCore {
             
             List<String> splitPart = options.splitHyphenParts ? TextUtils.splitWithPart(cleanToken) : null
             if( splitPart ) {
-                cleanToken = splitPart[0]
+                ti.cleanToken2 = splitPart[0]
             }
             
             List<AnalyzedToken> readings = new ArrayList<>(tokenReadings.getReadings())
@@ -371,7 +383,7 @@ class TagTextCore {
             
             List<Double> rates = null
             if( options.disambiguate && readings.size() > 1 ) {
-                rates = disambigStats.orderByStats(readings, cleanToken, tokens, idx, stats)
+                rates = disambigStats.orderByStats(readings, ti, stats)
             }
 
             if( options.tokenFormat ) {
