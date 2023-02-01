@@ -3,6 +3,9 @@
 package ua.net.nlp.tools.tag
 
 import java.math.RoundingMode
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.regex.Pattern
@@ -15,6 +18,7 @@ import org.languagetool.MultiThreadedJLanguageTool
 import org.languagetool.language.Ukrainian
 
 import ua.net.nlp.tools.TextUtils
+import ua.net.nlp.tools.TextUtils.IOFiles
 import ua.net.nlp.tools.TextUtils.OutputFormat
 import ua.net.nlp.tools.TextUtils.ResultBase
 import ua.net.nlp.tools.tag.DisambigStats
@@ -493,6 +497,18 @@ class TagTextCore {
 		});
     }
 
+    def process(IOFiles files) {
+        stats = new TagStats()
+        stats.options = options
+        
+        def outputFile = TextUtils.processByParagraphInternal(options, files.inputFile, files.outputFile, { buffer ->
+            return tagText(buffer)
+        },
+        { TagResult result ->
+            stats.add(result.stats)
+        });
+    }
+
     def postProcess() {
 
         if( options.homonymStats ) {
@@ -617,13 +633,23 @@ class TagTextCore {
 
         // TODO: quick hack to support multiple files
         if( options.inputFiles && options.inputFiles != ["-"] ) {
+            
+            ExecutorService executors = Executors.newWorkStealingPool()
+            options.singleThread = true
             options.inputFiles.forEach{ filename ->
                 options.output = ""
                 options.input = filename
                 nlpUk.setInputOutput(options)
-                nlpUk.process()
-                nlpUk.postProcess()
+                IOFiles files = TextUtils.prepareInputOutput(options)
+                
+                executors.submit({
+                    nlpUk.process(files)
+                } as Runnable)
             }
+            
+            executors.shutdown()
+            executors.awaitTermination(1, TimeUnit.DAYS)
+            nlpUk.postProcess()
         }
         else {
             nlpUk.process()

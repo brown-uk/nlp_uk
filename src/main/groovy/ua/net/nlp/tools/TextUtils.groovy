@@ -23,8 +23,13 @@ public class TextUtils {
     static int BUFFER_SIZE = 4*1024
     static int MAX_PARAGRAPH_SIZE = 200*1024
 
-    static def processByParagraph(OptionsBase options, Closure closure, Closure resultClosure) {
-
+    static class IOFiles {
+        InputStream inputFile
+        PrintStream outputFile
+    }
+    
+    static IOFiles prepareInputOutput(OptionsBase options) {
+        
 //        if( options.output == "-" || options.input == "-" ) {
 //            warnOnWindows();
 //        }
@@ -52,12 +57,20 @@ public class TextUtils {
             if( options.noTag ) {
                 System.err.println("Collecting stats only...")
             }
-            else
-            if( options.output != "-" ) {
+            else if( options.output != "-" ) {
                 System.err.println ("writing into ${options.output}")
             }
         }
-
+        
+        new IOFiles(inputFile: inputFile, outputFile: outputFile)
+    }
+    
+    static def processByParagraph(OptionsBase options, Closure closure, Closure resultClosure) {
+        IOFiles files = prepareInputOutput(options)
+        processByParagraphInternal(options, files.inputFile, files.outputFile, closure, resultClosure)
+    }
+    
+    static def processByParagraphInternal(OptionsBase options, InputStream inputFile, PrintStream outputFile, Closure closure, Closure resultClosure) {
         boolean parallel = false
         int cores = Runtime.getRuntime().availableProcessors()
         if( cores > 2 && ! options.singleThread ) {
