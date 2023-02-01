@@ -484,18 +484,33 @@ public class DisambigStats {
     
     @CompileStatic
     private <T> double adjustByContextAdjNoun(double rate, T key, TokenInfo ti, ContextMode ctxMode, Double matchRateSum) {
-        if( ctxMode == ContextMode.TAG 
-                && ti.idx < ti.tokens.length-1 
-                && matchRateSum < 1 ) {
-
+        if( ctxMode == ContextMode.TAG && matchRateSum < 1 ) {
             String tag = (String)key;
-            if( tag.startsWith("adj") && ! (ti.cleanToken.toLowerCase() == "та") ) {
-                
-                def adjInflections = InflectionHelper.getAdjInflections(ti.tokens[ti.idx].getReadings(), tag)
-                def nounInflections = InflectionHelper.getNounInflections(ti.tokens[ti.idx+1].getReadings(), Pattern.compile("&pron"))
-                
-                if( ! Collections.disjoint(adjInflections, nounInflections) ) {
-                    matchRateSum += 0.35
+            if( tag.startsWith("adj") ) {
+                if ( ti.idx < ti.tokens.length-1 ) {
+                    if( ! (ti.cleanToken.toLowerCase() == "та") ) {
+
+                        def adjInflections = InflectionHelper.getAdjInflections([new AnalyzedToken("", tag, "")])
+                        def nounInflections = InflectionHelper.getNounInflections(ti.tokens[ti.idx+1].getReadings(), Pattern.compile("&pron"))
+
+                        if( ! Collections.disjoint(adjInflections, nounInflections) ) {
+                            matchRateSum += 0.35
+                        }
+                    }
+                }
+            }
+            else if( tag.startsWith("noun") && ! tag.contains("pron") ) {
+                if ( ti.idx > 0 ) {
+                    if( ti.taggedTokens[ti.idx-1].tokens[0].tags =~ /adj(?!.*:nv)/ ) {
+
+                        def adjInflections = InflectionHelper.getNounInflections([new AnalyzedToken("", tag, "")], null)
+                        String adjTag = ti.taggedTokens[ti.idx-1].tokens[0].tags
+                        def nounInflections = InflectionHelper.getAdjInflections([new AnalyzedToken("", adjTag, "")])
+
+                        if( ! Collections.disjoint(adjInflections, nounInflections) ) {
+                            matchRateSum += 0.35
+                        }
+                    }
                 }
             }
         }
