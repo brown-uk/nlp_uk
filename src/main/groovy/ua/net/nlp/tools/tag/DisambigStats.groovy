@@ -5,6 +5,7 @@ import java.util.regex.Pattern
 
 import org.languagetool.AnalyzedToken
 import org.languagetool.AnalyzedTokenReadings
+import org.languagetool.rules.uk.InflectionHelper
 
 import groovy.transform.CompileStatic
 import groovy.transform.ToString
@@ -488,17 +489,12 @@ public class DisambigStats {
                 && matchRateSum < 1 ) {
 
             String tag = (String)key;
-            if( tag.startsWith("adj") && ti.tokens[ti.idx].getCleanToken().toLowerCase() != "та" ) {
-                String genRegex = "^noun"
-                if( tag.contains("ranim") ) genRegex += ":(un)?anim"
-                else if( tag.contains("rinanim") ) genRegex += ":(un|in)anim"
-                else genRegex += ":([ui]n)?anim"
-                genRegex += tag[3..<11]
-//                println ":: $tag / $genRegex"
+            if( tag.startsWith("adj") && ! (ti.cleanToken.toLowerCase() == "та") ) {
                 
-                def wcF = ti.tokens[ti.idx+1].getReadings().find { AnalyzedToken at -> at.getPOSTag() =~ genRegex }
-                if( wcF ) {
-//                    println ":: found ${wcF} : ${matchRateSum} -> ${matchRateSum += 0.5}"
+                def adjInflections = InflectionHelper.getAdjInflections(ti.tokens[ti.idx].getReadings(), tag)
+                def nounInflections = InflectionHelper.getNounInflections(ti.tokens[ti.idx+1].getReadings(), Pattern.compile("&pron"))
+                
+                if( ! Collections.disjoint(adjInflections, nounInflections) ) {
                     matchRateSum += 0.35
                 }
             }
