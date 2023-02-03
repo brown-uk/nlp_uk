@@ -513,7 +513,6 @@ class CleanText {
         int nlIdx = text.indexOf("\n")
         int dosNlIdx = text.indexOf("\r\n")
         boolean dosNlPresent = dosNlIdx >= 0 && dosNlIdx+1 == nlIdx
-        String newPara = dosNlPresent ? "\r\n\r\n" : "\n\n"
         if( dosNlPresent ) {
             _println "\tFirst new line is DOS-style, using DOS new line for the whole text"
         }
@@ -1028,12 +1027,12 @@ class CleanText {
     String fixLatinDigits(String text, int[] counts) {
         while( text =~ /[XVI][ХІ]|[ХІ][XVI]/ ) {
             text = text.replaceAll(/([XVI])([ХІ])/, { all, lat, cyr ->
-                lat + cyrToLatMap[cyr]
                 counts[1]++
+                lat + cyrToLatMap[cyr]
             })
             text = text.replaceAll(/([ХІ])([XVI])/, { all, cyr, lat ->
-                cyrToLatMap[cyr] + lat
                 counts[1]++
+                cyrToLatMap[cyr] + lat
             })
         }
         text

@@ -60,7 +60,12 @@ class CleanTextTest {
         assertEquals "о¬е", clean("о¬е")
         assertEquals "екс-глава", clean("екс¬глава")
 	}
-    
+
+    @Test
+    public void testLatCyrcMix() {
+        assertEquals "XXI", clean("XХІ")
+    }
+        
     @Test
     public void testWrap() {
 		assertEquals "урахування\n", clean("ураху-\nвання")
