@@ -64,20 +64,28 @@ class ContextToken {
             return w
         
         if( postag == "number" ) {
-            def m0 = Pattern.compile(/([12][0-9]{3}[-–—])?[12][0-9]{3}/).matcher(w) // preserve a year - often works as adj
+            def m0 = Pattern.compile(/((1[6789]|20)[0-9]{2}[-–—])?(1[6789]|20)([0-9]{2})/).matcher(w) // preserve a year - often works as adj
             if( m0.matches() )
-                return w
+                return "YY" + m0.group(4)
 
             // normalize 10 000
             w = w.replace(" ", "")
                 
-            def m1 = Pattern.compile(/([0-9]+[-–])?[0-9]+([0-9]{2})/).matcher(w) // we only care about last two digits
-            if( m1.matches() )
-                return m1.replaceFirst('$2')
+            def m1 = Pattern.compile(/([0-9]+[-—–])?([0-9]+)/).matcher(w) // we only care about last two digits
+            if( m1.matches() ) {
+                if( w =~ /[05-9]$/ || w =~ /1[0-9]$/ )
+                    return 0
+                if( w =~ /[234]$/ )
+                    return 2
+                if( w =~ /1$/ )
+                    return 1
+                // should not happen
+                return m1.group(2)
+            }
 
-            def m2 = Pattern.compile(/([0-9,]+[–-])?[0-9]+([,.])[0-9]+/).matcher(w) // we only care that it's decimal
+            def m2 = Pattern.compile(/([0-9,]+[–—-])?[0-9]+([,.])[0-9]+/).matcher(w) // we only care that it's decimal
             if( m2.matches() )
-                return m2.replaceFirst('0$10')
+                return '0,0'
         }
 
         String w1 = normalizeWord(w, lemma, postag)
@@ -85,8 +93,8 @@ class ContextToken {
             return w1
         
         if( postag == "punct" ) {
-            if( w.length() == 3 )
-                return w.replaceFirst(/^\.\.\.$/, '…')
+            if( w == "..." )
+                return '…'
 
             if( w.length() == 1 )
                 return w.replaceAll(/^[\u2013\u2014]$/, '-')
@@ -94,7 +102,7 @@ class ContextToken {
                         .replace('“', '»')
 
             if( w.indexOf(".") > 0 )
-                return w.replaceAll(/^([?!.])\.+/, '$1')
+                return w.replaceAll(/^([?!])\.+$/, '$1')
         }
 
         boolean hasLowerCaseLemma = lemma && lemma =~ /^[а-яіїєґ]/
@@ -129,8 +137,8 @@ class ContextToken {
     
     @CompileStatic
     static boolean useRightContext(String token) {
-//        token.toLowerCase() ==~ /це|його|її|їх|як|є|саме/
-        token.toLowerCase() ==~ /є|її|це|саме|всередині|перед/
+//        token.toLowerCase() ==~ /це|його|її|їх|як|є|саме|все/
+        token.toLowerCase() ==~ /є|її|це|саме|всередині|перед|протягом|брати|англійською|українською|рівні/
     }
     
 }
