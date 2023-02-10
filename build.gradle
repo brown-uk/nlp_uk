@@ -155,6 +155,12 @@ jar {
     includeEmptyDirs false
     exclude("ua/net/nlp/tools/TagText.class")
     exclude("ua/net/nlp/tools/TokenizeText.class")
+    exclude("ua/net/nlp/tools/CleanText.class")
+    exclude("ua/net/nlp/tools/CheckText.class")
+    exclude("ua/net/nlp/tools/EvaluateText.class")
+    exclude("ua/net/nlp/tools/ExtractText.class")
+    exclude("ua/net/nlp/tools/Inflect.class")
+    exclude("ua/net/nlp/tools/StressText.class")
 }
 
 

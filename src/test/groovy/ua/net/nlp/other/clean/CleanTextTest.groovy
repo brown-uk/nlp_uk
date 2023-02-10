@@ -1,27 +1,29 @@
 #!/usr/bin/env groovy
 
-package ua.net.nlp.other
+package ua.net.nlp.other.clean
 
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.junit.jupiter.api.Assumptions.assumeTrue
+
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 import groovy.transform.CompileStatic
-
-import static org.junit.jupiter.api.Assertions.assertArrayEquals
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assumptions.assumeTrue
-
-import ua.net.nlp.other.CleanText.CleanOptions
-import ua.net.nlp.other.CleanText.MarkOption
-import ua.net.nlp.other.CleanText.ParagraphDelimiter
+import ua.net.nlp.other.clean.CleanOptions
+import ua.net.nlp.other.clean.CleanOptions.MarkOption
+import ua.net.nlp.other.clean.CleanOptions.ParagraphDelimiter
+import ua.net.nlp.other.clean.CleanTextCore
 
 
+@CompileStatic
 class CleanTextTest {
     final boolean NEW_TESTS = Boolean.getBoolean("ua.net.nlp.tests.new")
     
-    CleanOptions options = [ "wordCount": 0, "debug": true ]
+    CleanOptions options = new CleanOptions("wordCount": 0, "debug": true)
 
-    CleanText cleanText = new CleanText( options )
+    CleanTextCore cleanText = new CleanTextCore( options )
 
     File file(String text) { 
         def f = new File("/tmp/nlp_uk_clean_text_test.txt")
@@ -31,7 +33,12 @@ class CleanTextTest {
     File outFile() {
         new File("/dev/null")
     }
-        
+
+    @BeforeEach
+    public void init() {
+        cleanText.out.init()
+    }
+            
     @CompileStatic
     String clean(String str) {
         str = str.replace('_', '')
@@ -53,7 +60,37 @@ class CleanTextTest {
         assertEquals "о¬е", clean("о¬е")
         assertEquals "екс-глава", clean("екс¬глава")
 	}
+
+    @Test
+    public void testRtf() {
+        def url = getClass().getClassLoader().getResource("clean/test.rtf")
+        def file = new File(url.toURI())
+        
+        def byteStream = new ByteArrayOutputStream()
+        try {
+            cleanText.out.out.set(new PrintStream(byteStream))
+
+            cleanText.cleanUp(file, options, null)
+            String s = byteStream.toString()
+            assertTrue(s.contains("RTF"))
+        }
+        finally {
+            cleanText.out.out.set(System.out)
+        }
+    }
     
+    @Test
+    public void testCp1251() {
+        def url = getClass().getClassLoader().getResource("clean/enc_cp1251.txt")
+        def file = new File(url.toURI())
+        
+        def byteStream = new ByteArrayOutputStream()
+        cleanText.out.out.set(new PrintStream(byteStream))
+
+        String text = cleanText.cleanUp(file, options, null)
+        assertEquals("десь там волоська голова\n", text)
+    }
+
     @Test
     public void testNumForLetter() {
         assertEquals "За віщо йому таке. Вул. Залізнична 3а.", clean("3а віщо йому таке. Вул. 3алізнична 3а.")
@@ -107,12 +144,6 @@ class CleanTextTest {
 
 		assertEquals "\"депутат\" H'''", clean("''депутат'' H'''")
 
-        assertEquals "- Агов", clean("-Агов")
-        assertEquals "-УВАТ(ИЙ)", clean("-УВАТ(ИЙ)")
-
-        assertEquals "- архієпископ\n- Дитина", clean("-архієпископ\n-Дитина")
-        assertEquals "-то ", clean("-то ")
-
         assertEquals "Інтерфакс-Україна\n", clean("Інтерфакс-\nУкраїна")
 
         def result = clean('просто-\nрово-часового')
@@ -128,6 +159,14 @@ class CleanTextTest {
         assert result == "благодійної\n"
     }
 
+    @Test
+    public void testLeadingHyphen() {
+        assertEquals "- Агов", clean("-Агов")
+        assertEquals "-УВАТ(ИЙ)", clean("-УВАТ(ИЙ)")
+
+        assertEquals "- архієпископ\n- Дитина", clean("-архієпископ\n-Дитина")
+        assertEquals "-то ", clean("-то ")
+    }
     
 	@Test
 	void testOi() {
@@ -224,14 +263,14 @@ class CleanTextTest {
         assertEquals ukrSent2, clean(ukrSent2)
 
         def expectedRates = [(double)0.5, (double)0.1]
-        assertEquals(expectedRates, cleanText.evalChunk("дерзаючий озером, а голова просто"))
+        assertEquals(expectedRates, cleanText.markLanguageModule.evalChunk("дерзаючий озером, а голова просто"))
 
         expectedRates = [(double)0.8, (double)0.2]
-        assertEquals(expectedRates, cleanText.evalChunk("енергозбереженню прийшов повний розгром але зелений друг виручив його в складний момент"))
+        assertEquals(expectedRates, cleanText.markLanguageModule.evalChunk("енергозбереженню прийшов повний розгром але зелений друг виручив його в складний момент"))
 
-        def rates = cleanText.evalChunk("Arsenal по\u2013царськи")
-        assertEquals(1.0, rates[0], 1E-2)
-        assertEquals(0.0, rates[1], 1E-2)
+        def rates = cleanText.markLanguageModule.evalChunk("Arsenal по\u2013царськи")
+        assertEquals(1.0d, rates[0], 1E-2d)
+        assertEquals(0.0d, rates[1], 1E-2d)
         
 //        def ukrSent3 = 
 //'''Фінал передбачується на початку оповіді у незначних зауваженнях: «Стены 
