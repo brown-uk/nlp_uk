@@ -32,6 +32,7 @@ class CleanTextTest {
         new File("/dev/null")
     }
         
+    @CompileStatic
     String clean(String str) {
         str = str.replace('_', '')
         cleanText.cleanUp(file(str), options, outFile())
@@ -40,19 +41,11 @@ class CleanTextTest {
 	
 	@Test
 	public void test() {
-		assertEquals "брат", clean("б_p_ат")
-
-		assertEquals "труба", clean("тр_y_ба")
-
         assertEquals "\"труба", clean("\\\"трyба")
 
         assertEquals "п'яний", clean("п\\'яний")
         
 		assertEquals "on throughпортал в", clean("on throughпортал в")
-        
-        assertEquals "За віщо йому таке. Вул. Залізнична 3а.", clean("3а віщо йому таке. Вул. 3алізнична 3а.")
-        
-        assertEquals "концентрація CO та CO2", clean("концентрація СO та CО2")
         
         assertEquals "загальновідоме", clean("загальновідо¬ме")
         assertEquals "по-турецьки", clean("по¬турецьки")
@@ -60,10 +53,48 @@ class CleanTextTest {
         assertEquals "о¬е", clean("о¬е")
         assertEquals "екс-глава", clean("екс¬глава")
 	}
+    
+    @Test
+    public void testNumForLetter() {
+        assertEquals "За віщо йому таке. Вул. Залізнична 3а.", clean("3а віщо йому таке. Вул. 3алізнична 3а.")
+    }
+
+    @Test
+    public void testRemove00AD() {
+        assertEquals "Залізнична", clean("За\u00ADлізнична")
+    }
 
     @Test
     public void testLatCyrcMix() {
         assertEquals "XXI", clean("XХІ")
+
+        assertEquals "брат", clean("б_p_ат")
+        
+        assertEquals "труба", clean("тр_y_ба")
+
+        assertEquals "baby", clean("b_а_b_у_")
+        
+        assertEquals "Abby", clean("А_bb_у_")
+
+        assertEquals "сіс", clean("с_і_с")
+        
+        // latin i
+        def orig = "чоловіка i жінки"
+        def result = clean(orig)
+        assert result != orig
+        assert result == "чоловіка і жінки"
+
+        // latin y
+        orig = "з полком y поміч"
+        result = clean(orig)
+        assert result != orig
+        assert result == "з полком у поміч"
+
+        orig = "da y Вoreckomu"
+        result = clean(orig)
+        assert result == orig
+
+        assertEquals "концентрація CO та CO2", clean("концентрація СO та CО2")
     }
         
     @Test
@@ -99,7 +130,7 @@ class CleanTextTest {
 
     
 	@Test
-	void test2() {
+	void testOi() {
         def result = clean("новоствореноі")
         assert result == "новоствореної"
 
@@ -119,22 +150,6 @@ class CleanTextTest {
 
         result = clean("чоло-віка")
         assert result == "чоловіка"
-
-        // latin i
-        def orig = "чоловіка i жінки"
-        result = clean(orig)
-        assert result != orig
-        assert result == "чоловіка і жінки"
-
-        // latin y
-        orig = "з полком y поміч"
-        result = clean(orig)
-        assert result != orig
-        assert result == "з полком у поміч"
-
-        orig = "da y Вoreckomu"
-        result = clean(orig)
-        assert result == orig
 	}
     
     @Disabled

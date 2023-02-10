@@ -37,6 +37,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.function.Function
+import java.util.regex.MatchResult
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import picocli.CommandLine
@@ -110,19 +112,15 @@ class CleanText {
 
     Map<String,String> cyrToLatMap = [:]
 
-    @Lazy
-    UkrainianTagger ukTagger = { new UkrainianTagger() }()
 	@Lazy
 	RussianTagger ruTagger = { new RussianTagger() }()
-    @Lazy
     Ukrainian ukLanguage = new Ukrainian() {
         @Override
         protected synchronized List<?> getPatternRules() { return [] }
     }
-    @Lazy
-    SRXSentenceTokenizer ukSentTokenizer = new SRXSentenceTokenizer(ukLanguage)
-    @Lazy
-    UkrainianWordTokenizer ukWordTokenizer = new UkrainianWordTokenizer()
+    UkrainianTagger ukTagger = ukLanguage.getTagger()
+    SRXSentenceTokenizer ukSentTokenizer = ukLanguage.getSentenceTokenizer()
+    UkrainianWordTokenizer ukWordTokenizer = ukLanguage.getWordTokenizer()
 
     CleanOptions options
 
@@ -460,14 +458,16 @@ class CleanText {
         if( text.contains("\u00AC") ) { // ¬
             _println "\tremoving U+00AC hyphens: "
             text = text.replaceAll(/([0-9])\u00AC([а-яіїєґА-ЯІЇЄҐ0-9])/, '$1-$2')
-            text = text.replaceAll(AC_HYPHEN_PATTERN1, { String all, w1, w2 ->
+            text = AC_HYPHEN_PATTERN1.matcher(text).replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { 
 //            text = AC_HYPHEN_PATTERN1.matcher(text).replaceAll({ String all, w1, w2 ->
+                def w1 = mr.group(1)
+                def w2 = mr.group(2)
                 def fix = "$w1-$w2"
                 if( knownWord(fix) ) return fix
                 fix = "$w1$w2"
                 if( knownWord(fix) ) return fix
-                return all
-            })
+                return mr.group(0)
+            } } )
         }
         return text
     }
@@ -1022,18 +1022,31 @@ class CleanText {
     }
     
 
-    
     @CompileStatic
     String fixLatinDigits(String text, int[] counts) {
-        while( text =~ /[XVI][ХІ]|[ХІ][XVI]/ ) {
-            text = text.replaceAll(/([XVI])([ХІ])/, { all, lat, cyr ->
-                counts[1]++
-                lat + cyrToLatMap[cyr]
-            })
-            text = text.replaceAll(/([ХІ])([XVI])/, { all, cyr, lat ->
-                counts[1]++
-                cyrToLatMap[cyr] + lat
-            })
+        def m1 = text =~ /([XVI])([ХІ])/
+        def m2 = text =~ /([ХІ])([XVI])/
+        
+        while( m1 || m2 ) {
+            if( m1 ) {
+                def t1 = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // lat, cyr
+                    def lat = mr.group(1)
+                    def cyr = mr.group(2)
+                    counts[1]++
+                    lat.concat( cyrToLatMap[cyr] )
+                } } )
+                text = t1
+            }
+            if( m2 ) {
+                def t2 = m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> //all, cyr, lat ->
+                    counts[1]++
+                    cyrToLatMap[mr.group(1)].concat( mr.group(2) )
+                } } )
+                text = t2
+            }
+            
+            m1 = text =~ /([XVI])([ХІ])/
+            m2 = text =~ /([ХІ])([XVI])/
         }
         text
     }
@@ -1041,38 +1054,54 @@ class CleanText {
     @CompileStatic
     String fixReliableCyr(String text, int[] counts) {
         // exclusively cyrillic letter followed by latin looking like cyrillic
-
-        text = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
+//        def t1 = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
+        def m1 = text =~ /([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/
+        def t1 = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // all, cyr, lat
+            def cyr = mr.group(1)
+            def lat = mr.group(2)
             debug "mix: 1.1"
             counts[0] += 1
-            cyr + latToCyrMap[lat]
-        })
+            cyr.concat(latToCyrMap[lat])
+        } } )
 
         // exclusively cyrillic letter preceeded by latin looking like cyrillic
 
-        text = text.replaceAll(/([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
+//        text.replaceAll(/([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
+        def m2 = t1 =~ /([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/
+        def t2 = m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // lat, cyr
+            def lat = mr.group(1)
+            def cyr = mr.group(2)
             debug "mix: 1.2"
             counts[0] += 1
-            latToCyrMap[lat] + cyr
-        })
+            assert cyr
+            latToCyrMap[lat].concat(cyr)
+        } } )
     }
 
     @CompileStatic
     String fixReliableLat(String text, int[] counts) {
         
-        text = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
+//        def t1 = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
+        def m1 = text =~ /([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/
+        text = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
+            def lat = mr.group(1)
+            def cyr = mr.group(2)
             debug "mix: 1.3"
             counts[1] += 2
-            lat + cyrToLatMap[cyr]
-        })
+            assert cyrToLatMap[cyr]
+            lat.concat(cyrToLatMap[cyr])
+        } } )
 
-        text = text.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
+//        def t2 = t1.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
+        def m2 = text =~ /([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/
+        text = m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
+            def cyr = mr.group(1)
+            def lat = mr.group(2)
             debug "mix: 1.4"
             counts[1] += 2
-            cyrToLatMap[cyr] + lat
-        })
-        
-        text
+            assert lat
+            cyrToLatMap[cyr].concat(lat)
+        } } )
     }
     
     @CompileStatic
@@ -1100,7 +1129,7 @@ class CleanText {
         text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-ZáÁéÉíÍḯḮóÓúýÝ-]+/, { String it ->
 
             if( it =~ /[а-яіїєґА-ЯІЇЄҐ]['’ʼ]?[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/
-            || it =~ /[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]['’ʼ]?[а-яіїєґА-ЯІЇЄҐ]/ ) {
+                    || it =~ /[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]['’ʼ]?[а-яіїєґА-ЯІЇЄҐ]/ ) {
                 //            println "Found mix in: $it, known to LT: " + knownWord(it)
                 if( ! knownWord(it) ) {
                     def fixed = it.replaceAll(/[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/, { String lat -> latToCyrMap[lat] })
@@ -1142,7 +1171,7 @@ class CleanText {
 
     @CompileStatic
     static String getSample(String text) {
-        text[0..<Math.min(text.size(), 80)].replace('\n', '\\n')
+        text.take(80).replace('\n', '\\n')
     }
 
 
@@ -1217,7 +1246,7 @@ class CleanText {
 
     static final Pattern MIX_1 = ~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/
     
-//    @CompileStatic
+    @CompileStatic
     String fixCyrLatMix(String text, File file) {
         // фото зhttp://www
         text = text.replaceAll(/(?iu)([а-яіїєґ])(http)/, '$1 $2')
