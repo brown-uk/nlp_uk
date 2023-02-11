@@ -164,8 +164,13 @@ class TagTextCore {
             stats = new TagStats()
             stats.options = options
         }
-        
         List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
+        
+        tagTextCore(analyzedSentences, stats)
+    }
+    
+    @CompileStatic
+    List<List<TTR>> tagTextCore(List<AnalyzedSentence> analyzedSentences, TagStats stats) {
 
         List<List<TTR>> taggedSentences = []
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
