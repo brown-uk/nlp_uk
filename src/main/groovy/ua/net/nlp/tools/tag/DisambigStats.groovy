@@ -22,7 +22,7 @@ public class DisambigStats {
     private static final Pattern UPPERCASED_PATTERN = Pattern.compile(/[А-ЯІЇЄҐ][а-яіїєґ'-]+/)
     private static final boolean USE_SUFFIX_2 = false
     private static final String statsFile = "/ua/net/nlp/tools/stats/lemma_freqs_hom.txt"
-    static final String statsVersion = "3.1.1"
+    static final String statsVersion = "3.1.2"
 
     boolean disambigBySuffix = true //DisambigModule.wordEnding in options.disambiguate
     boolean disambigByContext = true
