@@ -7,9 +7,8 @@ import org.slf4j.Logger
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 
-@PackageScope
 @CompileStatic
-class OutputTrait {
+public class OutputTrait {
     Logger logger
     ThreadLocal<PrintStream> out = new ThreadLocal<>()
     ThreadLocal<ByteArrayOutputStream> outSw = new ThreadLocal<>()

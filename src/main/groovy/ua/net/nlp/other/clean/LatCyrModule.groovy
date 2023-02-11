@@ -63,31 +63,37 @@ class LatCyrModule {
         
     @CompileStatic
     String fixLatinDigits(String text, int[] counts) {
-        def m1 = text =~ /([XVI])([ХІ])/
-        def m2 = text =~ /([ХІ])([XVI])/
+        def t0 = text
         
-        while( m1 || m2 ) {
+        boolean cont = true
+        for(int ii=0; ii<10; ii++) {
+            cont = false
+
+            def m1 = t0 =~ /([XVI])([ХІ])/
+
             if( m1 ) {
-                def t1 = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // lat, cyr
+                cont = true
+// t0 = null // ml
+                t0 = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // lat, cyr
                     def lat = mr.group(1)
                     def cyr = mr.group(2)
                     counts[1]++
                     lat.concat( cyrToLatMap[cyr] )
                 } } )
-                text = t1
             }
+            
+            def m2 = t0 =~ /([ХІ])([XVI])/
             if( m2 ) {
-                def t2 = m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> //all, cyr, lat ->
+                cont = true
+// t0 = null // ml
+                t0 = m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> //all, cyr, lat ->
                     counts[1]++
                     cyrToLatMap[mr.group(1)].concat( mr.group(2) )
                 } } )
-                text = t2
             }
             
-            m1 = text =~ /([XVI])([ХІ])/
-            m2 = text =~ /([ХІ])([XVI])/
         }
-        text
+        t0
     }
 
     @CompileStatic
@@ -107,6 +113,7 @@ class LatCyrModule {
 
 //        text.replaceAll(/([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
         def m2 = t1 =~ /([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/
+// t1 = null // ml
         def t2 = m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // lat, cyr
             def lat = mr.group(1)
             def cyr = mr.group(2)
@@ -122,7 +129,7 @@ class LatCyrModule {
         
 //        def t1 = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
         def m1 = text =~ /([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/
-        text = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
+        def t1 = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
             def lat = mr.group(1)
             def cyr = mr.group(2)
             out.debug "mix: 1.3"
@@ -132,8 +139,9 @@ class LatCyrModule {
         } } )
 
 //        def t2 = t1.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
-        def m2 = text =~ /([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/
-        text = m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
+        def m2 = t1 =~ /([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/
+// t1 = null // ml
+        m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
             def cyr = mr.group(1)
             def lat = mr.group(2)
             out.debug "mix: 1.4"
@@ -147,14 +155,14 @@ class LatCyrModule {
     String fixCharBetweenOthers(String text, int[] counts) {
         // latin letter that looks like Cyrillic between 2 Cyrillics
 
-        text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ]['’ʼ]?)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[а-яіїєґА-ЯІЇЄҐ])/, { all, cyr, lat, cyr2 ->
+        def t1 = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ]['’ʼ]?)([aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[а-яіїєґА-ЯІЇЄҐ])/, { all, cyr, lat, cyr2 ->
             counts[0] += 1
             cyr + latToCyrMap[lat] + cyr2
         })
 
         // Cyrillic letter that looks like Latin between 2 Latin
 
-        text = text.replaceAll(/([a-zA-Z]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[a-zA-Z])/, { all, lat, cyr, lat2 ->
+        t1.replaceAll(/([a-zA-Z]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[a-zA-Z])/, { all, lat, cyr, lat2 ->
             counts[1] += 2
             lat + cyrToLatMap[cyr] + lat2
         })
@@ -189,46 +197,61 @@ class LatCyrModule {
         int[] counts = [0, 0]
 
         // latin digits
-        text = fixLatinDigits(text, counts)
+        def t1 = fixLatinDigits(text, counts)
         // 1st tier
 
-        text = fixReliableCyr(text, counts)
-        text = fixReliableLat(text, counts)
+        def t2 = fixReliableCyr(t1, counts)
+// t1 = null // ml
+        def t3 = fixReliableLat(t2, counts)
+// t2 = null // ml
         
         // 2nd tier
 
-        text = fixToAllCyrillic(text, counts)
-
+        def t4 = fixToAllCyrillic(t3, counts)
+// t3 = null // ml
+        
         // 3nd tier - least reliable
 
-        text = fixCharBetweenOthers(text, counts)
-        
+        def t5 = fixCharBetweenOthers(t4, counts)
+// t4 = null // ml
         out.println "\tconverted ${counts[0]} lat->cyr, ${counts[1]} cyr->lat"
 
-        return text
+        return t5
     }
 
 
     static final Pattern MIX_1 = ~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/
     
     @CompileStatic
-    String fixCyrLatMix(String text, File file) {
+    String fixCyrLatMix(String text) {
         // фото зhttp://www
-        text = text.replaceAll(/(?iu)([а-яіїєґ])(http)/, '$1 $2')
+        def t0 = text.replaceAll(/(?iu)([а-яіїєґ])(http)/, '$1 $2')
         
-        if( MIX_1.matcher(text).find() ) {
+        
+        // CO/CO2 with cyr/lat mix
+        t0 = t0.replaceAll(/\b(СO|CО)(2?)\b/, 'CO$2')
+        // CO2 with cyr
+        t0 = t0.replaceAll(/\bСО2\b/, 'CO2')
+        // degree Celcius with cyr
+        t0 = t0.replaceAll(/\b[\u00B0\u00BA][СC]\b/, '\u00B0C')
+
+        
+        if( MIX_1.matcher(t0).find() ) {
             KNOWN_MIXES.each { String k, String v ->
                 text = text.replace(k, v)
             }
 
-            if( MIX_1.matcher(text).find() ) {
+            if( MIX_1.matcher(t0).find() ) {
                 out.println "\tlatin/cyrillic mix"
 
-                text = removeMix(text)
+                def t1 = removeMix(t0)
+// t0 = null // ml
 
-                if( MIX_1.matcher(text).find() ) {
+                if( MIX_1.matcher(t1).find() ) {
                     out.println "\tWARNING: still Latin/Cyrillic mix"
                 }
+                t0 = t1
+// t1 = null // ml
             }
 
             KNOWN_MIXES.each { String k, String v ->
@@ -237,11 +260,15 @@ class LatCyrModule {
         }
 
         // Latin a, o, i, and y
-        text = text.replaceAll(/([^a-z])[,;–—-] a ([А-ЯІЇЄҐа-яіїєґ])/, '$1, а $2')
-        text = text.replaceAll(/([^a-z]) i ([А-ЯІЇЄҐа-яіїєґ])/, '$1 і $2')
-        text = text.replaceAll(/([^a-z]) o ([А-ЯІЇЄҐа-яіїєґ])/, '$1 о $2')
-        text = text.replaceAll(/([^a-z]) y ([А-ЯІЇЄҐа-яіїєґ])/, '$1 у $2')
+        def t1 = t0.replaceAll(/([^a-z])[,;–—-] a ([А-ЯІЇЄҐа-яіїєґ])/, '$1, а $2')
+// t0 = null // ml
+        def t2 = t1.replaceAll(/([^a-z]) i ([А-ЯІЇЄҐа-яіїєґ])/, '$1 і $2')
+// t1 = null // ml
+        def t3 = t2.replaceAll(/([^a-z]) o ([А-ЯІЇЄҐа-яіїєґ])/, '$1 о $2')
+// t2 = null // ml
+        def t4 = t3.replaceAll(/([^a-z]) y ([А-ЯІЇЄҐа-яіїєґ])/, '$1 у $2')
+// t3 = null // ml
         
-        return text
+        return t4
     }
 }

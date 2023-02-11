@@ -22,6 +22,9 @@ package ua.net.nlp.other.clean
 // fix dangling hyphen (at the end of the line)
 // check and warn for spaced words (e.g. Н А Т А Л К А)
 // mark/rate or remove Russian paragraphs
+//
+// NOTE: due to https://issues.apache.org/jira/browse/GROOVY-10918 we have to variate local variables
+// it looks ugly but helps with OOM on big files, see also // ml comments to forcefully clear variables once we're done with them
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
@@ -33,11 +36,11 @@ import picocli.CommandLine
 import picocli.CommandLine.ParameterException
 import ua.net.nlp.other.clean.CleanOptions
 import ua.net.nlp.other.clean.CleanOptions.MarkOption
-//import ua.net.nlp.other.clean.CleanTextNanu
 
 
 class CleanTextCore {
     private static final String UTF8 = StandardCharsets.UTF_8.name()
+    static final int CHUNK_LIMIT = 10*1024*1024
     
     // for higher quality text esp. short newspaper articles you need to keep it low ~100
     // for larger text with possible scanned sources you may want to go higher > 200
@@ -60,6 +63,7 @@ class CleanTextCore {
         this.options = options
         markLanguageModule.options = options
         out.options = options
+        out.init()
 
         if( options.wordCount ) {
             minUkrWordCount = options.wordCount as int
@@ -115,14 +119,14 @@ class CleanTextCore {
 
         if( ! options.input ) {
 
-            def dir = options.dir 
+            String dir = options.dir 
 				? options.dir 
 				: options.arguments()
 					? options.arguments()[0]
 					: "."
 
             File baseDir = new File(dir)
-            def files = []
+            List<File> files = []
 
             int maxDepth_ = options.recursive ? -1 : 0;
 
@@ -286,7 +290,7 @@ class CleanTextCore {
         String text = null
         
         if( file.length() > 100*1024*1024 ) {
-            System.err.println "\tWARNING: It's highly recommended to keep your files for cleanup under 100MB"
+            System.err.println "\tWARNING: It's highly recommended to keep your files for cleanup under 10MB"
             System.err.println "\tThis way you prevent out of memory condition and can use parallel processing (via -p argument) better"
         }
 
@@ -298,26 +302,142 @@ class CleanTextCore {
         int dosNlIdx = text.indexOf("\r\n")
         boolean dosNlPresent = dosNlIdx >= 0 && dosNlIdx+1 == nlIdx
         if( dosNlPresent ) {
-            out.println "\tFirst new line is DOS-style, using DOS new line for the whole text"
+            out.println "\tFirst new line is DOS-style, using DOS new line for the whole text ($dosNlIdx)"
         }
 
         return cleanText(text, file, outFile, dosNlPresent)
     }
 
+    @CompileStatic
+    private static String escapeNl(String text) {
+        text.replace("\r", "\\r").replace("\n", "\\n")
+    } 
     
     @CompileStatic
     String cleanText(String text, File file, File outFile, dosNlPresent) {
+        if( text.length() > CHUNK_LIMIT ) {
+            out.println "\tSize ${text.length()} - splitting into chunks (by ~$CHUNK_LIMIT chars)"
+            def sb = new StringBuilder(text.length())
+
+            for(int ii=0; ii < text.length(); ) {
+                def len = Math.min(CHUNK_LIMIT, text.length()-ii)
+                // if possible adjust splitting by new line (better by paragraphs but it's hard to find how paragraphs are split)
+                int pos = text.indexOf(dosNlPresent ? "\r\n" : "\n", ii + len)
+//                    out.println "\t::pos: $pos"
+                if( pos > 0 && pos < ii + len + CHUNK_LIMIT/10 ) {
+                    len = (pos-ii)
+//                    if( pos+10 < text.length() ) {
+//                        def ch = escapeNl(text[pos-10..pos+10])
+//                        out.println "\t::$ch"
+//                    }
+                }
+                
+                def chunk = text[ii..<ii+len]
+                
+                out.println "\tchunk at $ii, len: $len: ${escapeNl(chunk.take(20))} ... ${escapeNl(text[ii+len-20..<ii+len])}"
+                def x = cleanTextInternal(chunk, file, outFile, dosNlPresent)
+                sb.append(x)
+                
+                ii+=len
+            }
+            sb.toString()
+        }
+        else {
+            cleanTextInternal(text, file, outFile, dosNlPresent)
+        }
+    }
+    
+    @CompileStatic
+    String cleanTextInternal(CharSequence text, File file, File outFile, dosNlPresent) {
+        def t00 = text.toString()
+        
         if( text.contains("\r") ) {
-            text = text.replace("\r", "")
+            t00 = t00.replace("\r", "")
         }
 
-        if( ! checkEmptyLines(text) )
+        if( ! checkEmptyLines(t00) )
             return null
         
+        def t0 = fixQuotes(t00)
+//t00 = null // ml
+            
+        // weird ї and й via combining characters
+        if( t0.contains("\u0308") ) {
+            t0 = t0.replaceAll(/[іi]\u0308/, 'ї')
+            t0 = t0.replaceAll(/[ІI]\u0308/, 'Ї')
+        }
+        if( t0.contains("\u0306") ) {
+            t0 = t0.replace(/и\u0306/, 'й')
+            t0 = t0.replace(/И\u0306/, 'Й')
+        }
+
+        def t01 = fixOi(t0)
+// t0 = null // ml
+
+        // fix weird apostrophes
+        t01 = t01.replaceAll(/(?iu)([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384\u0092´`?*]([єїюя])/, /$1'$2/) // "
+        t01 = t01.replaceAll(/(?iu)[´`]([аеєиіїоуюя])/, '\u0301$1')
+//        t0 = t0.replaceAll(/(?iu)([а-яіїєґ'\u2019\u02BC\u2013-]*)[´`]([а-яіїєґ'\u2019\u02BC\u2013-]+)/, { all, w1, w2
+//                  def fix = "$w1'$w2"
+//                knownWord(fix) ? fix : all
+//        }
+        
+        def t10 = hyphenModule.removeSoftHyphens(t01)
+//t01 = null // ml
+        
+        if( t10.contains('\u2028') ) {
+            t10 = t10.replaceAll(/\u2028\n?/, '\n')
+        }
+
+        // digit 3 instead of letter З
+        t10 = t10.replaceAll(/\b3[аa]([\h\v]*[а-яіїєґА-ЯІЇЄҐ])/, 'За$1')
+
+        t10 = t10.replaceAll(/(чоло|Людо)[ -](в[іі]к)/, '$1$2')
+
+
+        def t12 = latCyrModule.fixCyrLatMix(t10)
+//t10 = null // ml
+        if( ! t12 )
+            return null
+
+        if( ! checkTwoColumns(t12) )
+            return null
+
+
+        if( options.modules ) {
+            t12 = runModules(t12, file, options)
+        }
+
+        t12 = hyphenModule.separateLeadingHyphens(t12)
+
+//        text = hyphenModule.removeSoftHyphens(text)
+
+        t12 = hyphenModule.fixDanglingHyphens(t12)
+
+
+        t12 = fixSplitWords(t12, file)
+
+        checkForSpacing(t12, file)
+
+        if( options.markLanguages != MarkOption.none ) {
+            t12 = markLanguageModule.markRussian(t12, file, outFile, outDirName)
+        }
+
+        def t13 = t12
+//t12 = null // ml
+        if( dosNlPresent ) {
+            t13 = t13.replaceAll(/(?!<\r)\n/, "\r\n")
+        }
+        
+        t13
+    }
+
+    
+    @CompileStatic
+    String fixQuotes(String text) {
         if( text.contains("''") ) {
             text = text.replaceAll(/(?<!')''(?!')/, '"')
         }
-
         // sometimes quotes are escaped
         text = text.replace('\\"', '"')
         text = text.replaceAll(/([бвгґдзкмнпрстфхш])\\'([яєюї])/, '$1\'$2')
@@ -326,92 +446,27 @@ class CleanTextCore {
         text = text.replace(/U+02BA/, '"')
 
         // SINGLE LOW-9 QUOTATION MARK sometimes used as a comma
-        text = text.replace('\u201A', ',')
-
-        // weird ї and й via combining characters
-        text = text.replaceAll(/[іi]\u0308/, 'ї')
-        text = text.replace(/и\u0306/, 'й')
-        text = text.replaceAll(/[ІI]\u0308/, 'Ї')
-        text = text.replace(/И\u0306/, 'Й')
-
-        text = fixOi(text)
-
-        // fix weird apostrophes
-        text = text.replaceAll(/(?iu)([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384\u0092´`?*]([єїюя])/, /$1'$2/) // "
-        text = text.replaceAll(/(?iu)[´`]([аеєиіїоуюя])/, '\u0301$1')
-//        text = text.replaceAll(/(?iu)([а-яіїєґ'\u2019\u02BC\u2013-]*)[´`]([а-яіїєґ'\u2019\u02BC\u2013-]+)/, { all, w1, w2
-//                  def fix = "$w1'$w2"
-//                knownWord(fix) ? fix : all
-//        }
-        
-        text = hyphenModule.removeSoftHyphens(text)
-        text = hyphenModule.remove00ACHyphens(text)
-        
-        if( text.contains('\u2028') ) {
-            text = text.replaceAll(/\u2028\n?/, '\n')
-        }
-
-        // digit 3 instead of letter З
-        text = text.replaceAll(/\b3[аa]([\h\v]*[а-яіїєґА-ЯІЇЄҐ])/, 'За$1')
-
-        // CO/CO2 with cyr/lat mix
-        text = text.replaceAll(/\b(СO|CО)(2?)\b/, 'CO$2')
-        // CO2 with cyr
-        text = text.replaceAll(/\bСО2\b/, 'CO2')
-        // degree Celcius with cyr
-        text = text.replaceAll(/\b[\u00B0\u00BA][СC]\b/, '\u00B0C')
-
-        text = text.replaceAll(/(чоло|Людо)[ -](в[іі]к)/, '$1$2')
-
-
-        text = latCyrModule.fixCyrLatMix(text, file)
-        if( ! text )
-            return null
-
-        if( ! checkTwoColumns(text) )
-            return null
-
-
-        if( options.modules ) {
-            text = removeMeta(text, file, options)
-        }
-
-        text = hyphenModule.separateLeadingHyphens(text)
-
-//        text = hyphenModule.removeSoftHyphens(text)
-
-        text = hyphenModule.fixDanglingHyphens(text, file)
-
-        text = fixSplitWords(text, file)
-        
-        checkForSpacing(text, file)
-        
-        if( options.markLanguages != MarkOption.none ) {
-            text = markLanguageModule.markRussian(text, file, outFile, outDirName)
-        }
-
-        if( dosNlPresent ) {
-            text = text.replaceAll(/(?!<\r)\n/, "\r\n")
-        }
-        
-        text
+        text.replace('\u201A', ',')
     }
-	
+    
+    
     @CompileStatic
     String fixOi(String text) {
 
         if( ! options.disabledRules.contains("oi") ) {
             // промисловоі
-            text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ])(о[іi])\b/, { all, w1, w2 ->
+            def t0 = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ])(о[іi])\b/, { all, w1, w2 ->
                 String fix = "${w1}ої"
                 ltModule.knownWord(fix) ? fix : all
             })
              
             // Нацполіціі
-            text = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ][стц])([іi][іi])\b/, { all, w1, w2 ->
+            def t1 = t0.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ][стц])([іi][іi])\b/, { all, w1, w2 ->
                 String fix = "${w1}ії"
                 ltModule.knownWord(fix) ? fix : all
             })
+//t0 = null // ml
+            text = t1
         }
         text
     }
@@ -419,15 +474,16 @@ class CleanTextCore {
 	void checkForSpacing(text, file) {
 		def m = text =~ /([а-яіїєґА-ЯІЇЄҐ] ){5,}/
 		if( m.find() ) {
-			out.println "\tWARNING: Possible spacing in words, e.g \"" + m[0][0] + "\""
+			out.println "\tWARNING: Possible spacing in words, e.g \"${m.group(0)}\""
 		}
 	}
 
 
+    @CompileStatic
 	String fixSplitWords(String text, File file) {
 		int cnt = 0
 		String regex = /([а-яіїєґА-ЯІЇЄҐ'ʼ’-]*)\n([ \t]*)([а-яіїєґ][а-яіїєґ'ʼ’-]*)([,;.!?])?/
-		text = text.replaceAll(regex, { List<String> it ->
+		def t1 = text.replaceAll(regex, { List<String> it ->
 			if( it[4] != "."	// we don't want to join ММК ім. Ілліча
 				&& it[1].length() + it[3].length() >= 4
 				&& ! (it[0] =~ /[А-ЯІЇЄҐ]{2,}/)
@@ -445,27 +501,26 @@ class CleanTextCore {
 		if( cnt ) {
 			out.println "\t$cnt word splits removed"
 		}
-		text
+		t1
 	}
 
 
     boolean checkTwoColumns(String text) {
         if( ! options.allowTwoColumns ) {
 
-            if ( text.length() > 100*1024 ) {
-                text = text.take(100*1024)
-            }
-
-            if( text.count("    ") >= 5 ) {
-                def matcher = text =~ /(?ium)(.*?[а-яїієґ] {4,})[а-яіїєґ].{4}/
+//            def t0 = CharBuffer.wrap(text, 0, 100*1024)
+            def t0 = text.take(100*1024)
+            
+            if( t0.count("    ") >= 5 ) {
+                def matcher = t0 =~ /(?ium)(.*?[а-яїієґ] {4,})[а-яіїєґ].{4}/
                 matcher.find()
                 def matchSize = matcher.size()
                 if( matchSize >= 5
-                && matchSize > text.count("\n") * 3 / 4
-                && matcher[0][1].length() == matcher[2][1].length()
-                && matcher[0][1].length() == matcher[4][1].length() ) {
-                    _println "\tERROR: two columns detected, skipping...:"
-                    _println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
+                        && matchSize > t0.count("\n") * 3 / 4
+                        && matcher[0][1].length() == matcher[2][1].length()
+                        && matcher[0][1].length() == matcher[4][1].length() ) {
+                    out.println "\tERROR: two columns detected, skipping...:"
+                    out.println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
                     return false
                 }
             }
@@ -476,10 +531,9 @@ class CleanTextCore {
     @CompileStatic
     boolean checkEmptyLines(String text) {
         if( text.count("\n\n") > 5 ) {
-            if ( text.length() > 100*1024 ) {
-                text = text.take(100*1024)
-            }
-
+            //def t0 = CharBuffer.wrap(text, 0, 100*1024)
+            def t0 = text.take(100*1024)
+            
 //            def nonEmptyLines = text.getLines().findAll { it =~ /[^\s]/ }
 //            if( nonEmptyLines.count { it.length() > 120 } > 5 ) {
 //                _println "\tVery long lines found, probably unwrapped paragraphs..."
@@ -488,14 +542,14 @@ class CleanTextCore {
 
 			// headers often have titles without period
 			
-			def lines = text.readLines()
+			def lines = t0.readLines()
 			if( lines.size() > 2 ) {
 				lines = lines[2..<lines.size()]
 			}
 			
-			text = lines.join("\n")
+			def t1 = lines.join("\n")
 //            def matcher = text =~ /(?ius)[а-яїієґ0-9,—–-]\s*\n\n[а-яіїєґ0-9]/
-            def matcher = text =~ /(?us)[а-яїієґА-ЯІЇЄҐ,:—–-]\s*\n\n[а-яіїєґ]/
+            def matcher = t1 =~ /(?us)[а-яїієґА-ЯІЇЄҐ,:—–-]\s*\n\n[а-яіїєґ]/
 			if( matcher ) {
 				out.println "\tWARNING: Suspect empty lines inside the sentence"
 				return true
@@ -511,13 +565,13 @@ class CleanTextCore {
     }
 
 
-    String removeMeta(String text, File file, def options) {
+    String runModules(String text, File file, CleanOptions options) {
 
         if( options.modules == 'nanu' ) {
 //            text = new CleanTextNanu(out.get()).removeMeta(text, file, options)
         }
         else
-            throw new IllegalArgumentException("cleanup not supported for " + options.removeMeta)
+            throw new IllegalArgumentException("cleanup not supported for ${options.modules}")
 
         return text
     }

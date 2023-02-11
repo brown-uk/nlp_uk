@@ -388,4 +388,13 @@ class CleanTextTest {
 
         assertEquals expected, clean("фото зhttp://www.rvps.kiev.ua/")
     }
+    
+    @Test
+    public void testSplitBigFile() {
+        String w = "abc de\n"
+        int cnt = (int)(CleanTextCore.CHUNK_LIMIT * 3 / 2 / w.length())
+        String text = w.repeat(cnt);        
+
+        assertEquals text.hashCode(), clean(text).hashCode()
+    }
 }

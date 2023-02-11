@@ -31,6 +31,7 @@ class HyphenModule {
 //            text = text.replaceAll(/([А-ЯІЇЄҐA-Z])\u00AD(\n[ \t]*)([А-ЯІЇЄҐA-Z'ʼ’-]+)([,;.!?])?/, '$1$3$4$2')
            // text = text.replace('\u00AD', '-')
         }
+        text = remove00ACHyphens(text)
         return text
     }
 
@@ -38,10 +39,14 @@ class HyphenModule {
     
     @CompileStatic
     String remove00ACHyphens(String text) {
-        if( text.contains("\u00AC") ) { // ¬
+        def t0 = text
+        if( t0.contains("\u00AC") ) { // ¬
             out.println "\tremoving U+00AC hyphens: "
-            text = text.replaceAll(/([0-9])\u00AC([а-яіїєґА-ЯІЇЄҐ0-9])/, '$1-$2')
-            text = AC_HYPHEN_PATTERN1.matcher(text).replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
+            def t1 = t0.replaceAll(/([0-9])\u00AC([а-яіїєґА-ЯІЇЄҐ0-9])/, '$1-$2')
+// t0 = null // ml
+            def m2 = AC_HYPHEN_PATTERN1.matcher(t1)
+// t1 = null // ml
+            def t2 = m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
 //            text = AC_HYPHEN_PATTERN1.matcher(text).replaceAll({ String all, w1, w2 ->
                 def w1 = mr.group(1)
                 def w2 = mr.group(2)
@@ -51,13 +56,15 @@ class HyphenModule {
                 if( ltModule.knownWord(fix) ) return fix
                 return mr.group(0)
             } } )
+            t0 = t2
+// t2 = null // ml
         }
-        return text
+        return t0
     }
 
 
-//    @CompileStatic
-    String fixDanglingHyphens(String text, File file) {
+    @CompileStatic
+    String fixDanglingHyphens(String text) {
         if( text.contains("-\n") && text =~ /[а-яіїєґА-ЯІЇЄҐ]-\n/ ) {
             out.println "\tsuspect word wraps"
             def cnt = 0
@@ -118,55 +125,44 @@ class HyphenModule {
         }
     }
 
+    @CompileStatic
     String separateLeadingHyphens(String text) {
-
-        def regex = ~/^([-\u2013\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/
-
-        boolean newLineEnd = text.endsWith("\n")
-
+        def regex = /(?m)^([-\u2013\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/
+        
         def converted = 0
-        text = text.readLines()
-            .collect { line ->
-                def matcher = regex.matcher(line)
-                if( matcher ) {
-    //              Matcher match = matcher[0]
-                    if( ltModule.knownWord(matcher.group(2)) ) {
-                        converted += 1
-                        line = matcher.replaceFirst('$1 $2')
-                    }
-                }
-                line
+        def t1 = text.replaceAll(regex, { all, hyph, word ->
+            if( ltModule.knownWord(word) ) {
+                converted += 1
+                "$hyph $word"
             }
-            .join("\n")
-
+            else {
+                all
+            }
+        })
+        
         if( converted ) {
             out.println "\tConverted leading hyphens: ${converted}"
         }
 
-        if( newLineEnd ) {
-            text += "\n"
-        }
-
-        
         def regex2 = ~/ -[а-яіїєґ]{4,}/
-        if( regex2.matcher(text) ) {
+        if( regex2.matcher(t1) ) {
             int cnt = 0
             def first = null
             
-            text.readLines()
-            .each { line ->
-                def matcher = regex2.matcher(line)
-                while( matcher.find() ) {
-                    cnt += 1
-                    if( ! first )
-                        first = matcher[0]
-                }
+            t1.readLines()
+                .each { line ->
+                    def matcher = regex2.matcher(line)
+                    while( matcher.find() ) {
+                        cnt += 1
+                        if( ! first )
+                            first = matcher[0]
+                    }
             }
             if( cnt ) {
                 out.println "\tWARNING: found $cnt suspicious hypens after space, e.g. \"$first\""
             }
         }
         
-        text
+        t1
     }
 }
