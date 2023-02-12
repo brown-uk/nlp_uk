@@ -98,7 +98,7 @@ class HyphenModule {
 
             out.println "\t\t$cnt word wraps removed, $cntWithHyphen newlines after hyphen removed"
             if( cnt == 0 && cntWithHyphen == 0 ) {
-                println "\t\tfirst match: \"$first\""
+                out.println "\t\tfirst match: \"$first\""
             }
         }
 

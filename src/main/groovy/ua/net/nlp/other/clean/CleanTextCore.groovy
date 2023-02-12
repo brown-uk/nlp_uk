@@ -29,6 +29,11 @@ package ua.net.nlp.other.clean
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 
 import groovy.io.FileVisitResult
 import groovy.transform.CompileStatic
@@ -132,7 +137,8 @@ class CleanTextCore {
 
             baseDir.traverse(type: groovy.io.FileType.FILES, 
                 maxDepth: maxDepth_,
-                preDir  : { if (it.name == 'good' || it.name.endsWith('-good') ) return FileVisitResult.SKIP_SUBTREE },
+                preDir  : { File it ->
+                    if (it.name == 'good' || it.name.endsWith('-good') ) return FileVisitResult.SKIP_SUBTREE },
                 ) { File it ->
 //                if( it.isDirectory() && it.name == "good" )
 //                    return FileVisitResult.SKIP_SUBTREE
@@ -289,10 +295,10 @@ class CleanTextCore {
     String cleanUp(File file, CleanOptions options, File outFile) {
         String text = null
         
-        if( file.length() > 100*1024*1024 ) {
-            System.err.println "\tWARNING: It's highly recommended to keep your files for cleanup under 10MB"
-            System.err.println "\tThis way you prevent out of memory condition and can use parallel processing (via -p argument) better"
-        }
+//        if( file.length() > 100*1024*1024 ) {
+//            System.err.println "\tWARNING: It's highly recommended to keep your files for cleanup under 10MB"
+//            System.err.println "\tThis way you prevent out of memory condition and can use parallel processing (via -p argument) better"
+//        }
 
         text = encodingModule.getText(file)
         if( ! text )
@@ -314,37 +320,65 @@ class CleanTextCore {
     } 
     
     @CompileStatic
-    String cleanText(String text, File file, File outFile, dosNlPresent) {
+    String cleanText(String text, File file, File outFile, boolean dosNlPresent) {
         if( text.length() > CHUNK_LIMIT ) {
             out.println "\tSize ${text.length()} - splitting into chunks (by ~$CHUNK_LIMIT chars)"
+            boolean oldParallel = out.options.parallel
+            out.options.parallel = true
+            
+            ExecutorService executor = Executors.newWorkStealingPool()
+            List<Future<CharSequence>> futures = []
+
             def sb = new StringBuilder(text.length())
 
             for(int ii=0; ii < text.length(); ) {
                 def len = Math.min(CHUNK_LIMIT, text.length()-ii)
                 // if possible adjust splitting by new line (better by paragraphs but it's hard to find how paragraphs are split)
-                int pos = text.indexOf(dosNlPresent ? "\r\n" : "\n", ii + len)
+                int nlPos = text.indexOf(dosNlPresent ? "\r\n" : "\n", ii + len)
 //                    out.println "\t::pos: $pos"
-                if( pos > 0 && pos < ii + len + CHUNK_LIMIT/10 ) {
-                    len = (pos-ii)
+                if( nlPos > 0 && nlPos < ii + len + CHUNK_LIMIT/10 ) {
+                    len = (nlPos-ii)
 //                    if( pos+10 < text.length() ) {
 //                        def ch = escapeNl(text[pos-10..pos+10])
 //                        out.println "\t::$ch"
 //                    }
                 }
                 
-                def chunk = text[ii..<ii+len]
-                
-                out.println "\tchunk at $ii, len: $len: ${escapeNl(chunk.take(20))} ... ${escapeNl(text[ii+len-20..<ii+len])}"
-                def x = cleanTextInternal(chunk, file, outFile, dosNlPresent)
-                sb.append(x)
+                futures.add executor.submit(getCallableForChunk(ii, len, text, file, outFile, dosNlPresent))
                 
                 ii+=len
             }
+
+            out.println "\tSubmitted ${futures.size()} chunks in parallel"
+            
+            executor.shutdown()
+            
+            futures.each { f ->
+                sb.append(f.get())
+            }
+            
+            executor.awaitTermination(1, TimeUnit.DAYS)
+            
+            out.options.parallel = oldParallel
+            
             sb.toString()
         }
         else {
             cleanTextInternal(text, file, outFile, dosNlPresent)
         }
+    }
+    
+    
+    private Callable<CharSequence> getCallableForChunk(int pos, int len, String text, File file, File outFile, boolean dosNlPresent) {
+        return {
+            out.init()
+            def chunk = text[pos..<pos+len]
+//            System.err.println "\tchunk at $pos, len: $len"
+            out.println "\tchunk at $pos, len: $len: ${escapeNl(chunk.take(20))} ... ${escapeNl(text[pos+len-20..<pos+len])}"
+            def t = cleanTextInternal(chunk, file, outFile, dosNlPresent)
+            out.flush()
+            t
+        } as Callable<CharSequence>
     }
     
     @CompileStatic

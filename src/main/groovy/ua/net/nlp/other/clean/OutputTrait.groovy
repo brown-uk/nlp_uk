@@ -37,18 +37,23 @@ public class OutputTrait {
     }
     
     void debug(str) {
-        if( options.debug ) {
-            out.println "\tDEBUG: $str"
+        if( logger ) {
+            logger.info str.toString()
+        }
+        else {
+            if( options.debug ) {
+                out.println "\tDEBUG: $str"
+            }
         }
     }
 
     // making println thread-safe
-    void println(String txt) {
+    void println(Object str) {
         if( logger ) {
-            logger.info txt
+            logger.info str.toString()
         }
         else {
-            out.get().println(txt)
+            out.get().println(str)
         }
     }
 }
