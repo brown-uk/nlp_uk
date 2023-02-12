@@ -42,7 +42,7 @@ class CleanTextTest {
     @CompileStatic
     String clean(String str) {
         str = str.replace('_', '')
-        cleanText.cleanUp(file(str), options, outFile())
+        cleanText.cleanText(str, null, null)
     }
 
 	
@@ -159,6 +159,20 @@ class CleanTextTest {
         assert result == "благодійної\n"
     }
 
+    
+    @Test
+    public void testTwoColumns() {
+def text="""
+десь там                квітки пахніли
+хтось прийшов           на полі
+зламав сайт             під високим
+зламав пароль           сонцем
+зламав вісь             і небом
+""".trim()
+        
+        assertEquals null, clean(text)
+    }
+    
     @Test
     public void testLeadingHyphen() {
         assertEquals "- Агов", clean("-Агов")

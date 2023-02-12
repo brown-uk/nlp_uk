@@ -11,13 +11,16 @@ package ua.net.nlp.tools
 
 import java.nio.charset.StandardCharsets
 
+import groovy.transform.CompileStatic
+
 // A wrapper to load tag/TagTextCore.groovy with all related classes and resources without complicating CLI
 
+@CompileStatic
 class TagText {
 
     @groovy.transform.SourceURI
-    static SOURCE_URI
-    static SCRIPT_DIR=new File(SOURCE_URI).parent
+    static URI SOURCE_URI
+    static String SCRIPT_DIR=new File(SOURCE_URI).parent
 
     static void main(String[] args) {
         warnForEncoding()

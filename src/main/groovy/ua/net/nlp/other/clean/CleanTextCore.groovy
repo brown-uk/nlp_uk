@@ -36,6 +36,7 @@ import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
 import groovy.io.FileVisitResult
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import picocli.CommandLine
 import picocli.CommandLine.ParameterException
@@ -43,6 +44,7 @@ import ua.net.nlp.other.clean.CleanOptions
 import ua.net.nlp.other.clean.CleanOptions.MarkOption
 
 
+@CompileStatic
 class CleanTextCore {
     private static final String UTF8 = StandardCharsets.UTF_8.name()
     static final int CHUNK_LIMIT = 10*1024*1024
@@ -110,12 +112,9 @@ class CleanTextCore {
     
     private static void setup() {
         // windows have non-unicode encoding set by default
-        String osName = System.getProperty("os.name").toLowerCase()
-        if ( osName.contains("windows")) {
-            if( ! "UTF-8".equals(System.getProperty("file.encoding"))
-                    || "UTF-8".equals(java.nio.charset.Charset.defaultCharset()) ) {
-                System.setOut(new PrintStream(System.out,true,"UTF-8"))
-            }
+        if( ! "UTF-8".equals(System.getProperty("file.encoding"))
+                || "UTF-8".equals(java.nio.charset.Charset.defaultCharset()) ) {
+            System.setOut(new PrintStream(System.out,true,"UTF-8"))
         }
     }
 
@@ -126,8 +125,8 @@ class CleanTextCore {
 
             String dir = options.dir 
 				? options.dir 
-				: options.arguments()
-					? options.arguments()[0]
+				: options.inputDirs
+					? options.inputDirs[0]
 					: "."
 
             File baseDir = new File(dir)
@@ -303,89 +302,114 @@ class CleanTextCore {
         text = encodingModule.getText(file)
         if( ! text )
             return text
-        
-        int nlIdx = text.indexOf("\n")
-        int dosNlIdx = text.indexOf("\r\n")
-        boolean dosNlPresent = dosNlIdx >= 0 && dosNlIdx+1 == nlIdx
-        if( dosNlPresent ) {
-            out.println "\tFirst new line is DOS-style, using DOS new line for the whole text ($dosNlIdx)"
-        }
 
-        return cleanText(text, file, outFile, dosNlPresent)
+        return cleanText(text, file, outFile)
     }
 
     @CompileStatic
     private static String escapeNl(String text) {
         text.replace("\r", "\\r").replace("\n", "\\n")
     } 
-    
+
     @CompileStatic
-    String cleanText(String text, File file, File outFile, boolean dosNlPresent) {
-        if( text.length() > CHUNK_LIMIT ) {
-            out.println "\tSize ${text.length()} - splitting into chunks (by ~$CHUNK_LIMIT chars)"
-            boolean oldParallel = out.options.parallel
-            out.options.parallel = true
-            
-            ExecutorService executor = Executors.newWorkStealingPool()
-            List<Future<CharSequence>> futures = []
+    String cleanText(String text, File file, File outFile) {
+        int nlIdx = text.indexOf("\n")
+        int dosNlIdx = text.indexOf("\r\n")
+        boolean dosNlPresent = dosNlIdx >= 0 && dosNlIdx+1 == nlIdx
+        if( dosNlPresent ) {
+            out.println "\tFirst new line is DOS-style, using DOS new line for the whole text ($dosNlIdx)"
+        }
+        cleanText2(new CleanRequest(text: text, file: file, outFile: outFile, dosNl: dosNlPresent))
+    }
+    
+    static class CleanRequest {
+        String text
+        File file
+        File outFile
+        boolean dosNl
+        
+        String getLineBreak() { dosNl ? "\r\n" : "\n" }
+        CleanRequest forText(String text) {
+            new CleanRequest(text: text, file: file, outFile: outFile, dosNl: dosNl)
+        }
+    }
+    
+        
+    @CompileStatic
+    String cleanText2(CleanRequest request) {
+        if( request.text.length() > CHUNK_LIMIT ) {
+            cleanTextParallel(request)
+        }
+        else {
+            cleanTextInternal(request)
+        }
+    }
+    
+    private String cleanTextParallel(CleanRequest request) {
+        def text = request.text
+        
+        out.println "\tSize ${text.length()} - splitting into chunks (by ~$CHUNK_LIMIT chars)"
+        boolean oldParallel = out.options.parallel
+        out.options.parallel = true
+        
+        ExecutorService executor = Executors.newWorkStealingPool()
+        List<Future<CharSequence>> futures = []
 
-            def sb = new StringBuilder(text.length())
+        def sb = new StringBuilder(text.length())
 
-            for(int ii=0; ii < text.length(); ) {
-                def len = Math.min(CHUNK_LIMIT, text.length()-ii)
-                // if possible adjust splitting by new line (better by paragraphs but it's hard to find how paragraphs are split)
-                int nlPos = text.indexOf(dosNlPresent ? "\r\n" : "\n", ii + len)
+        for(int ii=0; ii < text.length(); ) {
+            def len = Math.min(CHUNK_LIMIT, text.length()-ii)
+            // if possible adjust splitting by new line (better by paragraphs but it's hard to find how paragraphs are split)
+            int nlPos = text.indexOf(request.getLineBreak(), ii + len)
 //                    out.println "\t::pos: $pos"
-                if( nlPos > 0 && nlPos < ii + len + CHUNK_LIMIT/10 ) {
-                    len = (nlPos-ii)
+            if( nlPos > 0 && nlPos < ii + len + CHUNK_LIMIT/10 ) {
+                len = (nlPos-ii)
 //                    if( pos+10 < text.length() ) {
 //                        def ch = escapeNl(text[pos-10..pos+10])
 //                        out.println "\t::$ch"
 //                    }
-                }
-                
-                futures.add executor.submit(getCallableForChunk(ii, len, text, file, outFile, dosNlPresent))
-                
-                ii+=len
             }
+            
+            futures.add executor.submit(getCallableForChunk(ii, len, request))
+            
+            ii+=len
+        }
 
-            out.println "\tSubmitted ${futures.size()} chunks in parallel"
-            
-            executor.shutdown()
-            
-            futures.each { f ->
-                sb.append(f.get())
-            }
-            
-            executor.awaitTermination(1, TimeUnit.DAYS)
-            
-            out.options.parallel = oldParallel
-            
-            sb.toString()
+        out.println "\tSubmitted ${futures.size()} chunks in parallel"
+        
+        executor.shutdown()
+        
+        futures.each { f ->
+            sb.append(f.get())
         }
-        else {
-            cleanTextInternal(text, file, outFile, dosNlPresent)
-        }
+        
+        executor.awaitTermination(1, TimeUnit.DAYS)
+        
+        out.options.parallel = oldParallel
+        
+        sb.toString()
     }
     
     
-    private Callable<CharSequence> getCallableForChunk(int pos, int len, String text, File file, File outFile, boolean dosNlPresent) {
+    @CompileStatic
+    private Callable<CharSequence> getCallableForChunk(int pos, int len, CleanRequest request) {
         return {
             out.init()
-            def chunk = text[pos..<pos+len]
-//            System.err.println "\tchunk at $pos, len: $len"
-            out.println "\tchunk at $pos, len: $len: ${escapeNl(chunk.take(20))} ... ${escapeNl(text[pos+len-20..<pos+len])}"
-            def t = cleanTextInternal(chunk, file, outFile, dosNlPresent)
+            def chunk = request.text[pos..<pos+len]
+//            out.debug "\tchunk at $pos, len: $len"
+            out.println "\tchunk at $pos, len: $len: ${escapeNl(chunk.take(20))} ... ${escapeNl(request.text[pos+len-20..<pos+len])}"
+            
+            def t = cleanTextInternal(request.forText(chunk))
             out.flush()
             t
         } as Callable<CharSequence>
     }
     
     @CompileStatic
-    String cleanTextInternal(CharSequence text, File file, File outFile, dosNlPresent) {
-        def t00 = text.toString()
+    String cleanTextInternal(CleanRequest request) {
+        def t00 = request.text.toString()
         
-        if( text.contains("\r") ) {
+        if( t00.contains("\r") ) {
             t00 = t00.replace("\r", "")
         }
 
@@ -438,32 +462,28 @@ class CleanTextCore {
             return null
 
 
-        if( options.modules ) {
-            t12 = runModules(t12, file, options)
-        }
+//        if( options.modules ) {
+//            t12 = runModules(t12, request, options)
+//        }
 
         t12 = hyphenModule.separateLeadingHyphens(t12)
 
-//        text = hyphenModule.removeSoftHyphens(text)
-
         t12 = hyphenModule.fixDanglingHyphens(t12)
 
+        t12 = fixSplitWords(t12)
 
-        t12 = fixSplitWords(t12, file)
-
-        checkForSpacing(t12, file)
+        checkForSpacing(t12)
 
         if( options.markLanguages != MarkOption.none ) {
-            t12 = markLanguageModule.markRussian(t12, file, outFile, outDirName)
+            def req2 = new CleanRequest(text: t12, file: request.file, outFile: request.outFile)
+            t12 = markLanguageModule.markRussian(request.forText(t12), outDirName)
         }
 
-        def t13 = t12
-//t12 = null // ml
-        if( dosNlPresent ) {
-            t13 = t13.replaceAll(/(?!<\r)\n/, "\r\n")
+        if( request.dosNl ) {
+            t12 = t12.replaceAll(/(?!<\r)\n/, "\r\n")
         }
         
-        t13
+        t12
     }
 
     
@@ -505,7 +525,8 @@ class CleanTextCore {
         text
     }
 
-	void checkForSpacing(text, file) {
+    @CompileStatic
+	void checkForSpacing(String text) {
 		def m = text =~ /([а-яіїєґА-ЯІЇЄҐ] ){5,}/
 		if( m.find() ) {
 			out.println "\tWARNING: Possible spacing in words, e.g \"${m.group(0)}\""
@@ -514,7 +535,7 @@ class CleanTextCore {
 
 
     @CompileStatic
-	String fixSplitWords(String text, File file) {
+	String fixSplitWords(String text) {
 		int cnt = 0
 		String regex = /([а-яіїєґА-ЯІЇЄҐ'ʼ’-]*)\n([ \t]*)([а-яіїєґ][а-яіїєґ'ʼ’-]*)([,;.!?])?/
 		def t1 = text.replaceAll(regex, { List<String> it ->
@@ -547,14 +568,20 @@ class CleanTextCore {
             
             if( t0.count("    ") >= 5 ) {
                 def matcher = t0 =~ /(?ium)(.*?[а-яїієґ] {4,})[а-яіїєґ].{4}/
-                matcher.find()
                 def matchSize = matcher.size()
-                if( matchSize >= 5
-                        && matchSize > t0.count("\n") * 3 / 4
-                        && matcher[0][1].length() == matcher[2][1].length()
-                        && matcher[0][1].length() == matcher[4][1].length() ) {
+                if( matchSize >= 5 && matchSize > t0.count("\n") * 3 / 4 ) {
+                    matcher.reset()
+                    matcher.find()
+                    def lines = []
+                    int secondColStart = matcher.group(1).length()
+                    for(int ii=0; ii<4; ii++) {
+                        matcher.find()
+                        if( secondColStart != matcher.group(1).length() )
+                            return true
+                        lines << matcher.group(0)
+                    }
                     out.println "\tERROR: two columns detected, skipping...:"
-                    out.println "\t${matcher[0][0]}\n\t${matcher[2][0]}\n\t${matcher[4][0]}"
+                    out.println "\t${lines.join('\n\t')}"
                     return false
                 }
             }
@@ -599,7 +626,7 @@ class CleanTextCore {
     }
 
 
-    String runModules(String text, File file, CleanOptions options) {
+    String runModules(CleanRequest request, CleanOptions options) {
 
         if( options.modules == 'nanu' ) {
 //            text = new CleanTextNanu(out.get()).removeMeta(text, file, options)
@@ -607,7 +634,7 @@ class CleanTextCore {
         else
             throw new IllegalArgumentException("cleanup not supported for ${options.modules}")
 
-        return text
+        return request.text
     }
 
 

@@ -2,10 +2,12 @@ package ua.net.nlp.other.clean
 
 import groovy.transform.CompileStatic
 import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 @CompileStatic
 class CleanOptions {
-    //        @Parameters(arity="1", paramLabel="input", description="The file(s) whose checksum to calculate.")
+    @Parameters(index = "0", description = "Directory to process. Default: current directory", arity="0..1")
+    List<String> inputDirs
     @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
     String input
     @Option(names = ["-o", "--output"], arity="1", description = ["Output file ((default: input file/dir with \"-good\" added)"])
@@ -41,6 +43,8 @@ class CleanOptions {
     @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
     boolean helpRequested
 
+    List<String> arguments() { [] }
+    
         
     public enum MarkOption {
         none, mark, cut

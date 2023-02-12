@@ -11,6 +11,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import ua.net.nlp.other.clean.CleanOptions.MarkOption
 import ua.net.nlp.other.clean.CleanOptions.ParagraphDelimiter
+import ua.net.nlp.other.clean.CleanTextCore.CleanRequest
 
 @PackageScope
 class MarkLanguageModule {
@@ -47,10 +48,9 @@ class MarkLanguageModule {
     }
     
     @CompileStatic
-    String markRussian(String text, File file, File outFile, String outDirName) {
-        
+    String markRussian(CleanRequest request, String outDirName) {
         // clean previous marks unless they are cut
-        text = pattern.matcher(text).replaceAll('$2')
+        def text = pattern.matcher(request.text).replaceAll('$2')
         
         // by paragraphs now
 //      String[] chunks = text.split(/\n\n/) // ukSentTokenizer.tokenize(text)
@@ -95,20 +95,20 @@ class MarkLanguageModule {
             .join("")
         
         if( options.markLanguages == MarkOption.cut ) {
-            if( ruChunks && file ) {
+            if( ruChunks && request.file ) {
                 String ruText = ruChunks.join("\n\n")
                 def ruFile
                 if( outDirName ) {
-                    def ruFilename = file.name.replaceFirst(/\.txt/, '.ru.txt')
+                    def ruFilename = request.file.name.replaceFirst(/\.txt/, '.ru.txt')
 
-                    def parentDir = outFile.getParentFile()
+                    def parentDir = request.outFile.getParentFile()
                     def ruDir = new File(parentDir, "ru")
                     ruDir.mkdirs()
 
                     ruFile = new File(ruDir, ruFilename)
                 }
                 else {
-                    ruFile = new File(outFile.absolutePath.replaceFirst(/\.txt/, '.ru.txt'))
+                    ruFile = new File(request.outFile.absolutePath.replaceFirst(/\.txt/, '.ru.txt'))
                 }
                 ruFile.setText(ruText, StandardCharsets.UTF_8.name())
             }

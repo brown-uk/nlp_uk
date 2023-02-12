@@ -38,7 +38,7 @@ public class OutputTrait {
     
     void debug(str) {
         if( logger ) {
-            logger.info str.toString()
+            logger.debug str.toString()
         }
         else {
             if( options.debug ) {
