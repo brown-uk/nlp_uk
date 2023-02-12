@@ -2,6 +2,7 @@ package ua.net.nlp.tools.tag;
 
 import java.util.function.Consumer
 import java.util.regex.Pattern
+import java.util.stream.Collectors
 
 import org.languagetool.AnalyzedToken
 import org.languagetool.AnalyzedTokenReadings
@@ -18,6 +19,7 @@ import ua.net.nlp.tools.tag.TagTextCore.TokenInfo
 import ua.net.nlp.tools.tag.TagOptions
 
 
+@CompileStatic
 public class DisambigStats {
     private static final Pattern UPPERCASED_PATTERN = Pattern.compile(/[А-ЯІЇЄҐ][а-яіїєґ'-]+/)
     private static final boolean USE_SUFFIX_2 = false
@@ -87,7 +89,7 @@ public class DisambigStats {
     Map<String, Map<String, Double>> statsForLemmaXp = new HashMap<>(256).withDefault{ new HashMap<>() }
     
     @groovy.transform.SourceURI
-    static SOURCE_URI
+    static URI SOURCE_URI
     // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
     static File SCRIPT_DIR = SOURCE_URI.scheme == "data"
         ? null // new File("src/main/groovy/ua/net/nlp/tools/tag")
@@ -390,11 +392,17 @@ public class DisambigStats {
                         && contextMatchesByTag(wctx1, currContext, normPostag)) )
     }
 
+    private static final Pattern CTX_BY_TAG_FOR_TAG = ~/^(adj|noun|verb|advp)/
+    
     @CompileStatic
     private static boolean contextMatchesByTag(WordContext wctx1, WordContext currContext, String normPostag) {
-        if( currContext.contextToken.postag =~ /^(adj|noun|verb|advp)/ ) {
-            return wctx1.contextToken.postag == currContext.contextToken.postag
-        }
+//        if( CTX_BY_TAG_FOR_TAG.matcher(currContext.contextToken.postag).find() ) {
+//            return wctx1.contextToken.postag == currContext.contextToken.postag
+//        }
+//
+//        return false
+        return (wctx1.contextToken.postag == currContext.contextToken.postag
+            && CTX_BY_TAG_FOR_TAG.matcher(currContext.contextToken.postag).find())
 
         return false
     }
@@ -407,17 +415,23 @@ public class DisambigStats {
                     || wctx1.contextToken.postag == currContext.contextToken.postag)
     }
 
-        
+    
+    private static final Pattern CTX_BY_LEMMA_FOR_TAG = ~/^(adj|noun)(?!.*v_naz)/
+    
     @CompileStatic
     private static boolean contextMatchesLemma(WordContext wctx1, WordContext currContext, String normPostag) {
-        if( normPostag =~ /^(adj|noun)(?!.*v_naz)/
-                && wctx1.contextToken.postag =~ /^(verb)/
-                && currContext.contextToken.postag =~ /^(verb)/ ) {
-//            if( wctx1.contextToken.lemma == currContext.contextToken.lemma )
-//                debugStats("      verb: $normPostag  for lemma ${wctx1.contextToken.lemma} ${wctx1.contextToken.lemma == currContext.contextToken.lemma}")
-            return wctx1.contextToken.lemma == currContext.contextToken.lemma
-        }
-        return false
+//        if( normPostag =~ /^(adj|noun)(?!.*v_naz)/
+//                && wctx1.contextToken.postag =~ /^(verb)/
+//                && currContext.contextToken.postag =~ /^(verb)/ ) {
+////            if( wctx1.contextToken.lemma == currContext.contextToken.lemma )
+////                debugStats("      verb: $normPostag  for lemma ${wctx1.contextToken.lemma} ${wctx1.contextToken.lemma == currContext.contextToken.lemma}")
+//            return wctx1.contextToken.lemma == currContext.contextToken.lemma
+//        }
+//        return false
+        return (wctx1.contextToken.lemma == currContext.contextToken.lemma 
+                && wctx1.contextToken.postag.startsWith('verb')
+                && currContext.contextToken.postag.startsWith('verb')
+                && CTX_BY_LEMMA_FOR_TAG.matcher(normPostag).find())
     }
     
     enum ContextMode { WORD, TAG }
@@ -433,31 +447,58 @@ public class DisambigStats {
         Set<WordContext> currContextsNext = useRightContext ? createWordContext(ti.tokens, ti.idx, +1) : null
         
         // TODO: limit previous tokens by ratings already applied?
-        Map<WordContext, Double> matchedContexts = ctxStats
-            .findAll {WordContext wc, Double v2 -> v2
-                currContextsPrev.find { currContext -> contextMatches(wc, currContext, ctxMode, normPostag) } \
-                    || (useRightContext && currContextsNext.find { currContext -> contextMatchesRight(wc, currContext, ctxMode, normPostag) } )
+        Map<WordContext, Double> matchedContexts = ctxStats.entrySet().stream()
+            .filter { 
+                WordContext wc = it.getKey()
+//                Double v2 = it.getValue()
+                
+                for(WordContext currContext: currContextsPrev) {
+                    if( contextMatches(wc, currContext, ctxMode, normPostag) )
+                        return true
+                }
+                if( useRightContext ) {
+                    for(WordContext currContext: currContextsNext) {
+                        if( contextMatchesRight(wc, currContext, ctxMode, normPostag) )
+                            return true
+                    }
+                }
+                return false
+//                currContextsPrev.find { currContext -> contextMatches(wc, currContext, ctxMode, normPostag) } \
+//                    || (useRightContext && currContextsNext.find { currContext -> contextMatchesRight(wc, currContext, ctxMode, normPostag) } )
             }
+            .collect(Collectors.toMap({Map.Entry<WordContext, Double> it -> it.key }, {Map.Entry<WordContext, Double> it -> it.value} ))
 
-        if( matchedContexts ) {
+//        if( matchedContexts ) {
 //            def str = matchedContexts.collect{ k,v -> "$k: $v"}.join("\n          ")
 //            debugStats("        ctxs:\n          %s", str)
-        }
+//        }
         
         // if any (previous) readings match the context add its context rate
-        Double matchRateSum = (Double) matchedContexts.collect{k,v -> v}.sum(0.0) /// (double)matchedContexts.size()
-
+        Double matchRateSum = sumValues(matchedContexts) /// (double)matchedContexts.size()
         
-        Map<WordContext, Double> matchedContextsLemma = ctxStats
-            .findAll {WordContext wc, Double v2 -> v2
-                currContextsPrev.find { currContext -> contextMatchesLemma(wc, currContext, normPostag) }
+        Map<WordContext, Double> matchedContextsLemma = ctxStats.entrySet().stream()
+            .filter {
+                WordContext wc = it.getKey()
+//                Double v2 = it.getValue()
+                for(WordContext currContext: currContextsPrev) {
+                    if( contextMatchesLemma(wc, currContext, normPostag) )
+                        return true
+                }
+                return false
             }
+            .collect(Collectors.toMap({Map.Entry<WordContext, Double> it -> it.key }, {Map.Entry<WordContext, Double> it -> it.value} ))
+
+//            .findAll {WordContext wc, Double v2 -> v2
+//                currContextsPrev.find { currContext -> contextMatchesLemma(wc, currContext, normPostag) }
+//            }
 
         if( matchedContextsLemma ) {
-            def str = matchedContextsLemma.collect{ k,v -> "$k: $v"}.join("\n          ")
-            debugStats("        ctxsL:\n          %s", str)
+            if( debugStatsFile ) {
+                def str = matchedContextsLemma.collect{ k,v -> "$k: $v"}.join("\n          ")
+                debugStats("        ctxsL:\n          %s", str)
+            }
             
-            matchRateSum += ((Double) matchedContextsLemma.collect{k,v -> v}.sum(0.0)) * 100.0
+            matchRateSum += sumValues(matchedContextsLemma) * 100.0
         }
         
         matchRateSum = adjustByContextAdjNoun(rate, key, ti, ctxMode, matchRateSum)
@@ -479,6 +520,22 @@ public class DisambigStats {
         }
 
         rate
+    }
+
+    private static double sumValues(Map<?, Double> map) {
+        double v = 0.0d
+        for(Map.Entry<?, Double> e : map) {
+            v += e.getValue()
+        }
+        v
+    }
+
+    private static double sumRates(Map<?, Stat> map) {
+        double v = 0.0d
+        for(Map.Entry<?, Stat> e : map) {
+            v += e.getValue().rate
+        }
+        v
     }
 
     
@@ -738,7 +795,7 @@ public class DisambigStats {
 
     @CompileStatic
     void normalizeRates() {
-        double statsByTagTotal = (Double) statsByTag.collect { k,v -> v.rate }.sum()
+        double statsByTagTotal = sumRates(statsByTag)
         
         // normalize tag rates
         statsByTag.each { String tag, Stat v ->
@@ -746,7 +803,7 @@ public class DisambigStats {
             v.ctxRates.entrySet().each { e -> e.value /= (double)statsByTagTotal }
         }
 
-        double statsBySuffix3Total = (Double) statsBySuffix3.collect { k,v -> v.collect{ k2, v2 -> v2.rate}.sum() }.sum()
+        double statsBySuffix3Total = (Double) statsBySuffix3.collect { k,v -> sumRates(v) }.sum()
         
 //        println ":: tagTotal: $statsByTagTotal, wordEndingTotal: $statsByWordEndingTotal"
 
@@ -760,7 +817,7 @@ public class DisambigStats {
         
         if( USE_SUFFIX_2 ) {
             // normalize suffix rates
-            double statsBySuffix2Total = (Double) statsBySuffix2.collect { k,v -> v.collect{ k2, v2 -> v2.rate}.sum() }.sum()
+            double statsBySuffix2Total = (Double) statsBySuffix2.collect { k,v -> sumRates(v) }.sum()
             statsBySuffix2.each { String wordEnding2, Map<String, Stat> v ->
                 v.each { String tag, Stat s ->
                     s.rate /= statsBySuffix2Total
@@ -771,7 +828,7 @@ public class DisambigStats {
 
         // normalize xp rate by lemma
         statsForLemmaXp.each { String k, Map<String, Double> v ->
-            double sum = (double)v.collect{ k2, v2 -> v2 }.sum()
+            double sum = sumValues(v)
             v.entrySet().each { Map.Entry<String, Double> e -> e.value /= (double)sum }
         }
     }
@@ -868,9 +925,9 @@ public class DisambigStats {
         null
     }
     
-    void printStats(disambigMap) {
-        BigDecimal unknown = disambigMap['total'] ? disambigMap['noWord'] * 100 / disambigMap['total'] : 0
-        unknown = unknown.round(0)
+    void printStats(Map<String, Integer> disambigMap) {
+//        BigDecimal unknown = disambigMap['total'] ? disambigMap['noWord'] * 100 / disambigMap['total'] : 0
+//        unknown = unknown.round(0)
         //println "Disambig stats: ${disambigMap}: unknown: ${unknown}%"
     }
 }

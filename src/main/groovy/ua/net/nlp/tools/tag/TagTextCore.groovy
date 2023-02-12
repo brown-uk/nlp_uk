@@ -271,7 +271,10 @@ class TagTextCore {
         tokens = tokens[1..-1] // remove SENT_START
         List<TTR> tokenReadingsT = []
 
-        tokens.eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
+//        tokens.eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
+        for(int idx=0; idx<tokens.length; idx++) {
+            AnalyzedTokenReadings tokenReadings = tokens[idx]
+            
             String theToken = tokenReadings.getToken()
             String cleanToken = tokenReadings.getCleanToken()
             
@@ -284,8 +287,7 @@ class TagTextCore {
                 hasTag = hasPosTag(tokenReadings)
             }
             
-            TokenInfo ti = new TokenInfo(cleanToken: tokenReadings.getCleanToken(), tokens: tokens, idx: idx, taggedTokens: tokenReadingsT,
-                cleanToken2: tokenReadings.getCleanToken())
+            TokenInfo ti = new TokenInfo(cleanToken: cleanToken, tokens: tokens, idx: idx, taggedTokens: tokenReadingsT, cleanToken2: cleanToken)
             
 //            if( hasTag ) {
 //                // TODO: tmp workaround, remove after LT 6.1
@@ -300,22 +302,22 @@ class TagTextCore {
             // TODO: ugly workaround for disambiguator problem
             if( ! hasTag || "\u2014".equals(theToken) ) {
                 if( tokenReadings.isLinebreak() )
-                    return tokenReadingsT
+                    continue // return tokenReadingsT
     
                 if( PUNCT_PATTERN.matcher(theToken).matches() ) {
                     def tkn = /*options.tokenFormat ||*/ options.outputFormat != OutputFormat.txt
                         ? new TaggedToken(value: theToken, lemma: cleanToken, tags: 'punct')
                         : new TaggedToken(value: theToken, lemma: cleanToken, tags: 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore())
                     tokenReadingsT << new TTR(tokens: [tkn])
-                    return tokenReadingsT
+                    continue // return tokenReadingsT
                 }
                 else if( SYMBOL_PATTERN.matcher(theToken).matches() ) {
                     tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: cleanToken, tags: 'symb')])
-                    return tokenReadingsT
+                    continue // return tokenReadingsT
                 }
                 else if( XML_TAG_PATTERN.matcher(theToken).matches() ) {
                     tokenReadingsT << new TTR(tokens: [new TaggedToken(value: theToken, lemma: cleanToken, tags: 'xmltag')])
-                    return tokenReadingsT
+                    continue // return tokenReadingsT
                 }
                 else if( UNKNOWN_PATTERN.matcher(theToken).matches() && ! NON_UK_PATTERN.matcher(theToken).find() ) {
                     if( isZheleh(options) ) {
@@ -354,13 +356,13 @@ class TagTextCore {
                                 }
 
                                 tokenReadingsT << new TTR(tokens: taggedTokens)
-                                return tokenReadingsT
+                                continue // return tokenReadingsT
                             }
                         }
                         
                         def lemma = options.setLemmaForUnknown ? cleanToken : ''
                         tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: lemma, tags: 'unknown')])
-                        return tokenReadingsT
+                        continue // return tokenReadingsT
                     }
                 }
                 else { // if( UNCLASS_PATTERN.matcher(theToken).matches() ) {
@@ -373,7 +375,7 @@ class TagTextCore {
 //                    }
 
                     tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: cleanToken, tags: 'unclass')])
-                    return tokenReadingsT
+                    continue // return tokenReadingsT
                 }
             }
             
