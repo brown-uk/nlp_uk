@@ -16,8 +16,6 @@ import ua.net.nlp.other.clean.CleanTextCore.CleanRequest
 @PackageScope
 class MarkLanguageModule {
     
-    static final Pattern pattern = ~/(?s)<span lang="ru"( rate="[0-9.]+")?>(?!---<\/span>)(.*?)<\/span>/
-
     CleanOptions options
     OutputTrait out
     LtModule ltModule
@@ -47,10 +45,17 @@ class MarkLanguageModule {
         }
     }
     
+    
+    private static final Pattern EXISTING_SPAN_PATTERN = ~/(?s)<span lang="ru"( rate="[0-9.]+")?>(?!---<\/span>)(.*?)<\/span>/
+    
     @CompileStatic
     String markRussian(CleanRequest request, String outDirName) {
         // clean previous marks unless they are cut
-        def text = pattern.matcher(request.text).replaceAll('$2')
+        def text = request.text
+        
+        if( text.contains('<span lang="ru"') ) {
+            EXISTING_SPAN_PATTERN.matcher(request.text).replaceAll('$2')
+        }
         
         // by paragraphs now
 //      String[] chunks = text.split(/\n\n/) // ukSentTokenizer.tokenize(text)
@@ -63,6 +68,7 @@ class MarkLanguageModule {
         else {
             delim = options.paragraphDelimiter == ParagraphDelimiter.single_nl ? "\n" : "\n\n"
         }
+
         def chunks = new ParaIterator(text: text, delim: delim)
 
         def ruChunks = []
@@ -90,7 +96,6 @@ class MarkLanguageModule {
                 else {
                     sent
                 }
-        
             }
             .join("")
         

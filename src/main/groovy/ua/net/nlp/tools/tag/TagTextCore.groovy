@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.regex.Pattern
+import java.util.stream.Collectors
 
 import org.languagetool.AnalyzedSentence
 import org.languagetool.AnalyzedToken
@@ -172,8 +173,8 @@ class TagTextCore {
     @CompileStatic
     List<List<TTR>> tagTextCore(List<AnalyzedSentence> analyzedSentences, TagStats stats) {
 
-        List<List<TTR>> taggedSentences = []
-        for (AnalyzedSentence analyzedSentence : analyzedSentences) {
+        List<List<TTR>> taggedSentences = 
+          analyzedSentences.parallelStream().map { AnalyzedSentence analyzedSentence ->
             
             cleanup(analyzedSentence)
             
@@ -181,11 +182,11 @@ class TagTextCore {
 
             List<TTR> taggedObjects = tagAsObject(tokens, stats)
 
-            taggedSentences << taggedObjects
+            def ret = [taggedObjects]
             
             if( options.tokenFormat ) {
                 if( tokens[-1].hasPosTag(JLanguageTool.PARAGRAPH_END_TAGNAME) ) {
-                    taggedSentences << []
+                    ret << []
                 }
             }
             
@@ -197,7 +198,11 @@ class TagTextCore {
                     }
                 }
             }
+            
+            ret
         }
+        .flatMap{ l -> l.stream() }
+        .collect(Collectors.toList())
         
         if( options.homonymStats ) {
             stats.collectHomonyms(analyzedSentences)

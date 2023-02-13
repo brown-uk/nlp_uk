@@ -328,7 +328,7 @@ class CleanTextCore {
         File outFile
         boolean dosNl
         
-        String getLineBreak() { dosNl ? "\r\n" : "\n" }
+        String getLineBreak() { dosNl ? ".\r\n" : ".\n" }
         CleanRequest forText(String text) {
             new CleanRequest(text: text, file: file, outFile: outFile, dosNl: dosNl)
         }
