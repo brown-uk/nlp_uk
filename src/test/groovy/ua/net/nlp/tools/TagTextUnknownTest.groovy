@@ -170,7 +170,7 @@ public class TagTextUnknownTest {
         expected =
 """<sentence>
   <token value="пані" lemma="паня" tags="noun:anim:p:v_naz:xp2" />
-  <token value="Ференцовій" lemma="Ференцова" tags="noun:anim:f:v_mis:prop:lname" q="-0.5" />
+  <token value="Ференцовій" lemma="Ференцова" tags="noun:anim:f:v_dav:prop:lname" q="-0.5" />
 </sentence>
 <paragraph/>
 """

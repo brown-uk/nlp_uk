@@ -43,6 +43,7 @@ class TagTextCore {
     static final Pattern NON_UK_PATTERN = Pattern.compile(/^[\#№u2013-]|[\u2013-]$|[ыэъё]|[а-яіїєґ][a-z]|[a-z][а-яіїєґ]/, Pattern.CASE_INSENSITIVE|Pattern.UNICODE_CASE)
     static final Pattern UNCLASS_PATTERN = Pattern.compile(/\p{IsLatin}[\p{IsLatin}\p{IsDigit}-]*|[0-9]+-?[а-яіїєґА-ЯІЇЄҐ]+|[а-яіїєґА-ЯІЇЄҐ]+-?[0-9]+/)
     public static final Pattern XML_TAG_PATTERN = Pattern.compile(/<\/?[a-zA-Z_0-9]+>/)
+    private final Pattern CONTROL_CHAR_PATTERN_R = Pattern.compile(/[\u0000-\u0008\u000B-\u0012\u0014-\u001F\u0A0D]/, Pattern.CASE_INSENSITIVE|Pattern.UNICODE_CASE)
     
     def language = new Ukrainian() {
         @Override
@@ -165,6 +166,13 @@ class TagTextCore {
             stats = new TagStats()
             stats.options = options
         }
+        
+        // remove control chars so we don't create broken xml
+        def m = text =~ CONTROL_CHAR_PATTERN_R
+        if( m ) {
+            m.replaceAll('')
+        }
+        
         List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
         
         tagTextCore(analyzedSentences, stats)
@@ -617,7 +625,7 @@ class TagTextCore {
         }
         if( ! options.output ) {
             def fileExt = "." + options.outputFormat // ? ".xml" : ".txt"
-            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, ".tagged${fileExt}")
+            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/(\.[a-z]+)?$/, ".tagged${fileExt}")
             options.output = outfile
         }
 

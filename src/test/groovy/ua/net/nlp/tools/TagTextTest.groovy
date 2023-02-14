@@ -5,17 +5,18 @@ package ua.net.nlp.tools
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
 
+import org.apache.commons.text.StringEscapeUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 import groovy.json.JsonSlurper
+import ua.net.nlp.tools.TextUtils.OutputFormat
 import ua.net.nlp.tools.tag.TagOptions
 import ua.net.nlp.tools.tag.TagStats
 import ua.net.nlp.tools.tag.TagTextCore
 import ua.net.nlp.tools.tag.TagTextCore.TTR
 import ua.net.nlp.tools.tag.TagTextCore.TagResult
-import ua.net.nlp.tools.TextUtils.OutputFormat
 
 
 class TagTextTest {
@@ -543,5 +544,22 @@ class TagTextTest {
 
 """
         assertEquals expected, new String(bas.toByteArray(), "UTF-8")
+    }
+    
+    @Test
+    public void testSpecialChars() {
+        
+//        assertEquals "голо\u001Fва", StringEscapeUtils.escapeXml10("п'яна голо\u001Fва")
+        
+        tagText.setOptions(new TagOptions(singleTokenOnly: true))
+
+        def expected =
+"""<sentence>
+  <token value="голо\u001Fва" lemma="голо\u001Fва" tags="unclass" />
+</sentence>
+<paragraph/>
+"""
+        TagResult tagged = tagText.tagText("голо\u001Fва")
+        assertEquals expected, tagged.tagged
     }
 }
