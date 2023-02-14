@@ -25,15 +25,6 @@ class CleanTextTest {
 
     CleanTextCore cleanText = new CleanTextCore( options )
 
-    File file(String text) { 
-        def f = new File("/tmp/nlp_uk_clean_text_test.txt")
-        f.text = text 
-        f
-    }
-    File outFile() {
-        new File("/dev/null")
-    }
-
     @BeforeEach
     public void init() {
         cleanText.out.init()
@@ -61,6 +52,14 @@ class CleanTextTest {
         assertEquals "екс-глава", clean("екс¬глава")
 	}
 
+    @Test
+    public void testControlChars() {
+        assertEquals "екс-глава", clean("екс\u001Fглава")
+        assertEquals "екс-глава", clean("екс\u001E\nглава")
+        assertEquals "пузатий", clean("пуза\u0008\nтий")
+        assertEquals "abc", clean("abc\u0008")
+    }
+    
     @Test
     public void testRtf() {
         def url = getClass().getClassLoader().getResource("clean/test.rtf")

@@ -34,7 +34,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
-
+import java.util.regex.Pattern
 import groovy.io.FileVisitResult
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
@@ -64,6 +64,7 @@ class CleanTextCore {
     MarkLanguageModule markLanguageModule = new MarkLanguageModule(out: out, ltModule: ltModule)
     EncodingModule encodingModule = new EncodingModule(out: out)
     HyphenModule hyphenModule = new HyphenModule(out: out, ltModule: ltModule)
+    ControlCharModule controlCharModule = new ControlCharModule(out: out, ltModule: ltModule)
     
     
     CleanTextCore(CleanOptions options) {
@@ -416,6 +417,8 @@ class CleanTextCore {
         if( ! checkEmptyLines(t00) )
             return null
         
+        t00 = controlCharModule.removeControlChars(t00)
+            
         def t0 = fixQuotes(t00)
 //t00 = null // ml
             
@@ -644,10 +647,11 @@ class CleanTextCore {
     }
 
 
+    private static final Pattern UKR_WORD = ~/[А-ЩЬЮЯІЇЄҐа-щьюяіїєґ][А-ЩЬЮЯІЇЄҐа-щьюяіїєґ'’ʼ\u0301-]+/
+    
     @CompileStatic
     private boolean verifyWordCounts(String text, int minUkrWordCount) {
-        def ukrWords = text.split(/[^А-ЯІЇЄҐёа-яіїєґё'’ʼ-]+/).findAll{ it ==~ /[А-ЩЬЮЯІЇЄҐа-щьюяіїєґ][А-ЩЬЮЯІЇЄҐа-щьюяіїєґ'’ʼ-]+/ }
-        int ukrWordCount = ukrWords.size()
+        def ukrWordCount = text.split(/[^А-ЯІЇЄҐёа-яіїєґё'’ʼ\u0301-]+/).count{ it ==~ UKR_WORD }
         if( minUkrWordCount == 0 ) {
             if( ukrWordCount == 0 ) {
 				out.println "\tWARNING: 0 Ukrainian words: " + getSample(text) // + "\n\t" + ukrWords
