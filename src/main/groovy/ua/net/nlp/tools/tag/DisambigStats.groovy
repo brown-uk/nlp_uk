@@ -123,7 +123,7 @@ public class DisambigStats {
         
         Map<WordReading, Stat> statsForWord = statsByWord[cleanToken]
 
-        stats.disambigMap['total'] ++
+        stats.disambigMap['total'] += 1
 
         updateDebugStats(readings, cleanToken, stats, statsForWord)
                 
@@ -222,18 +222,18 @@ public class DisambigStats {
         if( statsForWord != null ) {
             debugStats("  word stats: yes")
 //            debug("found word stats for $cleanToken / $readings")
-            stats.disambigMap['word'] ++
+            stats.disambigMap['word'] += 1
         }
         else {
             debugStats("  word stats: no")
-            stats.disambigMap['noWord'] ++
+            stats.disambigMap['noWord'] += 1
             
             boolean suffixStats3 = false
             
             for(AnalyzedToken r: readings) {
                 String wordEnding = getWordEnding(cleanToken, r.getPOSTag(), 3)
                 if( wordEnding in statsBySuffix3 ) {
-                    stats.disambigMap['wordEnd'] ++
+                    stats.disambigMap['wordEnd'] += 1
                     suffixStats3 = true
                     break;
                 }
@@ -247,7 +247,7 @@ public class DisambigStats {
                     for(AnalyzedToken r: readings) {
                         String wordEnding = getWordEnding(cleanToken, r.getPOSTag(), 2)
                         if( wordEnding in statsBySuffix2 ) {
-                            stats.disambigMap['sfx2'] ++
+                            stats.disambigMap['sfx2'] += 1
                             suffixStats2 = true
                             break;
                         }

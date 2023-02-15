@@ -6,15 +6,20 @@ import org.languagetool.AnalyzedSentence
 import org.languagetool.AnalyzedToken
 import org.languagetool.AnalyzedTokenReadings
 import org.languagetool.JLanguageTool
+import org.languagetool.tagging.ru.RussianTagger
+
 import ua.net.nlp.tools.tag.TagTextCore
 import ua.net.nlp.tools.tag.TagTextCore.TTR
 import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 import ua.net.nlp.tools.tag.TagOptions
 
 import groovy.transform.CompileStatic
+import groovy.transform.PackageScope
 
 
-public class TagStats {
+@PackageScope
+@CompileStatic
+class TagStats {
     static final Pattern CYR_LETTER = Pattern.compile(/[а-яіїєґА-ЯІЇЄҐ]/)
     static final Pattern ONLY_CYR_LETTER = Pattern.compile(/[а-яіїєґА-ЯІЇЄҐ'-]+/)
     static final Pattern IGNORE_TAGS_FOR_LEMMA = Pattern.compile(/arch|alt|short|long|bad/)
@@ -32,6 +37,8 @@ public class TagStats {
     Set lemmaAmbigs = new HashSet<>()
     Map<String, Integer> knownMap = [:].withDefault { 0 }
     int knownCnt = 0
+    @Lazy
+    RussianTagger ruTagger = { RussianTagger.INSTANCE }()
 
     Map<String, Integer> disambigMap = [:].withDefault { 0 }
     
@@ -53,23 +60,12 @@ public class TagStats {
     @CompileStatic
     def collectUnknown(List<List<TTR>> analyzedSentences) {
         for (List<TTR> sentTTR : analyzedSentences) {
-            // if any words contain Russian sequence filter out the whole sentence - this removes tons of Russian words from our unknown list
-            // we could also test each word against Russian dictionary but that would filter out some valid Ukrainian words too
-            
-            if( options.filterUnknown ) {
-                def unknownBad = sentTTR.any { TTR ttr ->
-                    def value = ttr.tokens[0].value
-                    value = value.toLowerCase()
-                    value.indexOf('еи') >= 0 || value =~ /[ыэёъ]/ || value ==~ /и|не|что/
-                }
-                if( unknownBad )
-                    continue
-            }
-
             sentTTR.each { TTR ttr ->
                 TaggedToken tk = ttr.tokens[0]
                 if( tk.tags == 'unknown' ) {
-                    unknownMap[tk.value] += 1
+                    if( goodForStats(tk.value) ) {
+                        unknownMap[tk.value] += 1
+                    }
                 }
                 else if( tk.tags == 'unclass' ) {
                     unclassMap[tk.value] += 1
@@ -79,6 +75,25 @@ public class TagStats {
                     knownMap[tk.value] += 1
                 }
             }
+        }
+    }
+
+    boolean goodForStats(String word) {
+        ! options.filterUnknown || ! knownWordRu(word)
+    }
+    
+    private static final RU_LETTERS = ~/[а-яё]/
+    
+    boolean knownWordRu(String word) {
+        if( ! (word.toLowerCase() =~ RU_LETTERS ) )
+            return false 
+
+        try {
+            return ! ruTagger.tag(Arrays.asList(word))[0][0].hasNoTag()
+        }
+        catch (Exception e) {
+            System.err.println("Failed on word: $word")
+            throw e
         }
     }
 

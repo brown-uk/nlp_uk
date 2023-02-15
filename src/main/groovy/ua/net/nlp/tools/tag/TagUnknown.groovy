@@ -54,7 +54,14 @@ public class TagUnknown {
 //            
 //            return tagInternal(part1, idx, tokens)
 //        }
-        return tagInternal(token, idx, tokens)
+        try {
+            return tagInternal(token, idx, tokens)
+        }
+        catch(Exception e) {
+            System.err.println "Failed to find unknown for \"$token\""
+            e.printStackTrace()
+            return null
+        }
     }
     
     @CompileStatic
@@ -98,6 +105,10 @@ public class TagUnknown {
                 //            println ":: max: ${wr}"
                 def parts = wr.lemma.split("/")
                 int del = parts[1] as int
+                
+                if( del + 2 > token.length() )
+                    return
+                
                 String add = parts[0]
                 def lemma = token[0..-del-1] + add
 
@@ -109,6 +120,7 @@ public class TagUnknown {
 
                 return new TaggedToken(value: token, lemma: lemma, tags: wr.postag, q: q)
             }
+            .findAll { it != null }
         }
 
         return retTokens
