@@ -67,14 +67,13 @@ public class TagOptions extends OptionsBase {
 
     
     void adjust() {
+        if( lemmaOnly ) {
+            outputFormat = OutputFormat.txt
+            disambiguate = true
+            singleTokenOnly = true
+        }
         if( ! outputFormat ) {
             outputFormat = outputFormat.xml
-
-            if( lemmaOnly ) {
-                outputFormat = OutputFormat.txt
-                disambiguate = true
-                singleTokenOnly = true
-            }
         }
         if( singleTokenOnly ) {
             tokenFormat = true
