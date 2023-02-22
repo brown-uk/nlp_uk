@@ -625,7 +625,8 @@ class TagTextCore {
         }
         if( ! options.output ) {
             def fileExt = "." + options.outputFormat // ? ".xml" : ".txt"
-            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/(\.[a-z]+)?$/, ".tagged${fileExt}")
+            def adj = options.lemmaOnly ? 'lemmatized' : 'tagged'
+            def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/(\.[a-z]+)?$/, ".$adj${fileExt}")
             options.output = outfile
         }
 
