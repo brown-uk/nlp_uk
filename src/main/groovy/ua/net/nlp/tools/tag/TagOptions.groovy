@@ -89,10 +89,7 @@ public class TagOptions extends OptionsBase {
         }
 
         if( ! quiet ) {
-            println "Output format: " + outputFormat
-            if( disambiguate ) {
-                println "Disambig: " + disambiguate
-            }
+            System.err.println "Output format: " + outputFormat
         }
     }
 
