@@ -57,7 +57,9 @@ public class TagOptions extends OptionsBase {
 
     @Option(names = ["-m", "--module"], arity="1", description = "Alternative spelling module (only 1 at a time), supported modules: [zheleh, lesya]")
     List<String> modules
-    
+
+    @Option(names = ["--singleNewLineAsParagraph"], description = "Split paragraphs by single new line instead of two")
+    boolean singleNewLineAsParagraph
     @Option(names = ["--singleThread"], description = "Always use single thread (default is to use multithreading if > 2 cpus are found)")
     boolean singleThread
     @Option(names = ["--timing"], description = "Pring timing information", hidden = true)

@@ -616,6 +616,8 @@ class TagTextCore {
         if( options.tagUnknown ) {
             tagUnknown.loadStats()
         }
+        
+        language.getSentenceTokenizer().setSingleLineBreaksMarksParagraph(options.singleNewLineAsParagraph)
     }
 
     void setInputOutput(TagOptions options) {

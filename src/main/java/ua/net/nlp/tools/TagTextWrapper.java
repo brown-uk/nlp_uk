@@ -53,7 +53,7 @@ public class TagTextWrapper {
             Method setOptionsMethod = clazz.getDeclaredMethod("setOptions", options.getClass());
             setOptionsMethod.invoke(tagText, options);
             processMethod.invoke(tagText);
-            System.out.println("Done tagging: " + i);
+            System.err.println("Done tagging: " + i);
         }
     }
 
