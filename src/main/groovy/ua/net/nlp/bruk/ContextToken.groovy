@@ -10,7 +10,7 @@ import org.languagetool.rules.uk.LemmaHelper
 @Canonical
 class ContextToken {
 //    static final Pattern POSTAG_KEY_PATTERN = Pattern.compile("^(noun:(anim|[iu]nanim)|verb(:rev)?:(perf|imperf)|adj|adv(p:(imperf:perf))?|part|prep|numr|conj:(coord|subord)|intj|onomat|punct|symb|noninfl|unclass|number|unknown|time|date|hashtag|BEG|END)")
-    static final Pattern POSTAG_CORE_REMOVE_PATTERN = Pattern.compile(/:(arch|coll|slang|bad|vulg|ua_[0-9]{4})/)
+    static final Pattern POSTAG_CORE_REMOVE_PATTERN = Pattern.compile(/:(arch|coll|slang|bad|vulg|ua_[0-9]{4}|ns)/)
     static final ContextToken BEG = new ContextToken('__BEG', '', 'BEG')
     static final ContextToken END = new ContextToken('__END', '', 'END')
     static final String[] IGNORE_TOKENS = [] //['б', 'би', 'ж', 'же', 'бодай'] 

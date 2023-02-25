@@ -376,7 +376,7 @@ public class DisambigStats {
         rate
     } 
     
-    private static final Pattern POSTAG_NORM_PATTERN = ~ /:(xp[1-9]|ua_[0-9]{4}|comp.|&predic|&insert|vulg|coll)/
+    private static final Pattern POSTAG_NORM_PATTERN = ~ /:(xp[1-9]|ua_[0-9]{4}|comp.|&predic|&insert|vulg|coll|ns)/
     
     @CompileStatic
     private static String normalizePostagForRate(String postag) {
@@ -545,7 +545,7 @@ public class DisambigStats {
             String tag = (String)key;
             if( tag.startsWith("adj") ) {
                 if ( ti.idx < ti.tokens.length-1 ) {
-                    if( ! (ti.cleanToken.toLowerCase() == "та") ) {
+                    if( ! (ti.cleanToken.toLowerCase() == "та") && ti.tokens[ti.idx].getReadings()[0].getLemma() != "який" ) {
 
                         def adjInflections = InflectionHelper.getAdjInflections([new AnalyzedToken("", tag, "")])
                         def nounInflections = InflectionHelper.getNounInflections(ti.tokens[ti.idx+1].getReadings(), Pattern.compile("&pron"))
@@ -558,7 +558,7 @@ public class DisambigStats {
             }
             else if( tag.startsWith("noun") && ! tag.contains("pron") ) {
                 if ( ti.idx > 0 ) {
-                    if( ti.taggedTokens[ti.idx-1].tokens[0].tags =~ /adj(?!.*:nv)/ ) {
+                    if( ti.taggedTokens[ti.idx-1].tokens[0].tags =~ /adj(?!.*:nv)/ && ti.tokens[ti.idx].getReadings()[0].getLemma() != "який" ) {
 
                         def adjInflections = InflectionHelper.getNounInflections([new AnalyzedToken("", tag, "")], null)
                         String adjTag = ti.taggedTokens[ti.idx-1].tokens[0].tags

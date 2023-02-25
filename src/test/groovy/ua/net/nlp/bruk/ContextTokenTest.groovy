@@ -51,4 +51,10 @@ public class ContextTokenTest {
         r = ContextToken.normalizeContextString("?..", "?..", "punct")
         assertEquals "?", r
     }
+    
+    @Test
+    public void testNormalizePostag() {
+        def t = new ContextToken("аліменти", "аліменти", "noun:inanim:p:v_zna:ns")
+        assertEquals "noun:inanim:p:v_zna", t.postag
+    }
 }
