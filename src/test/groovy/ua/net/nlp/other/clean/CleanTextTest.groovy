@@ -219,6 +219,15 @@ def text="""
         result = clean("жив*е один хлопец")
         assertEquals "живе один хлопец", result
     }
+    
+    @Test
+    public void testTilda() {
+        def result = clean("по~християнськи")
+        assertEquals "по-християнськи", result
+
+        result = clean("для~мене")
+        assertEquals "для мене", result
+    }
 
     @Disabled
     @Test

@@ -32,6 +32,7 @@ class HyphenModule {
            // text = text.replace('\u00AD', '-')
         }
         text = remove00ACHyphens(text)
+        text = removeTildaAsHyphen(text)
         return text
     }
 
@@ -62,6 +63,26 @@ class HyphenModule {
         return t0
     }
 
+    private final Pattern AC_HYPHEN_PATTERN_TILDA = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]*[а-яіїєґА-ЯІЇЄҐ])~([а-яіїєґА-ЯІЇЄҐ][а-яіїєґА-ЯІЇЄҐ'ʼ’-]*)/)
+    
+    @CompileStatic
+    String removeTildaAsHyphen(String text) {
+        def t0 = text
+        if( t0.contains("~") ) { // ¬
+            out.println "\tremoving ~ as hyphen: "
+            def m2 = AC_HYPHEN_PATTERN_TILDA.matcher(t0)
+            def t2 = m2.replaceAll{ mr ->
+                def w1 = mr.group(1)
+                def w2 = mr.group(2)
+                def fix = "$w1-$w2"
+                if( ltModule.knownWord(fix) ) return fix
+                if( ltModule.knownWord(w1) && ltModule.knownWord(w2) ) return "$w1 $w2"
+                return mr.group(0)
+            }
+            t0 = t2
+        }
+        return t0
+    }
 
     @CompileStatic
     String fixDanglingHyphens(String text) {
