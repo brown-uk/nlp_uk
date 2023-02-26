@@ -135,7 +135,7 @@ class ContextToken {
         return w
     }
     
-    private static final USE_RIGHT_CTX_PATTERN = ~/є|її|це|саме|всередині|перед|протягом|брати|англійською|українською|рівні/
+    private static final USE_RIGHT_CTX_PATTERN = ~/є|її|це|саме|всередині|перед|протягом|брати|англійською|українською|рівні|доросл.*/
     
     @CompileStatic
     static boolean useRightContext(String token) {

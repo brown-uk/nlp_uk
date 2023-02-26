@@ -545,13 +545,13 @@ public class DisambigStats {
             String tag = (String)key;
             if( tag.startsWith("adj") ) {
                 if ( ti.idx < ti.tokens.length-1 ) {
-                    if( ! (ti.cleanToken.toLowerCase() == "та") && ti.tokens[ti.idx].getReadings()[0].getLemma() != "який" ) {
+                    if( ti.cleanToken.toLowerCase() != "та" && ti.tokens[ti.idx].getReadings()[0].getLemma() != "який" ) {
 
                         def adjInflections = InflectionHelper.getAdjInflections([new AnalyzedToken("", tag, "")])
                         def nounInflections = InflectionHelper.getNounInflections(ti.tokens[ti.idx+1].getReadings(), Pattern.compile("&pron"))
 
                         if( ! Collections.disjoint(adjInflections, nounInflections) ) {
-                            matchRateSum += 0.35
+                            matchRateSum = Math.min(matchRateSum + 0.35d, 1d)
                         }
                     }
                 }
@@ -565,7 +565,7 @@ public class DisambigStats {
                         def nounInflections = InflectionHelper.getAdjInflections([new AnalyzedToken("", adjTag, "")])
 
                         if( ! Collections.disjoint(adjInflections, nounInflections) ) {
-                            matchRateSum += 0.35
+                            matchRateSum = Math.min(matchRateSum + 0.35d, 1d)
                         }
                     }
                 }
