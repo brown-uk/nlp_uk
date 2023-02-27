@@ -288,7 +288,7 @@ class TagTextCore {
 
     @CompileStatic
     private List<TTR> tagAsObject(AnalyzedTokenReadings[] tokens, TagStats stats) {
-        if( ! tokens )
+        if( tokens.size() < 2 )
             return []
         
         tokens = tokens[1..-1] // remove SENT_START

@@ -576,4 +576,18 @@ class TagTextTest {
         TagResult tagged = tagText.tagText("голо\u001Fва")
         assertEquals expected, tagged.tagged
     }
+
+    @Test
+    public void testSingleLineAsSentence() {
+        tagText.setOptions(new TagOptions(sentencePerLine: true, lemmaOnly: true))
+        TagResult tagged = tagText.tagText("Слово.\n\n\nДіло.")
+        def expected = 
+"""слово.
+
+
+діло.
+"""
+
+        assertEquals expected, tagged.tagged
+    }
 }
