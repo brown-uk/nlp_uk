@@ -288,6 +288,9 @@ class TagTextCore {
 
     @CompileStatic
     private List<TTR> tagAsObject(AnalyzedTokenReadings[] tokens, TagStats stats) {
+        if( ! tokens )
+            return []
+        
         tokens = tokens[1..-1] // remove SENT_START
         List<TTR> tokenReadingsT = []
 
