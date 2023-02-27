@@ -173,9 +173,16 @@ class TagTextCore {
             m.replaceAll('')
         }
         
-        List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
+        List<AnalyzedSentence> analyzedSentences = analyzeText(text)
         
         tagTextCore(analyzedSentences, stats)
+    }
+    
+//    @CompileDynamic
+    List<AnalyzedSentence> analyzeText(String text) {
+        options.sentencePerLine
+            ? langTool.analyzeSentences( text.split("\n") as List )
+            : langTool.analyzeText(text)
     }
     
     @CompileStatic
@@ -617,7 +624,7 @@ class TagTextCore {
             tagUnknown.loadStats()
         }
         
-        language.getSentenceTokenizer().setSingleLineBreaksMarksParagraph(options.singleNewLineAsParagraph)
+//        language.getSentenceTokenizer().setSingleLineBreaksMarksParagraph(options.singleNewLineAsParagraph)
     }
 
     void setInputOutput(TagOptions options) {
