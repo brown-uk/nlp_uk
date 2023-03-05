@@ -187,7 +187,10 @@ class TagTextCore {
     
     @CompileStatic
     List<List<TTR>> tagTextCore(List<AnalyzedSentence> analyzedSentences, TagStats stats) {
-
+        if( stats == null ) {
+            stats = new TagStats()
+        }
+        
         List<List<TTR>> taggedSentences = 
           analyzedSentences.parallelStream().map { AnalyzedSentence analyzedSentence ->
             
