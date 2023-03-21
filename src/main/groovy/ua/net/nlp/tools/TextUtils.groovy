@@ -247,7 +247,9 @@ public class TextUtils {
 		if( buffer ) {
 			def analyzed = processClosure(buffer.toString())
             outputHandler.print(analyzed)
-            outputHandler.outputFile.println()
+            if( outputHandler.outputFile ) {
+                outputHandler.outputFile.println()
+            }
 			postProcessClosure(analyzed)
 		}
 

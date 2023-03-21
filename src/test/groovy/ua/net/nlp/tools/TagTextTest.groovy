@@ -421,6 +421,20 @@ class TagTextTest {
 
     
     @Test
+    public void testTagCoreNoStats() {
+        tagText.setOptions(new TagOptions(setLemmaForUnknown: true))
+        
+        List<List<TTR>> tagged = tagText.tagTextCore("десь брарарат.\n\nковбасу.", null)
+
+        def expected = [['десь', 'брарарат', '.'], ['ковбаса', '.']]
+        assertEquals expected, tagged.collect { it.collect { TTR ttr -> ttr.tokens[0].lemma } }
+
+        expected = [['десь/adv', 'брарарат/unknown', './punct'], ['ковбаса/noun', './punct']]
+        assertEquals expected, tagged.collect { it.collect { TTR ttr -> ttr.tokens[0].lemma + "/" + ttr.tokens[0].tags.replaceFirst(/:.*/, '')} }
+    }
+
+    
+    @Test
     public void testPartsSeparate() {
         tagText.setOptions(new TagOptions())
 

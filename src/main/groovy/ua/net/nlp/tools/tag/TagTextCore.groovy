@@ -162,11 +162,6 @@ class TagTextCore {
 
     @CompileStatic
     List<List<TTR>> tagTextCore(String text, TagStats stats) {
-        if( stats == null ) {
-            stats = new TagStats()
-            stats.options = options
-        }
-        
         // remove control chars so we don't create broken xml
         def m = text =~ CONTROL_CHAR_PATTERN_R
         if( m ) {
@@ -187,9 +182,6 @@ class TagTextCore {
     
     @CompileStatic
     List<List<TTR>> tagTextCore(List<AnalyzedSentence> analyzedSentences, TagStats stats) {
-        if( stats == null ) {
-            stats = new TagStats()
-        }
         
         List<List<TTR>> taggedSentences = 
           analyzedSentences.parallelStream().map { AnalyzedSentence analyzedSentence ->

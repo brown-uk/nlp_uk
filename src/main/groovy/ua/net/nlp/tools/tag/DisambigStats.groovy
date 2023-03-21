@@ -123,9 +123,11 @@ public class DisambigStats {
         
         Map<WordReading, Stat> statsForWord = statsByWord[cleanToken]
 
-        stats.disambigMap['total'] += 1
+        if( stats != null ) {
+            stats.disambigMap['total'] += 1
 
-        updateDebugStats(readings, cleanToken, stats, statsForWord)
+            updateDebugStats(readings, cleanToken, stats, statsForWord)
+        }
                 
 
         boolean withXp = true
