@@ -499,8 +499,8 @@ class CleanTextCore {
         text = text.replace('\\"', '"')
         text = text.replaceAll(/([бвгґдзкмнпрстфхш])\\'([яєюї])/, '$1\'$2')
         
-        text = text.replace(/U+200B/, '')
-        text = text.replace(/U+02BA/, '"')
+        text = text.replace(/\u200B/, ' ')
+        text = text.replace(/\u02BA/, '"')
 
         // SINGLE LOW-9 QUOTATION MARK sometimes used as a comma
         text.replace('\u201A', ',')
