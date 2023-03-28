@@ -37,7 +37,6 @@ class TagTextSemTest {
     <token value="усе" lemma="усе" tags="adv" semtags="1:dur:max" />
     <token value="усе" lemma="усе" tags="noun:inanim:n:v_naz:&amp;pron:gen" semtags="1:quantif" />
     <token value="усе" lemma="усе" tags="noun:inanim:n:v_zna:&amp;pron:gen" semtags="1:quantif" />
-    <token value="усе" lemma="усе" tags="part" />
     <token value="усе" lemma="увесь" tags="adj:n:v_naz:&amp;pron:gen" semtags="1:quantif" />
     <token value="усе" lemma="увесь" tags="adj:n:v_zna:&amp;pron:gen" semtags="1:quantif" />
   </tokenReading>
