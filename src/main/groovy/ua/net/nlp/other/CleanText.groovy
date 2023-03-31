@@ -24,6 +24,7 @@ package ua.net.nlp.other
 // mark/rate or remove Russian paragraphs
 
 @GrabConfig(systemClassLoader=true)
+@Grab(group='org.languagetool', module='languagetool-core', version='6.1')
 @Grab(group='org.languagetool', module='language-uk', version='6.1')
 @Grab(group='org.languagetool', module='language-ru', version='6.1')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
@@ -46,13 +47,11 @@ import groovy.transform.CompileStatic
 import org.languagetool.tagging.uk.*
 import org.languagetool.tokenizers.SRXSentenceTokenizer
 import org.languagetool.tokenizers.uk.UkrainianWordTokenizer
-import org.slf4j.Logger
 import org.languagetool.tagging.Tagger
 import org.languagetool.tagging.ru.RussianTagger
 import org.languagetool.AnalyzedToken
 import org.languagetool.language.Ukrainian
-//import ua.net.nlp.other.CleanTextNanu
-
+import org.slf4j.Logger
 
 @CompileStatic
 class CleanText {

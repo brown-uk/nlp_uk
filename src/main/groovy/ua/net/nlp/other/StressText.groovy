@@ -3,9 +3,9 @@
 package ua.net.nlp.other
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='language-uk', version='6.0')
-//@Grab(group='org.languagetool', module='language-uk', version='6.1-SNAPSHOT')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.2.+')
+@Grab(group='org.languagetool', module='languagetool-core', version='6.1')
+@Grab(group='org.languagetool', module='language-uk', version='6.1')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
 import org.languagetool.*

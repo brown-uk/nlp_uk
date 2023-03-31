@@ -5,24 +5,13 @@
 //
 // NOTE: it disables some rules, like spelling, double whitespace etc
 
-
 package ua.net.nlp.other
 
 import groovy.transform.CompileStatic
-@Grab(group='org.languagetool', module='language-uk', version='5.9')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
-
-import org.codehaus.groovy.util.StringUtil;
 import org.languagetool.*
 import org.languagetool.rules.*
-import org.languagetool.rules.patterns.RuleSet
 import org.languagetool.tokenizers.*
 import org.languagetool.language.*
-import org.languagetool.uk.*
-import org.languagetool.JLanguageTool.Level
-import org.languagetool.JLanguageTool.Mode
-import org.languagetool.JLanguageTool.ParagraphHandling
-import org.languagetool.markup.*
 
 
 class EvaluateText {
