@@ -215,6 +215,20 @@ public class TagTextUnknownTest {
 
         assertEquals expected, tagged.tagged
     }
+    
+    @Test
+    public void testAbbrEntity() {
+        def tagged = tagText.tagText("АУФТ-10")
+
+        def expected =
+"""<sentence>
+  <token value="АУФТ-10" lemma="АУФТ-10" tags="noninfl" q="-0.7" />
+</sentence>
+<paragraph/>
+"""
+
+        assertEquals expected, tagged.tagged
+    }
 
         
     @Test

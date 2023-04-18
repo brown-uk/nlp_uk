@@ -66,6 +66,8 @@ public class TagUnknown {
     
     @CompileStatic
     List<TaggedToken> tagInternal(String token, int idx, AnalyzedTokenReadings[] tokens) {
+        if( token ==~ /[А-ЯІЇЄҐ]+-[0-9]+[а-яіїєґА-ЯІЇЄҐ]*/ ) // ФАТ-10
+            return [new TaggedToken(value: token, lemma: token, tags: 'noninfl', q: -0.7)]
         if( token ==~ /[А-ЯІЇЄҐ]{2,6}/ )
             return [new TaggedToken(value: token, lemma: token, tags: 'noninfl:abbr', q: -0.7)]
     
