@@ -63,6 +63,9 @@ public class TagUnknown {
             return null
         }
     }
+
+    // НС-фільтрів
+    static final Pattern PREFIXED = Pattern.compile(/([А-ЯІЇЄҐA-Z0-9]+[-\u2013])([а-яіїєґ].*)/)
     
     @CompileStatic
     List<TaggedToken> tagInternal(String token, int idx, AnalyzedTokenReadings[] tokens) {
@@ -70,7 +73,20 @@ public class TagUnknown {
             return [new TaggedToken(value: token, lemma: token, tags: 'noninfl', q: -0.7)]
         if( token ==~ /[А-ЯІЇЄҐ]{2,6}/ )
             return [new TaggedToken(value: token, lemma: token, tags: 'noninfl:abbr', q: -0.7)]
-    
+
+        def m = PREFIXED.matcher(token)
+        if( m.matches() ) {
+            String left = m.group(1)
+            String right = m.group(2)
+            
+            def tagged = tagInternal(right, idx, tokens)
+            tagged.each { tt ->
+                tt.lemma = "$left${tt.lemma}" 
+                tt.value = "$left${tt.value}" 
+            }
+            return tagged
+        }
+
         int lemmaSuffixLen = token.endsWith("ться") ? lemmaSuffixLenB + 2 : lemmaSuffixLenB
                 
         if( token.length() < lemmaSuffixLen + 2 )

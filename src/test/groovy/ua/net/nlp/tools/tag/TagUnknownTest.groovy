@@ -263,6 +263,20 @@ public class TagTextUnknownTest {
         assertEquals expected, tagged.tagged
     }
 
+    @Test
+    public void testHpyphenedCaps() {
+        def tagged = tagText.tagText("НС-фільтрів")
+
+        def expected =
+"""<sentence>
+  <token value="НС-фільтрів" lemma="НС-фільтр" tags="noun:inanim:p:v_rod" q="-0.5" />
+</sentence>
+<paragraph/>
+"""
+
+        assertEquals expected, tagged.tagged
+    }
+
     
     @Test
     public void testVerb() {
