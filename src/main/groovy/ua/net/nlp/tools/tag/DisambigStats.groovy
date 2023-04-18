@@ -659,8 +659,7 @@ public class DisambigStats {
 
         def statsFileRes = getClass().getResource(statsFile)
         if( statsFileRes == null ) {
-            System.err.println "Disambiguation stats not found, run \"TagText.groovy --download\" to download it from github, and then retry"
-            System.exit 1
+            throw new IllegalStateException("Disambiguation stats not found, run \"TagText.groovy --download\" to download it from github, and then retry")
         }
         
         
@@ -838,6 +837,11 @@ public class DisambigStats {
     @CompileStatic
     void writeDerivedStats() {
         def derivedStatsDir = "tmp"
+        
+        if( ! new File(derivedStatsDir).isDirectory() ) {
+            System.err.println("No $derivedStatsDir found - no derivative stats will be generated")
+            return
+        }
         
         File tff = new File("$derivedStatsDir/tag_freqs.txt")
         tff.text = ''

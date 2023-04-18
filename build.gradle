@@ -88,6 +88,12 @@ eclipse {
   }
 }
 
+task downloadResources(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "ua.net.nlp.tools.tag.TagTextCore"
+    args "--download"
+}
+
 test {
     useJUnitPlatform()
     jvmArgs '-Dgroovy.grape.enable=false'
@@ -96,9 +102,9 @@ test {
 
 task tagText(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = "org.nlp_uk.tools.TagText"
+    mainClass = "ua.net.nlp.tools.tag.TagTextCore"
 
-    jvmArgs '-Dgroovy.grape.enable=false'
+//    jvmArgs '-Dgroovy.grape.enable=false'
 
     String argParam = project.hasProperty('args') ? project['args'] : ''
     args argParam.split()

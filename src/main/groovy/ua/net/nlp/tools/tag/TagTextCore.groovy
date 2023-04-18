@@ -652,7 +652,13 @@ class TagTextCore {
         
         def options = parseOptions(args)
 
-        nlpUk.setOptions(options)
+        try {
+            nlpUk.setOptions(options)
+        }
+        catch(IllegalStateException e) {
+            System.err.println(e.getMessage())
+            System.exit(1)
+        }
         
         if( options.download ) {
             nlpUk.download()
