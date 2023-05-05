@@ -99,6 +99,9 @@ class CleanTextTest {
     public void testRemove00AD() {
         assertEquals "Залізнична", clean("За\u00ADлізнична")
         assertEquals "А Б", clean("А\u200BБ")
+        assertEquals "14-го", clean("14\u00ADго")
+        assertEquals "необов’язковий\n", clean("необов’\u00AD\nязковий")
+        assertEquals "Івано-франківський", clean("Івано-\u00ADфранківський")
     }
 
     @Test
@@ -180,6 +183,9 @@ def text="""
 
         assertEquals "- архієпископ\n- Дитина", clean("-архієпископ\n-Дитина")
         assertEquals "-то ", clean("-то ")
+        
+        assertEquals "сказав він. - Подорожчання викликане", clean("сказав він. -Подорожчання викликане")
+        assertEquals "люба моя,- Євген.", clean("люба моя,-Євген.")
     }
     
 	@Test

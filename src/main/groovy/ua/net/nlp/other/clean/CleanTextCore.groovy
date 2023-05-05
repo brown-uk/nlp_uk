@@ -308,11 +308,6 @@ class CleanTextCore {
     }
 
     @CompileStatic
-    private static String escapeNl(String text) {
-        text.replace("\r", "\\r").replace("\n", "\\n")
-    } 
-
-    @CompileStatic
     String cleanText(String text, File file, File outFile) {
         int nlIdx = text.indexOf("\n")
         int dosNlIdx = text.indexOf("\r\n")
@@ -398,7 +393,9 @@ class CleanTextCore {
             out.init()
             def chunk = request.text[pos..<pos+len]
 //            out.debug "\tchunk at $pos, len: $len"
-            out.println "\tchunk at $pos, len: $len: ${escapeNl(chunk.take(20))} ... ${escapeNl(request.text[pos+len-20..<pos+len])}"
+            def chunkStart = CleanUtils.escapeNl(chunk.take(20))
+            def chunkEnd = CleanUtils.escapeNl(request.text[pos+len-20..<pos+len])
+            out.println "\tchunk at $pos, len: $len: $chunkStart ... $chunkEnd"
             
             def t = cleanTextInternal(request.forText(chunk))
             out.flush()

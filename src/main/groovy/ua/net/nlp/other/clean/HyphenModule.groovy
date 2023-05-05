@@ -13,26 +13,38 @@ import groovy.transform.PackageScope
 @CompileStatic
 class HyphenModule {
     
-    private final Pattern SOFT_HYPHEN_PATTERN1 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’]\]\)]?)\u00AD+(\n[ \t]*)([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’-]+)([,;.!?])?/)
-    private final Pattern SOFT_HYPHEN_PATTERN2 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’:. ])\u00AD+([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’ -])/)
+    private final Pattern SOFT_HYPHEN_PATTERN1 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’][-\u2013\u2014]?)\u00AD+(\n[ \t]*)([-\u2013\u2014]?[а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’-]+)([,;.!?])?/)
+    private final Pattern SOFT_HYPHEN_PATTERN3 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’:. ][-\u2013\u2014]?)\u00AD+([-\u2013\u2014]?[а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’ -])/)
+    private final Pattern SOFT_HYPHEN_PATTERN2 = Pattern.compile(/([0-9])\u00AD+([а-яіїєґА-ЯІЇЄҐa-zA-Z])/)
     
     OutputTrait out
     LtModule ltModule
     
     @CompileStatic
     String removeSoftHyphens(String text) {
-        if( text.contains("\u00AD") ) {
-            out.println "\tremoving soft hyphens: "
-//            text = text.replaceAll(/[ \t]*\u00AD[ \t]*([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, '$1$2')
-//            text = text.replaceAll(/\u00AD(?!\n {10,}[А-ЯІЇЄҐ])(\n?[ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, '$2$3$1')
-            text = SOFT_HYPHEN_PATTERN1.matcher(text).replaceAll('$1$3$4$2')
-            text = SOFT_HYPHEN_PATTERN2.matcher(text).replaceAll('$1$2')
-//            text = text.replaceAll(/(?i)([А-ЯІЇЄҐ:. ])\u00AD+([А-ЯІЇЄҐ'ʼ’ -])/, '$1$2')
-//            text = text.replaceAll(/([А-ЯІЇЄҐA-Z])\u00AD(\n[ \t]*)([А-ЯІЇЄҐA-Z'ʼ’-]+)([,;.!?])?/, '$1$3$4$2')
-           // text = text.replace('\u00AD', '-')
-        }
+        text = remove00ADHyphens(text)
         text = remove00ACHyphens(text)
         text = removeTildaAsHyphen(text)
+        return text
+    }
+
+    private String remove00ADHyphens(String text) {
+        if( text.contains("\u00AD") ) {
+            out.println "\tremoving soft hyphens: "
+            //            text = text.replaceAll(/[ \t]*\u00AD[ \t]*([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, '$1$2')
+            //            text = text.replaceAll(/\u00AD(?!\n {10,}[А-ЯІЇЄҐ])(\n?[ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, '$2$3$1')
+            def text1 = SOFT_HYPHEN_PATTERN1.matcher(text).replaceAll('$1$3$4$2')
+            def text2 = SOFT_HYPHEN_PATTERN2.matcher(text1).replaceAll('$1-$2')
+            text = SOFT_HYPHEN_PATTERN3.matcher(text2).replaceAll('$1$2')
+            //            text = text.replaceAll(/(?i)([А-ЯІЇЄҐ:. ])\u00AD+([А-ЯІЇЄҐ'ʼ’ -])/, '$1$2')
+            //            text = text.replaceAll(/([А-ЯІЇЄҐA-Z])\u00AD(\n[ \t]*)([А-ЯІЇЄҐA-Z'ʼ’-]+)([,;.!?])?/, '$1$3$4$2')
+            // text = text.replace('\u00AD', '-')
+
+            if( text.contains("\u00AD") ) {
+                def ctx = CleanUtils.getContext(text, "\u00AD")
+                out.println "\t\tNOTE: still contains soft hyphens: $ctx"
+            }
+        }
         return text
     }
 
@@ -148,13 +160,13 @@ class HyphenModule {
 
     @CompileStatic
     String separateLeadingHyphens(String text) {
-        def regex = /(?m)^([-\u2013\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/
+        def regex = /(?m)(^|[\h,:;?!])([-\u2013\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/
         
         def converted = 0
-        def t1 = text.replaceAll(regex, { all, hyph, word ->
+        def t1 = text.replaceAll(regex, { all, space, hyph, word ->
             if( ltModule.knownWord(word) ) {
                 converted += 1
-                "$hyph $word"
+                "$space$hyph $word"
             }
             else {
                 all

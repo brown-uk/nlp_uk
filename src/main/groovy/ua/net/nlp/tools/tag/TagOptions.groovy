@@ -70,8 +70,19 @@ public class TagOptions extends OptionsBase {
     @Option(names = ["--download"], description = "Download file with disambiguation statistics and semantic tags (for tagging from CLI only)")
     boolean download
 
+    enum Module { zheleh, lesya }
     
     void adjust() {
+        if( modules ) {
+            def allowed = Module.values().collect { m -> m.name() }
+            modules.each { module ->
+                if( ! (module in allowed) ) {
+                    System.err.println("Error: invalid module $module")
+                    System.exit(1)
+                }
+            }
+        }
+        
         if( lemmaOnly ) {
             outputFormat = OutputFormat.txt
             disambiguate = true
