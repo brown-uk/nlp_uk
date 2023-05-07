@@ -1,3 +1,7 @@
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+
 plugins {
     id 'java'
     id 'groovy'
@@ -57,16 +61,16 @@ sourceSets {
 }
 
 processResources {
-    doLast() {
-        copy {
-            from("src/main/groovy/") {
-              include "org/nlp_uk/tools/TagText.groovy"
-            }
-//            into "${project.buildDir}/resources/main"
-            into "${project.buildDir}/classes/java/main"
-            includeEmptyDirs = false
-        }
-    }
+//    doLast() {
+//        copy {
+//            from("src/main/groovy/") {
+//              include "org/nlp_uk/tools/TagText.groovy"
+//            }
+////            into "${project.buildDir}/resources/main"
+//            into "${project.buildDir}/classes/java/main"
+//            includeEmptyDirs = false
+//        }
+//    }
 }
 
 compileGroovy {
@@ -92,6 +96,24 @@ task downloadResources(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = "ua.net.nlp.tools.tag.TagTextCore"
     args "--download"
+
+    // ugly hack - downloadResources depends on compiling and thus processResources
+    // but after the download we need to call/force processResources again
+    // TODO: find how to do it nicely
+    // for now - just copy the files manually
+    doLast {
+        def outputDir = tasks.processResources.outputs.files.files.iterator().next()
+        File semtags = new File(outputDir, "/ua/net/nlp/tools/semtags")
+        semtags.mkdirs()
+        File stats = new File(outputDir, "/ua/net/nlp/tools/stats")
+        stats.mkdirs()
+        tasks.processResources.inputs.files.files
+            .findAll { File file -> file.name =~ /\.(csv|txt)$/ }
+            .each { File file ->
+                def toDir = file.path.contains("semtag") ? semtags : stats
+                Files.copy(file.toPath(), new File(toDir, file.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+    }
 }
 
 test {
