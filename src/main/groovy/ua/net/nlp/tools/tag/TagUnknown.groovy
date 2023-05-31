@@ -90,13 +90,13 @@ public class TagUnknown {
         int lemmaSuffixLen = token.endsWith("ться") ? lemmaSuffixLenB + 2 : lemmaSuffixLenB
                 
         if( token.length() < lemmaSuffixLen + 2 )
-            return null
+            return []
         
         def last3 = token[-lemmaSuffixLen..-1]
         
         def opToTagMap = lemmaSuffixStatsF[last3]
 
-        def retTokens = null
+        List<TaggedToken> retTokens = []
         
         opToTagMap = opToTagMap.findAll { e -> getCoeff(e, token, idx, tokens) > 0 }
         if( opToTagMap ) {

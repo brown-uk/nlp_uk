@@ -32,7 +32,7 @@ public class SemTags {
     TagOptions options
     Map<String, Map<String,List<String>>> semanticTags = new HashMap<>()
     
-    @CompileStatic
+//    @CompileStatic
     def loadSemTags() {
         if( semanticTags.size() > 0 )
             return
