@@ -45,6 +45,9 @@ dependencies {
         exclude group: 'org.apache.lucene'
         exclude group: 'io.grpc'
     }
+    if( project.hasProperty('morfologik_ukrainian_lt_version') ) {
+        implementation("ua.net.nlp:morfologik-ukrainian-lt:${morfologik_ukrainian_lt_version}")
+    }
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.+'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.+'
