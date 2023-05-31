@@ -35,7 +35,7 @@ class ModLesya {
 
         if( tokenReadings.isPosTagUnknown() ) {
             adjustedToken = adjustedToken.replaceAll(/(?ui)йі/, 'ї')
-            adjustedToken = adjustedToken.replaceAll(/(?ui)іі\b/, 'ії')
+            adjustedToken = adjustedToken.replaceAll(/(?ui)([іо])і\b/, '$1ї')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {

@@ -29,7 +29,7 @@ class TagTextModLesyaTest {
     @Test
     public void testLesyaOrphograph() {
 
-        TagResult tagged = tagText.tagText("звичайі націі")
+        TagResult tagged = tagText.tagText("звичайі нашоі націі")
         def expected =
 """<sentence>
   <tokenReading>
@@ -37,6 +37,9 @@ class TagTextModLesyaTest {
     <token value="звичайі" lemma="звичай" tags="noun:inanim:p:v_kly:alt" />
     <token value="звичайі" lemma="звичай" tags="noun:inanim:p:v_naz:alt" />
     <token value="звичайі" lemma="звичай" tags="noun:inanim:p:v_zna:alt" />
+  </tokenReading>
+  <tokenReading>
+    <token value="нашоі" lemma="наш" tags="adj:f:v_rod:&amp;pron:pos:alt" />
   </tokenReading>
   <tokenReading>
     <token value="націі" lemma="нація" tags="noun:inanim:f:v_dav:alt" />
