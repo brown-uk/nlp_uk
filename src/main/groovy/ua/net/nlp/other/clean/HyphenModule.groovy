@@ -158,20 +158,27 @@ class HyphenModule {
         }
     }
 
+    
+    private final Pattern LEADING_HYPHEN_PATTERN1 = Pattern.compile(/(\.\h+[-\u2013\u2014])([А-ЯІЇЄҐ][^.-])/)
+    private final Pattern LEADING_HYPHEN_PATTERN2 = Pattern.compile(/(?m)(^|[\h,:;?!])([-\u2013\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/)
+    
     @CompileStatic
     String separateLeadingHyphens(String text) {
-        def regex = /(?m)(^|[\h,:;?!])([-\u2013\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/
+        text = LEADING_HYPHEN_PATTERN1.matcher(text).replaceAll('$1 $2')
         
         def converted = 0
-        def t1 = text.replaceAll(regex, { all, space, hyph, word ->
+        def t1 = LEADING_HYPHEN_PATTERN2.matcher(text).replaceAll{ mr -> //all, space, hyph, word ->
+            def space = mr.group(1)
+            def hyph = mr.group(2)
+            def word = mr.group(3)
             if( ltModule.knownWord(word) ) {
                 converted += 1
                 "$space$hyph $word"
             }
             else {
-                all
+                mr.group(0)
             }
-        })
+        }
         
         if( converted ) {
             out.println "\tConverted leading hyphens: ${converted}"

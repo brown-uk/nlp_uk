@@ -24,6 +24,7 @@ class ControlCharModule {
     
     @CompileStatic
     String removeControlChars(String text) {
+        text = text.replace("\u200E", "")
         
         def m = text =~ CONTROL_CHAR_PATTERN_W
         
