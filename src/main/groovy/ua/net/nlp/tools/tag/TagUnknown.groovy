@@ -144,8 +144,8 @@ public class TagUnknown {
         return retTokens
     }
     
-    static Pattern mascPrefix = ~/пан|містер|гер|сеньйор|монсеньйор|добродій/
-    static Pattern femPrefix = ~/пані|міс|місіс|фрау|сеньора|сеньйоріта|мадам|маде?муазель|добродійка/
+    static Pattern mascPrefix = ~/пан|містер|гер|сеньйор|монсеньйор|добродій|князь/
+    static Pattern femPrefix = ~/пані|міс|місіс|княгиня|фрау|сеньора|сеньйоріта|мадам|маде?муазель|добродійка/
 
     @CompileStatic
     private static String gen(String postag) {
