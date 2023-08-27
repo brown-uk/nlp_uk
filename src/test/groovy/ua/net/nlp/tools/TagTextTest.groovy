@@ -46,7 +46,7 @@ class TagTextTest {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt, lemmaOnly: true, disambiguate: true))
         TagResult tagged = tagText.tagText("І словом її мала. Ділами швидше № 1")
         def expected = 
-"""і словом вона малий.
+"""і слово вона малий.
 діло швидше № 1
 """
         assertEquals expected, tagged.tagged
