@@ -139,10 +139,10 @@ class TagTextModZhelehTest {
         expected =
 """<sentence>
   <tokenReading>
-    <token value="Поднїпровя" lemma="Подніпров'я" tags="noun:inanim:n:v_kly:prop:geo" />
-    <token value="Поднїпровя" lemma="Подніпров'я" tags="noun:inanim:n:v_naz:prop:geo" />
-    <token value="Поднїпровя" lemma="Подніпров'я" tags="noun:inanim:n:v_rod:prop:geo" />
-    <token value="Поднїпровя" lemma="Подніпров'я" tags="noun:inanim:n:v_zna:prop:geo" />
+    <token value="Поднїпровя" lemma="Подніпров'я" tags="noun:inanim:n:v_kly:prop:geo:bad" />
+    <token value="Поднїпровя" lemma="Подніпров'я" tags="noun:inanim:n:v_naz:prop:geo:bad" />
+    <token value="Поднїпровя" lemma="Подніпров'я" tags="noun:inanim:n:v_rod:prop:geo:bad" />
+    <token value="Поднїпровя" lemma="Подніпров'я" tags="noun:inanim:n:v_zna:prop:geo:bad" />
   </tokenReading>
 </sentence>
 """

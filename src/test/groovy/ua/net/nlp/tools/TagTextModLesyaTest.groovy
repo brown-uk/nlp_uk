@@ -100,15 +100,13 @@ class TagTextModLesyaTest {
 """
         assertEquals expected, tagged.tagged
         
-        tagged = tagText.tagText("пізнійше")
+        tagged = tagText.tagText("головнійше")
         expected =
 """<sentence>
   <tokenReading>
-    <token value="пізнійше" lemma="пізніше" tags="adv:compc:&amp;predic:alt" />
-    <token value="пізнійше" lemma="пізніше" tags="prep:alt" />
-    <token value="пізнійше" lemma="пізніший" tags="adj:n:v_kly:compc:alt" />
-    <token value="пізнійше" lemma="пізніший" tags="adj:n:v_naz:compc:alt" />
-    <token value="пізнійше" lemma="пізніший" tags="adj:n:v_zna:compc:alt" />
+    <token value="головнійше" lemma="головніший" tags="adj:n:v_kly:compc:alt" />
+    <token value="головнійше" lemma="головніший" tags="adj:n:v_naz:compc:alt" />
+    <token value="головнійше" lemma="головніший" tags="adj:n:v_zna:compc:alt" />
   </tokenReading>
 </sentence>
 """
