@@ -353,7 +353,7 @@ public class TextUtils {
         @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
         boolean helpRequested
         @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt}", defaultValue = "xml")
-        OutputFormat outputFormat = OutputFormat.xml
+        public OutputFormat outputFormat = OutputFormat.xml
         boolean singleThread = true
 
         boolean splitHyphenParts = true

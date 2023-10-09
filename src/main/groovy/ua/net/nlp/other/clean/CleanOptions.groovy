@@ -5,7 +5,7 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 @CompileStatic
-class CleanOptions {
+public class CleanOptions {
     @Parameters(index = "0", description = "Directory to process. Default: current directory", arity="0..1")
     List<String> inputDirs
     @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])

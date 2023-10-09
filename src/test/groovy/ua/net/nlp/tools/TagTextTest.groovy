@@ -604,4 +604,17 @@ class TagTextTest {
 
         assertEquals expected, tagged.tagged
     }
+
+//    @Test
+//    public void testDismbigUnify() {
+//        tagText.setOptions(new TagOptions())
+//        TagResult tagged = tagText.tagText("як одного цілого.")
+//        def expected =
+//"""слово.
+//діло.
+//"""
+//
+//        assertEquals expected, tagged.tagged
+//    }
+    
 }

@@ -6,8 +6,8 @@ import groovy.transform.CompileStatic
 @CompileStatic
 @Canonical
 class WordReading {
-    String lemma
-    String postag
+    public String lemma
+    public String postag
     
     @CompileStatic
     WordReading(String lemma, String postag) {

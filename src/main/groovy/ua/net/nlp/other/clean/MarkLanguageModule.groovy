@@ -7,21 +7,22 @@ import java.util.regex.Pattern
 import org.languagetool.AnalyzedToken
 import org.languagetool.tagging.ru.RussianTagger
 
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import ua.net.nlp.other.clean.CleanOptions.MarkOption
 import ua.net.nlp.other.clean.CleanOptions.ParagraphDelimiter
-import ua.net.nlp.other.clean.CleanTextCore.CleanRequest
+import ua.net.nlp.other.clean.CleanRequest
 
 @PackageScope
+@CompileStatic
 class MarkLanguageModule {
     
     CleanOptions options
     OutputTrait out
     LtModule ltModule
     
-    @CompileStatic
-    class ParaIterator implements Iterator<String> {
+    static class ParaIterator implements Iterator<String> {
         String text;
         String delim;
         int from = 0
@@ -48,7 +49,6 @@ class MarkLanguageModule {
     
     private static final Pattern EXISTING_SPAN_PATTERN = ~/(?s)<span lang="ru"( rate="[0-9.]+")?>(?!---<\/span>)(.*?)<\/span>/
     
-    @CompileStatic
     String markRussian(CleanRequest request, String outDirName) {
         // clean previous marks unless they are cut
         def text = request.text
@@ -75,51 +75,59 @@ class MarkLanguageModule {
         
         text = chunks
             .collect { String sent ->
-                if( ! (sent =~ /[а-яіїєґёА-ЯІЇЄҐЁ]/) ) {
-                    return sent
-                }
-                
-                List<Double> vals = evalChunk(sent)
-                Double ukRate = vals[0], ruRate = vals[1]
-                
-                if( ukRate < ruRate ) {
-                    ruRate = Math.round(ruRate * 100d)/100d
-                    String marked = "<span lang=\"ru\" rate=\"${ruRate}\">$sent</span>".replaceFirst(/(?s)([\h\v]+)(<\/span>)$/, '$2$1')
-                    if( options.markLanguages == MarkOption.mark ) {
-                        marked
-                    }
-                    else {
-                        ruChunks << marked
-                        '<span lang="ru">---</span>'
-                    }
-                }
-                else {
-                    sent
-                }
+                markRuChunks(sent, ruChunks, outDirName)
             }
             .join("")
         
         if( options.markLanguages == MarkOption.cut ) {
-            if( ruChunks && request.file ) {
-                String ruText = ruChunks.join("\n\n")
-                def ruFile
-                if( outDirName ) {
-                    def ruFilename = request.file.name.replaceFirst(/\.txt/, '.ru.txt')
-
-                    def parentDir = request.outFile.getParentFile()
-                    def ruDir = new File(parentDir, "ru")
-                    ruDir.mkdirs()
-
-                    ruFile = new File(ruDir, ruFilename)
-                }
-                else {
-                    ruFile = new File(request.outFile.absolutePath.replaceFirst(/\.txt/, '.ru.txt'))
-                }
-                ruFile.setText(ruText, StandardCharsets.UTF_8.name())
-            }
+            writeCutTextToFile(ruChunks, request, outDirName)
         }
 
         text
+    }
+
+    private markRuChunks(String sent, List ruChunks, String outDirName) {
+        if( ! (sent =~ /[а-яіїєґёА-ЯІЇЄҐЁ]/) ) {
+            return sent
+        }
+
+        List<Double> vals = evalChunk(sent)
+        Double ukRate = vals[0], ruRate = vals[1]
+
+        if( ukRate < ruRate ) {
+            ruRate = Math.round(ruRate * 100d)/100d
+            String marked = "<span lang=\"ru\" rate=\"${ruRate}\">$sent</span>".replaceFirst(/(?s)([\h\v]+)(<\/span>)$/, '$2$1')
+            if( options.markLanguages == MarkOption.mark ) {
+                marked
+            }
+            else {
+                ruChunks << marked
+                '<span lang="ru">---</span>'
+            }
+        }
+        else {
+            sent
+        }
+    }
+
+    private writeCutTextToFile(List ruChunks, CleanRequest request, String outDirName) {
+        if( ruChunks && request.file ) {
+            String ruText = ruChunks.join("\n\n")
+            def ruFile
+            if( outDirName ) {
+                def ruFilename = request.file.name.replaceFirst(/\.txt/, '.ru.txt')
+
+                def parentDir = request.outFile.getParentFile()
+                def ruDir = new File(parentDir, "ru")
+                ruDir.mkdirs()
+
+                ruFile = new File(ruDir, ruFilename)
+            }
+            else {
+                ruFile = new File(request.outFile.absolutePath.replaceFirst(/\.txt/, '.ru.txt'))
+            }
+            ruFile.setText(ruText, StandardCharsets.UTF_8.name())
+        }
     }
 
     @CompileStatic
@@ -223,6 +231,7 @@ class MarkLanguageModule {
     }
 
     
+    @CompileDynamic
     int getUkWordRating(String word) {
         if( word =~ /(?iu)[іїєґ'\u2019\u02BC]|^й$/ )
             return 10

@@ -38,6 +38,7 @@ import java.util.regex.Pattern
 import groovy.io.FileVisitResult
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
+import groovy.transform.PackageScope
 import picocli.CommandLine
 import picocli.CommandLine.ParameterException
 import ua.net.nlp.other.clean.CleanOptions
@@ -316,18 +317,6 @@ class CleanTextCore {
             out.println "\tFirst new line is DOS-style, using DOS new line for the whole text ($dosNlIdx)"
         }
         cleanText2(new CleanRequest(text: text, file: file, outFile: outFile, dosNl: dosNlPresent))
-    }
-    
-    static class CleanRequest {
-        String text
-        File file
-        File outFile
-        boolean dosNl
-        
-        String getLineBreak() { dosNl ? ".\r\n" : ".\n" }
-        CleanRequest forText(String text) {
-            new CleanRequest(text: text, file: file, outFile: outFile, dosNl: dosNl)
-        }
     }
     
         
