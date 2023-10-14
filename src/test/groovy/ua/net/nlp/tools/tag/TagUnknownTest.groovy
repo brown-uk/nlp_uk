@@ -307,7 +307,7 @@ public class TagTextUnknownTest {
 
         expected =
 """<sentence>
-  <token value="популяється" lemma="популятися" tags="verb:rev:imperf:pres:s:3" q="-0.6" />
+  <token value="популяється" lemma="популятися" tags="verb:rev:imperf:pres:s:3" q="-0.5" />
 </sentence>
 <paragraph/>
 """

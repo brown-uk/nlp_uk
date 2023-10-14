@@ -3,6 +3,8 @@
 package ua.net.nlp.tools
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertNotEquals
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 import org.checkerframework.framework.qual.IgnoreInWholeProgramInference
@@ -11,6 +13,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
+import ua.net.nlp.bruk.WordReading
 import ua.net.nlp.tools.tag.TagOptions
 import ua.net.nlp.tools.tag.TagTextCore
 import ua.net.nlp.tools.tag.TagTextCore.TagResult
@@ -39,6 +44,13 @@ class TagTextDisambigTest {
         tagText.setOptions(options)
     }
 
+    @CompileStatic
+    @Test
+    public void testTokenReading() {
+        def wr1 = new WordReading('а', 'part')
+        def wr2 = new WordReading('а', 'conj')
+        assertNotEquals(wr1, wr2) 
+    }
     
     @Test
     public void testTokenFormat() {
