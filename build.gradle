@@ -135,6 +135,16 @@ task tagText(type: JavaExec) {
     args argParam.split()
 }
 
+task cleanText(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "ua.net.nlp.other.clean.CleanTextCore"
+
+//    jvmArgs '-Dgroovy.grape.enable=false'
+
+    String argParam = project.hasProperty('args') ? project['args'] : ''
+    args argParam.split()
+}
+
 
 task testScripts(type: Exec) {
     commandLine 'echo "я ти" | groovy src/main/groovy/ua/net/nlp/tools/TokenizeText.groovy -i -'

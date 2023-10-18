@@ -103,13 +103,13 @@ class CleanTextCore {
     }
 
     
-    static int main(String[] args) {
+    static void main(String[] args) {
         
         setup()
 
         def options = parseOptions(args)
 
-        return new CleanTextCore(options).process()
+        new CleanTextCore(options).process()
     }
     
     private static void setup() {
