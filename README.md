@@ -36,17 +36,23 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 Встановити JDK 17 (https://www.oracle.com/java/technologies/downloads/#jdk17-windows)
 
 ### Чистити файл
-`./gradlew -q cleanText -Pargs="-i <мій_файл.txt>"`
+UNIX:<br/>
+`./gradlew -q cleanText -Pargs="-i <мій-файл.txt>"`<br/>
+Windows:<br/>
+`gradlew.bat -q cleanText -Pargs="-i <мій-файл.txt>"`
 
-Буде створено файл <мій_файл.good.txt> в якому виправлено знайдені проблеми зі словами.
+Буде створено файл <мій-файл.good.txt> в якому виправлено знайдені проблеми зі словами.
 
 ### Тегувати файл
-`./gradlew -q tagText -Pargs="-i <мій_файл.txt> -su"`
+UNIX:<br/>
+`./gradlew -q tagText -Pargs="-i <мій-файл.txt> -su"`<br/>
+Windows:<br/>
+`gradlew.bat -q tagText -Pargs="-i <мій-файл.txt> -su"`
 
-Буде створено файл <мій_файл.tagged.xml>. Прапорець -su генерує файл невідомих слів.
+Буде створено файл <мій-файл.tagged.xml>. Прапорець "-su" генерує файл невідомих слів.
 
 
-### Використовувані програмні засоби
+## Використовувані програмні засоби
 
 Для аналізу текстів використовується український модуль [LanguageTool](https://languagetool.org)
 
