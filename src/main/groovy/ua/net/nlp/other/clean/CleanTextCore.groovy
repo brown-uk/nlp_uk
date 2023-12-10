@@ -392,6 +392,10 @@ class CleanTextCore {
         } as Callable<CharSequence>
     }
     
+    //TODO: мдрд, мрлд, мрд, перс-служб, кКал, однин
+    // .*тсья
+    // адмінстрац, адміністра-ції, фінасування, результатми, будьласка, дербюджет
+    
     @CompileStatic
     String cleanTextInternal(CleanRequest request) {
         def t00 = request.text.toString()
@@ -485,7 +489,8 @@ class CleanTextCore {
         text = text.replace('\\"', '"')
         text = text.replaceAll(/([бвгґдзкмнпрстфхш])\\'([яєюї])/, '$1\'$2')
         
-        text = text.replace(/\u200B/, ' ')
+        text = text.replaceAll(/(?iu)([а-яіїєґ])\u200B([а-яіїєґ])/, '$1$2')
+        text = text.replaceAll(/\u200B+/, ' ')
         text = text.replace(/\u02BA/, '"')
 
         // SINGLE LOW-9 QUOTATION MARK sometimes used as a comma

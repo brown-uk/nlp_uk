@@ -98,7 +98,8 @@ class CleanTextTest {
     @Test
     public void testRemove00AD() {
         assertEquals "Залізнична", clean("За\u00ADлізнична")
-        assertEquals "А Б", clean("А\u200BБ")
+        assertEquals "АБ", clean("А\u200BБ")
+        assertEquals "А  Б", clean("А \u200BБ")
         assertEquals "14-го", clean("14\u00ADго")
         assertEquals "необов’язковий\n", clean("необов’\u00AD\nязковий")
         assertEquals "Івано-франківський", clean("Івано-\u00ADфранківський")
