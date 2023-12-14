@@ -488,8 +488,9 @@ class CleanTextCore {
         // sometimes quotes are escaped
         text = text.replace('\\"', '"')
         text = text.replaceAll(/([бвгґдзкмнпрстфхш])\\'([яєюї])/, '$1\'$2')
-        
-        text = text.replaceAll(/(?iu)([а-яіїєґ])\u200B([а-яіїєґ])/, '$1$2')
+
+        text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ])\u200B([а-яіїєґ])/, '$1$2')
+        text = text.replaceAll(/([А-ЯІЄЇҐ])\u200B([А-ЯІЇЄҐ])/, '$1$2')
         text = text.replaceAll(/\u200B+/, ' ')
         text = text.replace(/\u02BA/, '"')
 
