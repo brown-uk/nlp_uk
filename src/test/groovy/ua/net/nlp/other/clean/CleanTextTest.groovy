@@ -106,6 +106,14 @@ class CleanTextTest {
     }
 
     @Test
+    public void testRemove001D() {
+        assertEquals "Баренцово-Карського", clean("Баренцово\u001DКарського")
+        assertEquals "прогинання\n ", clean("прогинан\u001D\n ня")
+//        assertEquals "Азово-Чорноморського\n", clean("Азово\u001D\nЧорноморського")
+        assertEquals "Азово-Чорноморського\n", clean("Азово\u001DЧорно\u001D\nморського")
+    }
+    
+    @Test
     public void testLatCyrcMix() {
         assertEquals "XXI", clean("XХІ")
 

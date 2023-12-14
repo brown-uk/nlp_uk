@@ -22,9 +22,10 @@ class ControlCharModule {
     OutputTrait out
     LtModule ltModule
     
-    @CompileStatic
     String removeControlChars(String text) {
         text = text.replace("\u200E", "")
+        
+        text = remove001DHyphens(text)
         
         def m = text =~ CONTROL_CHAR_PATTERN_W
         
@@ -60,4 +61,16 @@ class ControlCharModule {
         
         return text
     }
+    
+    private String remove001DHyphens(String text) {
+        if( text.contains("\u001D") ) {
+            out.println "\tremoving U+001D"
+//            out.println "\treplacing U+001D with U+00AC"
+//            text = text.replace("\u001D", "\u00AC")
+            text = text.replaceAll(/(?iu)([а-яіїєґ])\u001D\n(\h*)([а-яіїєґ'\u2019\u20BC-]+)/, '$1$3\n$2')
+            text = text.replaceAll(/(?iu)([а-яіїєґ])\u001D([а-яіїєґ])/, '$1-$2')
+        }
+        return text
+    }
+
 }
