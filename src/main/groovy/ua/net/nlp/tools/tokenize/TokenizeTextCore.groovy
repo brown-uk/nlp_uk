@@ -5,7 +5,7 @@ package ua.net.nlp.tools.tokenize
 import java.util.regex.Pattern
 import groovy.json.JsonGenerator
 import groovy.transform.CompileStatic
-
+import org.apache.commons.lang3.StringUtils
 import org.languagetool.language.*
 import org.languagetool.tokenizers.*
 import org.languagetool.tokenizers.uk.*
@@ -117,13 +117,18 @@ class TokenizeTextCore {
             if ( onlyWords ) {
                 words = words.collect { it.replace('\u0301', '') } 
                 words = words.findAll { WORD_PATTERN.matcher(it) }
-                TextUtils.adjustTokens(words, true)
+                words = TextUtils.adjustTokens(words, true)
+            }
+            else if( ! options.preserveWhitespace ) {
+                words = TextUtils.adjustTokens(words, true)
+                    .findAll { w -> ! StringUtils.isWhitespace(w) }
             }
             else {
-                TextUtils.adjustTokens(words, true).collect { word ->
+                words = TextUtils.adjustTokens(words, true).collect { word ->
                     word.replace("\n", options.newLine).replace("\t", " ")
-                };
+                }
             }
+            words
         }
     }
     
@@ -133,6 +138,8 @@ class TokenizeTextCore {
         boolean words
         @Option(names = ["-u", "--onlyWords"], description = ["Remove non-words (assumes \"-w\")"])
         boolean onlyWords
+        @Option(names = ["--preserveWhitespace"], description = "Preserve whitepsace tokens")
+        boolean preserveWhitespace
         @Option(names = ["-s", "--sentences"], description = "Tokenize into sentences (default)")
         boolean sentences
 

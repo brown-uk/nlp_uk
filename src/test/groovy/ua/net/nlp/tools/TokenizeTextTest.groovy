@@ -23,6 +23,13 @@ class TokenizeTextTest {
     void testWords() {
         TokenizeTextCore TokenizeTextCore = new TokenizeTextCore(new TokenizeOptions(words: true))
         def res = TokenizeTextCore.getAnalyzed("Автомагістраль-Південь, наш 'видатний' автобан. Став схожий на диряве корито")
+        assertEquals "Автомагістраль-Південь|,|наш|'|видатний|'|автобан|.\nСтав|схожий|на|диряве|корито\n", res.tagged
+    }
+
+    @Test
+    void testWordsWithSpace() {
+        TokenizeTextCore TokenizeTextCore = new TokenizeTextCore(new TokenizeOptions(words: true, preserveWhitespace: true))
+        def res = TokenizeTextCore.getAnalyzed("Автомагістраль-Південь, наш 'видатний' автобан. Став схожий на диряве корито")
         assertEquals "Автомагістраль-Південь|,| |наш| |'|видатний|'| |автобан|.| \nСтав| |схожий| |на| |диряве| |корито\n", res.tagged
     }
 
@@ -133,8 +140,8 @@ class TokenizeTextTest {
         def object = jsonSlurper.parseText("[" + TokenizeTextCore.getAnalyzed(
             "Автомагістраль-Південь, наш 'видатний' автобан. Став схожий на диряве корито").tagged + "]")
         assertEquals ([
-            ["Автомагістраль-Південь", ",", " ", "наш", " ", "'", "видатний", "'", " ", "автобан", ".", " "],
-            ["Став", " ", "схожий", " ", "на", " ", "диряве", " ", "корито"]], object)
+            ["Автомагістраль-Південь", ",", "наш", "'", "видатний", "'", "автобан", "."],
+            ["Став", "схожий", "на", "диряве", "корито"]], object)
     }
 
     @Test
@@ -143,6 +150,20 @@ class TokenizeTextTest {
 
         TokenizeTextCore TokenizeTextCore = new TokenizeTextCore(new TokenizeOptions(
             outputFormat: OutputFormat.json, words: true)
+        )
+
+        def object = jsonSlurper.parseText("[" + TokenizeTextCore.getAnalyzed(
+            "ТОВ «ЛАБЄАН-хісв»").tagged + "]")
+
+        assertEquals ([["ТОВ", "«", "ЛАБЄАН-хісв", "»"]], object)
+    }
+
+    @Test
+    void testQuotesSplitJsonWithWhitespace() {
+        def jsonSlurper = new JsonSlurper()
+
+        TokenizeTextCore TokenizeTextCore = new TokenizeTextCore(new TokenizeOptions(
+            outputFormat: OutputFormat.json, words: true, preserveWhitespace: true)
         )
 
         def object = jsonSlurper.parseText("[" + TokenizeTextCore.getAnalyzed(
