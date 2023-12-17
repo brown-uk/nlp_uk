@@ -36,8 +36,8 @@ import picocli.CommandLine.ParameterException
 
 
 class TagTextCore {
-    
-    public static final Pattern PUNCT_PATTERN = Pattern.compile(/[,.:;!?\/()\[\]{}«»„“"'…\u2013\u2014\u201D\u201C•■♦-]+/)
+
+    public static final Pattern PUNCT_PATTERN = Pattern.compile(/[,.:;!?\/()\[\]{}«»„“"'…\u2013\u2014\u201D\u201C•■♦-]+/)               // "
     public static final Pattern SYMBOL_PATTERN = Pattern.compile(/[%&@$*+=<>\u00A0-\u00BF\u2000-\u20CF\u2100-\u218F\u2200-\u22FF]+/)
     static final Pattern UNKNOWN_PATTERN = Pattern.compile(/(.*-)?[а-яіїєґА-ЯІЇЄҐ][а-яіїєґА-ЯІЇЄҐ'\u02BC\u2019]+(-.*)?/)
     static final Pattern NON_UK_PATTERN = Pattern.compile(/^[\#№u2013-]|[\u2013-]$|[ыэъё]|[а-яіїєґ][a-z]|[a-z][а-яіїєґ]/, Pattern.CASE_INSENSITIVE|Pattern.UNICODE_CASE)
@@ -62,9 +62,9 @@ class TagTextCore {
             super(str);
             this.stats = stats
         }
-	}
-	
-	TagStats stats = new TagStats()
+    }
+
+    TagStats stats = new TagStats()
     DisambigStats disambigStats = new DisambigStats()
     SemTags semTags = new SemTags()
     ModZheleh modZheleh = new ModZheleh(langTool)
@@ -179,10 +179,14 @@ class TagTextCore {
             ? langTool.analyzeSentences( text.split("\n") as List )
             : langTool.analyzeText(text)
     }
-    
+
+    @CompileStatic
+    public List<List<TTR>> tagTextCore(List<AnalyzedSentence> analyzedSentences) {
+        tagTextCore(analyzedSentences, null);
+    }
+        
     @CompileStatic
     List<List<TTR>> tagTextCore(List<AnalyzedSentence> analyzedSentences, TagStats stats) {
-        
         List<List<TTR>> taggedSentences = 
           analyzedSentences.parallelStream().map { AnalyzedSentence analyzedSentence ->
             
@@ -663,6 +667,13 @@ class TagTextCore {
         if( options.download ) {
             nlpUk.download()
             return
+        }
+
+        if( ! options.quiet ) {
+            println("LT version: ${JLanguageTool.VERSION}")
+            def dictUkVersionRes = Ukrainian.class.getClassLoader().getResourceAsStream('org/languagetool/resource/uk/VERSION')
+            def dictUkversion = dictUkVersionRes ? dictUkVersionRes.text : "<unknown>"
+            println("dict_uk version: ${dictUkversion}")
         }
 
         // TODO: quick hack to support multiple files

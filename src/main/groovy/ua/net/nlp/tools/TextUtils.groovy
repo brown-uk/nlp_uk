@@ -349,7 +349,7 @@ public class TextUtils {
         @Option(names = ["-o", "--output"], arity="1", description = ["Output file"])
         String output
         @Option(names = ["-q", "--quiet"], description = ["Less output"])
-        boolean quiet
+        public boolean quiet
         @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
         boolean helpRequested
         @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt}", defaultValue = "xml")
