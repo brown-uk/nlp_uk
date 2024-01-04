@@ -3,6 +3,10 @@
 package ua.net.nlp.tools.tag
 
 import java.math.RoundingMode
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -676,25 +680,27 @@ class TagTextCore {
             println("dict_uk version: ${dictUkversion}")
         }
 
-        // TODO: quick hack to support multiple files
-        if( options.inputFiles && options.inputFiles != ["-"] ) {
+        // TODO: quick hack to support recursive processing
+        if( options.recursive ) {
+            def dirs = options.inputFiles ?: ["."]
             
-            ExecutorService executors = Executors.newWorkStealingPool()
-            options.singleThread = true
-            options.inputFiles.forEach{ filename ->
-                options.output = ""
-                options.input = filename
-                nlpUk.setInputOutput(options)
-                IOFiles files = TextUtils.prepareInputOutput(options)
-                
-                executors.submit({
-                    nlpUk.process(files)
-                } as Runnable)
+            List<File> files = []
+            dirs.collect { d -> 
+                new File(d).eachFileRecurse { f -> 
+                      if( f.name.toLowerCase().endsWith(".txt") ) {
+                          files << f
+                      }
+                }
             }
             
-            executors.shutdown()
-            executors.awaitTermination(1, TimeUnit.DAYS)
-            nlpUk.postProcess()
+            println "Found ${files.size()} files with .txt extension" // + files
+            options.singleThread = true
+            processFilesParallel(nlpUk, options, files.collect { it.path })
+        }
+        // TODO: quick hack to support multiple files
+        else if( options.inputFiles && options.inputFiles != ["-"] ) {
+            options.singleThread = true
+            processFilesParallel(nlpUk, options, options.inputFiles)
         }
         else {
             nlpUk.process()
@@ -702,4 +708,22 @@ class TagTextCore {
         }
     }
 
+    static processFilesParallel(TagTextCore nlpUk, TagOptions options, List<String> inputFiles) {
+        ExecutorService executors = Executors.newWorkStealingPool()
+        inputFiles.forEach{ filename ->
+            options.output = ""
+            options.input = filename
+            nlpUk.setInputOutput(options)
+            IOFiles files = TextUtils.prepareInputOutput(options)
+            
+            executors.submit({
+                nlpUk.process(files)
+            } as Runnable)
+        }
+        
+        executors.shutdown()
+        executors.awaitTermination(1, TimeUnit.DAYS)
+        nlpUk.postProcess()
+    }
+    
 }

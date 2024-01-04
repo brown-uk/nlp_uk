@@ -20,18 +20,9 @@ in_txt = None
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", help="Verbose",  action="store_true")
 parser.add_argument("-g", help="Disambiguate and print first token only",  action="store_true")
-parser.add_argument("input_file", default=None, type=str, help="Input file")
-parser.add_argument("-o", "--output_file", default=None, type=str, help="Output file")
-#parser.add_argument("-gr", "--disambiguationRate", default=None, type=str, help="Show a disambiguated token ratings")
-#parser.add_argument("-t", "--tokenFormat", default=None, type=str, help="Use <token> format (instead of <tokenReading>)")
-#parser.add_argument("-t1", "--singleTokenOnly", default=None, type=str, help="rint only one token per reading (-g is recommended with this option)")
+parser.add_argument("dir", default=".", type=str, help="Directory to look for txt files in")
 
 args = parser.parse_args()
-
-
-with open(args.input_file, encoding=ENCODING) as a_file:
-    in_txt = a_file.read()
-
 
 def print_output(p):
 
@@ -50,18 +41,14 @@ my_env["JAVA_TOOL_OPTIONS"] = "-Dfile.encoding=UTF-8"
 
 
 groovy_cmd = 'groovy.bat' if sys.platform == "win32" else 'groovy'
-cmd = [groovy_cmd, SCRIPT_PATH + '/TagText.groovy', '-i', '-']
+cmd = [groovy_cmd, SCRIPT_PATH + '/TagText.groovy']
 
 if args.g:
     cmd.append('-g')
     cmd.append('-t1')
 
-if args.output_file:
-    cmd.append('-o')
-    cmd.append(args.output_file)
-else:
-    cmd.append('-o')
-    cmd.append('-')
+cmd.append('-r')
+cmd.append(args.dir)
 
 if args.v:
     print('Running: ' + str(cmd))
@@ -75,6 +62,5 @@ threading.Thread(target=print_output, args=(p,)).start()
 threading.Thread(target=print_error, args=(p,)).start()
 
 
-p.stdin.write(in_txt.encode(ENCODING))
 p.stdin.close()
 
