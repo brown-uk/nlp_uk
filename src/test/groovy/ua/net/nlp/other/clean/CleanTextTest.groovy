@@ -3,6 +3,7 @@
 package ua.net.nlp.other.clean
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
 import static org.junit.jupiter.api.Assertions.assertTrue
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
@@ -25,9 +26,13 @@ class CleanTextTest {
 
     CleanTextCore cleanText = new CleanTextCore( options )
 
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
+    
     @BeforeEach
     public void init() {
-        cleanText.out.init()
+//        cleanText.out.init()
+        
+        cleanText.out.out.set(new PrintStream(outputStream))
     }
             
     @CompileStatic
@@ -127,6 +132,22 @@ class CleanTextTest {
 
         assertEquals "сіс", clean("с_і_с")
         
+        assertEquals "Corporation", clean("С_orporation")
+        
+        assertEquals "нашій Twitter", clean("нашійTwitter")
+        
+        // leave as is
+        outputStream.reset()
+        assertEquals "margin'ом", clean("margin'ом")
+        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
+
+        assertEquals "ГогольFest", clean("ГогольFest")
+        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
+
+        assertEquals "скорhйше", clean("скорhйше")
+        // mark but don't fix as most probably it's "ѣ"
+//        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
+
         // latin i
         def orig = "чоловіка i жінки"
         def result = clean(orig)
@@ -147,7 +168,7 @@ class CleanTextTest {
     }
         
     @Test
-    public void testWrap() {
+    public void testWordWrap() {
 		assertEquals "урахування\n", clean("ураху-\nвання")
         assertEquals "Прем’єр-ліги\n", clean("Прем’єр-\nліги")
 //        assertEquals "інформаційно\u2013звітний\n", clean("інформаційно\u2013\nзвітний")
@@ -169,6 +190,17 @@ class CleanTextTest {
 
         result = clean("благо-\nдійної")
         assert result == "благодійної\n"
+        
+        // with space
+        result = clean("кудись- \nінде")
+        assert result == "кудись-інде\n"
+        
+        // with 2 new lines
+        result = clean("сукуп-\n \n ність")
+        assertEquals "сукупність\n ", result
+
+        result = clean("сукуп-\n --- \n ність")
+        assertEquals "сукупність\n ", result
     }
 
     

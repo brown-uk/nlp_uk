@@ -46,7 +46,6 @@ class TagTextSemTest {
     <token value="голова" lemma="голова" tags="noun:inanim:f:v_naz" semtags="1:conc:body:part:2:abst:ment:3:abst:unit" />
   </tokenReading>
   <tokenReading>
-    <token value="аахенська" lemma="аахенський" tags="adj:f:v_kly" semtags="1:abst" />
     <token value="аахенська" lemma="аахенський" tags="adj:f:v_naz" semtags="1:abst" />
   </tokenReading>
   <tokenReading>

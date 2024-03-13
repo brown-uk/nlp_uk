@@ -94,6 +94,19 @@ class TagTextDisambigTest {
         tagged = tagText.tagText("Чорні")
 
         assertEquals expected4, tagged.tagged
+
+        assumeTrue(NEW_TESTS)
+        
+        tagged = tagText.tagText("минула думка")
+        
+        expected =
+"""<sentence>
+  <token value="минула" lemma="минути" tags="verb:perf:past:f" />
+  <token value="думка" lemma="думка" tags="noun:inanim:f:v_naz" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
     }
     
     

@@ -35,13 +35,11 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+
 import groovy.io.FileVisitResult
-import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
-import groovy.transform.PackageScope
 import picocli.CommandLine
 import picocli.CommandLine.ParameterException
-import ua.net.nlp.other.clean.CleanOptions
 import ua.net.nlp.other.clean.CleanOptions.MarkOption
 
 
@@ -66,6 +64,8 @@ class CleanTextCore {
     EncodingModule encodingModule = new EncodingModule(out: out)
     HyphenModule hyphenModule = new HyphenModule(out: out, ltModule: ltModule)
     ControlCharModule controlCharModule = new ControlCharModule(out: out, ltModule: ltModule)
+    ApostropheModule apostropheModule = new ApostropheModule(out: out, ltModule: ltModule)
+    GracModule gracModule = new GracModule(out: out, ltModule: ltModule)
     
     
     CleanTextCore(CleanOptions options) {
@@ -268,6 +268,14 @@ class CleanTextCore {
     
     @CompileStatic
     doCleanFile(File file, File outFile) {
+        if( file.size() == 0 ) {
+            out.println "\tWARNING: Empty file ${file.name}"
+            if( options.keepInvalidFiles ) {
+                copyAsIs(file, outFile)
+            }
+            return
+        }
+        
         String text = cleanUp(file, options, outFile)
 
         if( ! text ) {
@@ -287,9 +295,14 @@ class CleanTextCore {
             outFile.setText(text, UTF8)
         }
         else {
-            out.println "\tCopying file as is"
-            outFile.setBytes(file.getBytes())
+            copyAsIs(file, outFile)
         }
+    }
+
+    @CompileStatic
+    private copyAsIs(File file, File outFile) {
+        out.println "\tCopying file as is"
+        outFile.setBytes(file.getBytes())
     }
     
     @CompileStatic
@@ -302,6 +315,8 @@ class CleanTextCore {
 //        }
 
         text = encodingModule.getText(file)
+        if( text == null ) // we have detected rtf or word
+            return file.getText('UTF-8')
         if( ! text )
             return text
 
@@ -408,7 +423,11 @@ class CleanTextCore {
             return null
         
         t00 = controlCharModule.removeControlChars(t00)
-            
+        
+        t00 = gracModule.fix(t00)
+        
+        t00 = fixTypos(t00)
+        
         def t0 = fixQuotes(t00)
 //t00 = null // ml
             
@@ -425,13 +444,9 @@ class CleanTextCore {
         def t01 = fixOi(t0)
 // t0 = null // ml
 
-        // fix weird apostrophes
-        t01 = t01.replaceAll(/(?iu)([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384\u0092´`?*]([єїюя])/, /$1'$2/) // "
-        t01 = t01.replaceAll(/(?iu)[´`]([аеєиіїоуюя])/, '\u0301$1')
-//        t0 = t0.replaceAll(/(?iu)([а-яіїєґ'\u2019\u02BC\u2013-]*)[´`]([а-яіїєґ'\u2019\u02BC\u2013-]+)/, { all, w1, w2
-//                  def fix = "$w1'$w2"
-//                knownWord(fix) ? fix : all
-//        }
+        t01 = apostropheModule.fixWeirdApostrophes(t01)
+
+        t01 = apostropheModule.fixSpacedApostrophes(t01)
         
         def t10 = hyphenModule.removeSoftHyphens(t01)
 //t01 = null // ml
@@ -442,8 +457,6 @@ class CleanTextCore {
 
         // digit 3 instead of letter З
         t10 = t10.replaceAll(/\b3[аa]([\h\v]*[а-яіїєґА-ЯІЇЄҐ])/, 'За$1')
-
-        t10 = t10.replaceAll(/(чоло|Людо)[ -](в[іі]к)/, '$1$2')
 
 
         def t12 = latCyrModule.fixCyrLatMix(t10)
@@ -477,6 +490,14 @@ class CleanTextCore {
         }
         
         t12
+    }
+    
+    @CompileStatic
+    String fixTypos(String text) {
+        text = text.replaceAll(/тсья\b/, 'ться')
+        text = text.replaceAll(/т(тт[яюі])/, '\1')
+        text = text.replaceAll(/н(нн[яюі])/, '\1')
+        text = text.replaceAll(/ьі/, 'ы')
     }
 
     
