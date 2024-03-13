@@ -14,6 +14,8 @@ public class TagOptions extends OptionsBase {
     List<String> inputFiles
     @Option(names = ["-r", "--recursive"], description = "Tag all files recursively in the given directories")
     boolean recursive
+    @Option(names = ["--list-file"], description = "Read files to tag from the file")
+    String listFile
 
     @Option(names = ["--lemmaOnly"], description = "Prints only lemmas, implies: --outputFormat=txt --disambiguate=true")
     boolean lemmaOnly

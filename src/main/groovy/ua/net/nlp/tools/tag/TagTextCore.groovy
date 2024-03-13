@@ -700,6 +700,11 @@ class TagTextCore {
             options.singleThread = true
             processFilesParallel(nlpUk, options, options.inputFiles)
         }
+        else if( options.listFile ) {
+            options.singleThread = true
+            def files = new File(options.listFile).readLines('UTF-8')
+            processFilesParallel(nlpUk, options, files)
+        }
         else {
             nlpUk.process()
             nlpUk.postProcess()
