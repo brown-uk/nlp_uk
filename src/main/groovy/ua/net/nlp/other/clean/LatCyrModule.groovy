@@ -10,13 +10,20 @@ import groovy.transform.PackageScope
 
 @PackageScope
 class LatCyrModule {
-    Map<String, String> KNOWN_MIXES =
+    private static final String TEMP_EMPTY = "\uE117"
+    
+    private static final Map<String, String> KNOWN_MIXES =
     [
-        "ТаблоID": "Табло@@ID",
-        "Фirtka": "Ф@@irtka"
+        "ТаблоID": "Табло\uE117ID",
+        "Фirtka": "Ф\uE117irtka",
+        "СхідSide": "Схід\uE117Side",
+        "ГолосUA": "Голос\uE117UA",
+        "ОsтаNNя": "Оsта\uE117NNя",
+        // ЧорнобильRenaissance
+        // НашSoft
     ]
 
-    Map<String, String> latToCyrMap = [
+    private static final Map<String, String> latToCyrMap = [
         'a' : 'а',
         'c' : 'с',
         'e' : 'е',
@@ -100,7 +107,7 @@ class LatCyrModule {
     String fixReliableCyr(String text, int[] counts) {
         // exclusively cyrillic letter followed by latin looking like cyrillic
 //        def t1 = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
-        def m1 = text =~ /([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/
+        def m1 = text =~ /([бвгґдєжзийклмнптфцчшщьюяѣБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/
         def t1 = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // all, cyr, lat
             def cyr = mr.group(1)
             def lat = mr.group(2)
@@ -112,7 +119,7 @@ class LatCyrModule {
         // exclusively cyrillic letter preceeded by latin looking like cyrillic
 
 //        text.replaceAll(/([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
-        def m2 = t1 =~ /([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/
+        def m2 = t1 =~ /([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяѣБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/
 // t1 = null // ml
         def t2 = m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // lat, cyr
             def lat = mr.group(1)
@@ -139,7 +146,7 @@ class LatCyrModule {
         } } )
 
 //        def t2 = t1.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
-        def m2 = t1 =~ /([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/
+        def m2 = t1 =~ /([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfgjklmnrstuvwzDFGJLNQRSUVWZ])/ // h is often == ѣ
 // t1 = null // ml
         m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
             def cyr = mr.group(1)
@@ -168,21 +175,50 @@ class LatCyrModule {
         })
     }
     
+    private static Pattern SMALL_UK_BIG_EN = ~ /([а-яіїєґ])([A-Z])/
+    
+    // в нашійTwitter-трансляції
+    @CompileStatic
+    String fixToSplit(String text, int[] counts) {
+
+        text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-Z-]+/, { String it ->
+
+            def m = SMALL_UK_BIG_EN.matcher(it)
+            if( m ) {
+                def split = m.replaceFirst('$1 $2')
+                def parts = split.split(' ')
+                
+                if( parts[0].length() >= 2 && parts[1].length() >= 3 
+                    && ltModule.knownWord(parts[0])
+                    && ltModule.knownWordEn(parts[1]) ) {
+                    out.debug "mix: 2.1"
+                    counts[0] += 1
+                    return split
+                }
+            }
+            return it
+        })
+    }
+
+    // ignoring best man'ом
+    private static Pattern TO_ALL_CYR_WORD = ~/[а-яіїєґА-ЯІЇЄҐ]['’ʼ]?[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]|[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ][а-яіїєґА-ЯІЇЄҐ]/
+    private static Pattern TO_ALL_CYR_SYMB = ~/[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/
+    
     @CompileStatic
     String fixToAllCyrillic(String text, int[] counts) {
         // 2nd tier - try all Cyrillic
         // if we convert all Latin to Cyrillic and find it in the dictionary use conversion
 
-        text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-ZáÁéÉíÍḯḮóÓúýÝ-]+/, { String it ->
+        text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ\u0301'ʼ’a-zA-ZáÁéÉíÍḯḮóÓúýÝ-]+/, { String it ->
 
-            if( it =~ /[а-яіїєґА-ЯІЇЄҐ]['’ʼ]?[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/
-                    || it =~ /[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]['’ʼ]?[а-яіїєґА-ЯІЇЄҐ]/ ) {
+            if( TO_ALL_CYR_WORD.matcher(it) ) {
                 //            println "Found mix in: $it, known to LT: " + knownWord(it)
-                if( ! ltModule.knownWord(it) ) {
-                    def fixed = it.replaceAll(/[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/, { String lat -> latToCyrMap[lat] })
-                    def fixedCleaned = fixed.replace('\u0301', '')
+                if( it.length() > 3 && ! ltModule.knownWord(it) ) {
+                    def fixed = TO_ALL_CYR_SYMB.matcher(it).replaceAll{ MatchResult lat -> latToCyrMap[lat.group()] }
+//                    def fixedCleaned = fixed.replace('\u0301', '')
                     //                println "\tfixed $fixed known to LT: " + knownWord(fixedCleaned)
-                    if( ltModule.knownWord(fixedCleaned) ) {
+                    if( ltModule.knownWord(fixed) ) {
+                        out.debug "mix: 2 - all cyr"
                         counts[0] += 1
                         return fixed
                     }
@@ -191,7 +227,29 @@ class LatCyrModule {
             return it
         })
     }
-        
+
+    @CompileStatic
+    String fixToAllEnglish(String text, int[] counts) {
+        // 2nd tier - try all Latin
+        // if we convert all Cyrillic to Lating and find it in the English dictionary use conversion
+
+        text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-Z-]+/, { String it ->
+
+            if( it =~ /[a-zA-Z]['’ʼ]?[aceiopxyABCEIKMHOPTXY]|[aceiopxyABCEIKMHOPTXY]['’ʼ]?[a-zA-Z]/ ) {
+                //            println "Found mix in: $it, known to LT: " + knownWord(it)
+                if( ! ltModule.knownWord(it) ) {
+                    def fixed = it.replaceAll(/[асеіорхуАВСЕНІКМОРТХУ]/, { String cyr -> cyrToLatMap[cyr] })
+                    if( ltModule.knownWordEn(fixed) ) {
+                        out.debug "mix: 2 - all English"
+                        counts[0] += 1
+                        return fixed
+                    }
+                }
+            }
+            return it
+        })
+    }
+
     @CompileStatic
     String removeMix(String text) {
         int[] counts = [0, 0]
@@ -207,20 +265,25 @@ class LatCyrModule {
         
         // 2nd tier
 
-        def t4 = fixToAllCyrillic(t3, counts)
+        def t40 = fixToSplit(t3, counts)
+        
+        def t41 = fixToAllCyrillic(t40, counts)
 // t3 = null // ml
+
+        def t5 = fixToAllEnglish(t41, counts)
         
         // 3nd tier - least reliable
 
-        def t5 = fixCharBetweenOthers(t4, counts)
+        def t6 = fixCharBetweenOthers(t5, counts)
 // t4 = null // ml
         out.println "\tconverted ${counts[0]} lat->cyr, ${counts[1]} cyr->lat"
 
-        return t5
+        return t6
     }
 
 
     static final Pattern MIX_1 = ~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/
+//    static final Pattern APO_ENDING = ~ /([a-zA-Z]+)(['’ʼ][а-яіїє]{1,5})\b/
     
     @CompileStatic
     String fixCyrLatMix(String text) {
@@ -237,10 +300,14 @@ class LatCyrModule {
 
         
         if( MIX_1.matcher(t0).find() ) {
+            t0 = t0.replaceAll(/(?iu)([а-яіїєґ])(Fest|Inform|SOS|Art|City|News)/, '$1\uE117$2')
+            
             KNOWN_MIXES.each { String k, String v ->
-                text = text.replace(k, v)
+                t0 = t0.replace(k, v)
             }
 
+//            t0 = APO_ENDING.matcher(t0).replaceAll('$1\uE010$2')
+            
             if( MIX_1.matcher(t0).find() ) {
                 out.println "\tlatin/cyrillic mix"
 
@@ -254,9 +321,9 @@ class LatCyrModule {
 // t1 = null // ml
             }
 
-            KNOWN_MIXES.each { String k, String v ->
-                text = text.replace(v, k)
-            }
+//            t0 = t0.replace('\uE010', '')
+            
+            t0 = t0.replace(TEMP_EMPTY, '')
         }
 
         // Latin a, o, i, and y

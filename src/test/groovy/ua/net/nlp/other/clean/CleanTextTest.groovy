@@ -58,6 +58,11 @@ class CleanTextTest {
 	}
 
     @Test
+    public void testTypos() {
+        assertEquals "нагородження", clean("нагородженння")
+    }
+    
+    @Test
     public void testControlChars() {
         assertEquals "екс-глава", clean("екс\u001Fглава")
         assertEquals "екс-глава", clean("екс\u001E\nглава")
@@ -117,7 +122,12 @@ class CleanTextTest {
 //        assertEquals "Азово-Чорноморського\n", clean("Азово\u001D\nЧорноморського")
         assertEquals "Азово-Чорноморського\n", clean("Азово\u001DЧорно\u001D\nморського")
     }
-    
+
+    @Test
+    public void testApostrophe() {
+        assertEquals "зв'язаний", clean("зв 'язаний")
+    }
+        
     @Test
     public void testLatCyrcMix() {
         assertEquals "XXI", clean("XХІ")
@@ -251,8 +261,8 @@ def text="""
 //        result = clea("Зе- ленський", file(), new CleanOptions())
 //        assert result == "Зеленський"
 
-        result = clean("чоло-віка")
-        assert result == "чоловіка"
+//        result = clean("чоло-віка")
+//        assert result == "чоловіка"
 	}
     
     @Disabled

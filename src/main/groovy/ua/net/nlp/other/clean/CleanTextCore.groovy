@@ -40,7 +40,6 @@ import groovy.io.FileVisitResult
 import groovy.transform.CompileStatic
 import picocli.CommandLine
 import picocli.CommandLine.ParameterException
-import ua.net.nlp.other.clean.CleanOptions.MarkOption
 
 
 @CompileStatic
@@ -407,10 +406,6 @@ class CleanTextCore {
         } as Callable<CharSequence>
     }
     
-    //TODO: мдрд, мрлд, мрд, перс-служб, кКал, однин
-    // .*тсья
-    // адмінстрац, адміністра-ції, фінасування, результатми, будьласка, дербюджет
-    
     @CompileStatic
     String cleanTextInternal(CleanRequest request) {
         def t00 = request.text.toString()
@@ -480,7 +475,7 @@ class CleanTextCore {
 
         checkForSpacing(t12)
 
-        if( options.markLanguages != MarkOption.none ) {
+        if( options.markLanguages != CleanOptions.MarkOption.none ) {
             def req2 = new CleanRequest(text: t12, file: request.file, outFile: request.outFile)
             t12 = markLanguageModule.markRussian(request.forText(t12), outDirName)
         }
@@ -495,9 +490,27 @@ class CleanTextCore {
     @CompileStatic
     String fixTypos(String text) {
         text = text.replaceAll(/тсья\b/, 'ться')
-        text = text.replaceAll(/т(тт[яюі])/, '\1')
-        text = text.replaceAll(/н(нн[яюі])/, '\1')
-        text = text.replaceAll(/ьі/, 'ы')
+        text = text.replaceAll(/т(тт[яюі])/, '$1')
+        text = text.replaceAll(/н(нн[яюі])/, '$1')
+
+        text = text.replace(/дербюджет/, 'держбюджет')
+        text = text.replace(/фінасуванн/, /фінансуванн/)
+        text = text.replace(/адмінстрац/, /адміністрац/)
+        text = text.replace("дистопад", "листопад")
+        
+        text = text.replaceAll(/\b(мдрд|мрлд|мрд)\b/, 'млрд')
+        
+        // too many FP: Тижденьі розмовляв, Владімір Ільіч
+//        text = text.replaceAll(/ьі/, 'ы')
+    
+        text = text.replace("заборгованност", "заборгованост")
+        text = text.replaceAll(/\bперс-(служб|центр|секрет|конф)/, 'прес-$1')
+        text = text.replaceAll(/(повдіомле|повідмле|повідмоле)нн/, 'повідомленн')
+        text = text.replace(/авіакастроф/, 'авіакатастроф')
+        text = text.replace(/зазанач/, 'зазнач')
+        text = text.replace(/йдетьсяу/, 'йдеться у')
+
+    //TODO: кКал, будьласка
     }
 
     

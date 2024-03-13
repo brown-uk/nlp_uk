@@ -42,7 +42,7 @@ class HyphenModule {
 
             if( text.contains("\u00AD") ) {
                 def ctx = CleanUtils.getContext(text, "\u00AD")
-                out.println "\t\tNOTE: still contains soft hyphens: $ctx"
+                out.println "\t\tNOTE: still contains U+00AD hyphens: $ctx"
             }
         }
         return text
@@ -71,6 +71,10 @@ class HyphenModule {
             } } )
             t0 = t2
 // t2 = null // ml
+            if( text.contains("\u00AC") ) {
+                def ctx = CleanUtils.getContext(text, "\u00AC")
+                out.println "\t\tNOTE: still contains U+00AC hyphens: $ctx"
+            }
         }
         return t0
     }
@@ -98,19 +102,19 @@ class HyphenModule {
 
     @CompileStatic
     String fixDanglingHyphens(String text) {
-        if( text.contains("-\n") && text =~ /[а-яіїєґА-ЯІЇЄҐ]-\n/ ) {
+        if( text =~ /[а-яіїєґА-ЯІЇЄҐ]-[ \t]*\n/ ) {
             out.println "\tsuspect word wraps"
             def cnt = 0
             int cntWithHyphen = 0
 
             // e.g.: депутат-\n«мажоритарник»
-            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ-]+)-\n([ \t]*)([«„"][а-яіїєґ'ʼ’-]+[»“"])([,;.!?])?/, { List<String> it ->
+            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ-]+)[ \t]*-\n([ \t]*)([«„"][а-яіїєґ'ʼ’-]+[»“"])([,;.!?])?/, { List<String> it ->
                 cntWithHyphen += 1
                 it[1] + "-" + it[3] + (it[4] ?: "") + "\n" + it[2]
             })
 
             def first = null
-            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-\n([ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, { List<String> it ->
+            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-[ \t]*\n(?:[ \t]*(?:---)?[ \t]*\n)?([ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, { List<String> it ->
                 if( ! first )
                     first = it[0] ? it[0].replace('\n', "\\n") : it[0]
                 //            println "== " + (it[1] + "-" + it[3]) + ", known: " + knownWord(it[1] + "-" + it[3])
@@ -135,12 +139,16 @@ class HyphenModule {
             }
         }
 
-        if( text =~ /¬ *\n/ ) {
+        if( text =~ /¬[ \t]*\n/ ) {
             out.println "\tsuspect word wraps with ¬:"
             text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)¬ *\n([ \t]*)([а-яіїєґ'ʼ’-]+)/, '$1$3\n$2')
             out.println "\t\t¬ word wraps removed"
         }
 
+        if( text =~ /[а-яіїєґА-ЯІЇЄҐ][-–¬][ \t]*\n/ ) {
+            out.println "\t\tNOTE: still contains word wraps"
+        }
+        
         return text
     }
 

@@ -3,6 +3,7 @@ package ua.net.nlp.other.clean
 import org.languagetool.AnalyzedToken
 import org.languagetool.language.Ukrainian
 import org.languagetool.tagging.Tagger
+import org.languagetool.tagging.en.EnglishTagger
 import org.languagetool.tagging.ru.RussianTagger
 import org.languagetool.tagging.uk.UkrainianTagger
 import org.languagetool.tokenizers.SRXSentenceTokenizer
@@ -16,6 +17,8 @@ import groovy.transform.PackageScope
 class LtModule {
     @Lazy
     RussianTagger ruTagger = { new RussianTagger() }()
+    @Lazy
+    EnglishTagger enTagger = { new EnglishTagger() }()
 
     Ukrainian ukLanguage = new Ukrainian() {
         @Override
@@ -53,6 +56,17 @@ class LtModule {
     boolean knownWordRu(String word) {
         try {
             return ! ruTagger.tag(Arrays.asList(word))[0][0].hasNoTag()
+        }
+        catch (Exception e) {
+            System.err.println("Failed on word: $word")
+            throw e
+        }
+    }
+    
+    @CompileStatic
+    boolean knownWordEn(String word) {
+        try {
+            return ! enTagger.tag(Arrays.asList(word))[0][0].hasNoTag()
         }
         catch (Exception e) {
             System.err.println("Failed on word: $word")

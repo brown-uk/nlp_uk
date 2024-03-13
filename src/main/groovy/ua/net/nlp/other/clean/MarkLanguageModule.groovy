@@ -242,9 +242,9 @@ class MarkLanguageModule {
                 return 0
 
             def badToken = tokenReadings.find { AnalyzedToken t ->
-                    t.getPOSTag().contains(":bad") && ! t.getPOSTag().contains("&adjp:actv") && ! (t.getLemma() =~ /(ння|ий)$/) }
+                    t.getPOSTag() =~ /:(bad|subst)/ && ! t.getPOSTag().contains("&adjp:actv") && ! (t.getLemma() =~ /(ння|ий)$/) }
             if( badToken ) {
-                def nonBadToken = badToken = tokenReadings.find { AnalyzedToken t -> ! t.getPOSTag().contains(":bad") }
+                def nonBadToken = badToken = tokenReadings.find { AnalyzedToken t -> ! (t.getPOSTag() =~ /:(bad|subst)/) }
                 if( ! nonBadToken )
                     return 2
             }
