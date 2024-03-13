@@ -19,6 +19,7 @@ import org.languagetool.AnalyzedSentence
 import org.languagetool.AnalyzedToken
 import org.languagetool.AnalyzedTokenReadings
 import org.languagetool.JLanguageTool
+import org.languagetool.LtBuildInfo
 import org.languagetool.MultiThreadedJLanguageTool
 import org.languagetool.language.Ukrainian
 
@@ -674,10 +675,7 @@ class TagTextCore {
         }
 
         if( ! options.quiet ) {
-            println("LT version: ${JLanguageTool.VERSION}")
-            def dictUkVersionRes = Ukrainian.class.getClassLoader().getResourceAsStream('org/languagetool/resource/uk/VERSION')
-            def dictUkversion = dictUkVersionRes ? dictUkVersionRes.text : "<unknown>"
-            println("dict_uk version: ${dictUkversion}")
+            printLtVersion()
         }
 
         // TODO: quick hack to support recursive processing
@@ -706,6 +704,13 @@ class TagTextCore {
             nlpUk.process()
             nlpUk.postProcess()
         }
+    }
+
+    def static printLtVersion() {
+        println("LT version: ${LtBuildInfo.OS.getVersion()}")
+        def dictUkVersionRes = Ukrainian.class.getClassLoader().getResourceAsStream('org/languagetool/resource/uk/VERSION')
+        def dictUkversion = dictUkVersionRes ? dictUkVersionRes.text : "<unknown>"
+        println("dict_uk version: ${dictUkversion}")
     }
 
     static processFilesParallel(TagTextCore nlpUk, TagOptions options, List<String> inputFiles) {
