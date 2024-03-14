@@ -110,7 +110,7 @@ class TagTextCore {
                             sb.append(" ")
                         }
                         if( options.lemmaOnly ) {
-                            sb.append(token.tokens[0].lemma)                    
+                            sb.append(token.tokens[0].lemma)
                         }
                         else {
                             def lemmasAndTags = token.tokens.collect{ t -> 
@@ -520,27 +520,48 @@ class TagTextCore {
 
 
     def process() {
-        stats = new TagStats()
-        stats.options = options
+//        def stats = new TagStats()
+//        stats.options = options
         
         def outputFile = TextUtils.processByParagraph(options, { buffer ->
             return tagText(buffer)
         },
-		{ TagResult result ->
-			stats.add(result.stats) 
-		});
+        { TagResult result ->
+            // when processing stdin add stats to the global ones
+            this.stats.add(result.stats)
+        });
     }
 
-    def process(IOFiles files) {
-        stats = new TagStats()
+    def process(IOFiles fileInfo) {
+        def stats = new TagStats()
         stats.options = options
-        
-        def outputFile = TextUtils.processByParagraphInternal(options, files.inputFile, files.outputFile, { buffer ->
+
+        def outputFile = TextUtils.processByParagraphInternal(options, fileInfo.inputFile, fileInfo.outputFile, { buffer ->
             return tagText(buffer)
         },
         { TagResult result ->
+            // when processing by file add stats to the file stats first
             stats.add(result.stats)
         });
+
+        // ... then add to global ones
+        this.stats.add(stats)
+        addUnknownPct(stats, fileInfo)
+    }
+
+    def addUnknownPct(TagStats stats, IOFiles fileInfo) {
+//    println "== ${fileInfo.filename}, ${stats.knownCnt}, ${stats.unknownMap}"
+      if( fileInfo.filename
+            && ( stats.knownCnt || stats.unknownMap || stats.unclassMap ) ) {
+          def notKnownCnt = stats.unknownMap.values().sum(0) + stats.unclassMap.values().sum(0)
+          this.stats.unknownPctMap[fileInfo.filename] = (notKnownCnt)*1000 / (stats.knownCnt + notKnownCnt)
+      }
+      if( options.progress ) {
+        def sz = this.stats.unknownPctMap.size()
+        if( sz % 100 == 0 ) {
+          System.err.println "Processed ${sz} files"
+        }
+      }
     }
 
     def postProcess() {

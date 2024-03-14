@@ -74,6 +74,8 @@ public class TagOptions extends OptionsBase {
     boolean timing
     @Option(names = ["--download"], description = "Download file with disambiguation statistics and semantic tags (for tagging from CLI only)")
     boolean download
+    @Option(names = ["--progress"], description = "Pring progress information every <n> files", hidden = true)
+    int progress=0
 
     enum Module { zheleh, lesya }
     
@@ -112,6 +114,10 @@ public class TagOptions extends OptionsBase {
         if( ! quiet ) {
             System.err.println "Output format: " + outputFormat
         }
+    }
+
+    boolean isSingleFile() {
+      return ! recursive && ! listFile && inputFiles && inputFiles.size() == 1
     }
 
 }

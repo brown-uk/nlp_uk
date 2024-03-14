@@ -37,6 +37,8 @@ class TagStats {
     Set lemmaAmbigs = new HashSet<>()
     Map<String, Integer> knownMap = [:].withDefault { 0 }
     int knownCnt = 0
+    // filename -> unknown/unclass pct
+    Map<String, Integer> unknownPctMap = [:]
     @Lazy
     RussianTagger ruTagger = { RussianTagger.INSTANCE }()
 
@@ -173,7 +175,7 @@ class TagStats {
             printStream.println "\n\n"
         }
         else {
-            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml|json)$/, '') + '.homonym.txt')
+            def outputFile = new File(getStatFilename('homonym'))
             printStream = new PrintStream(outputFile, "UTF-8")
         }
 
@@ -196,15 +198,20 @@ class TagStats {
             }
     }
 
-    def printUnknownStats() {
+    String getStatFilename(String suffix) {
+        def name = options.isSingleFile()
+            && options.output && options.output != "-" ? options.output.replaceFirst(/\.(txt|xml|json)$/, '') : "all"
+        name += ".${suffix}.txt"
+    }
 
+    def printUnknownStats() {
         def printStream
         if( options.output == "-" ) {
             printStream = System.out
             printStream.println "\n\nUnknown:\n\n"
         }
         else {
-            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml|json)$/, '') + '.unknown.txt')
+            def outputFile = new File(getStatFilename('unknown'))
             printStream = new PrintStream(outputFile, "UTF-8")
         }
 
@@ -225,8 +232,20 @@ class TagStats {
         Map unknownWordsMap = unknownMap.findAll { k,v -> k =~ /(?iu)^[а-яіїєґ][а-яіїєґ'-]*/ }
         double unknownUniqueWordPct = knownMap.size()+unknownWordsMap.size() ? (double)unknownWordsMap.size()*100/(knownMap.size()+unknownWordsMap.size()) : 0
         println "\tunknown unique (letters only): " + unknownWordsMap.size() + ", " + String.format("%.1f", unknownUniqueWordPct) + "%"
-        
+
         printUnclassStats()
+
+        if( unknownPctMap ) {
+            def outputFile = new File(getStatFilename('unknownPcts'))
+            outputFile.text = ''
+            unknownPctMap
+                .sort { -it.value }
+                .each { k, v ->
+                    def str = String.format("%s\t%.1f\n", k, ((float)v)/10.0)
+                    outputFile << str
+                }
+        }
+
     }
 
     def printUnclassStats() {
@@ -236,7 +255,7 @@ class TagStats {
             printStream.println "\n\nUnclass:\n\n"
         }
         else {
-            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml|json)$/, '') + '.unclass.txt')
+            def outputFile = new File(getStatFilename('unclass'))
             printStream = new PrintStream(outputFile, "UTF-8")
         }
 
@@ -256,7 +275,7 @@ class TagStats {
             printStream.println "\n\n"
         }
         else {
-            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml|json)$/, '') + '.freq.txt')
+            def outputFile = new File(getStatFilename('freq'))
             printStream = new PrintStream(outputFile, "UTF-8")
         }
 
@@ -278,7 +297,7 @@ class TagStats {
             printStream.println "\n\n"
         }
         else {
-            def outputFile = new File(options.output.replaceFirst(/\.(txt|xml|json)$/, '') + '.lemma.freq.txt')
+            def outputFile = new File(getStatFilename('lemma.freq'))
             printStream = new PrintStream(outputFile, "UTF-8")
         }
 

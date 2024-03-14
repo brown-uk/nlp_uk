@@ -26,8 +26,9 @@ public class TextUtils {
     static class IOFiles {
         InputStream inputFile
         PrintStream outputFile
+        String filename // only for file-by-file case
     }
-    
+
     static IOFiles prepareInputOutput(OptionsBase options) {
         
 //        if( options.output == "-" || options.input == "-" ) {
@@ -62,7 +63,12 @@ public class TextUtils {
             }
         }
         
-        new IOFiles(inputFile: inputFile, outputFile: outputFile)
+        def ioFiles = new IOFiles(inputFile: inputFile, outputFile: outputFile)
+        if( options.input && options.input != "-" ) {
+            ioFiles.filename = options.input
+        }
+
+        return ioFiles
     }
     
     static def processByParagraph(OptionsBase options, Closure closure, Closure resultClosure) {
@@ -181,8 +187,15 @@ public class TextUtils {
         if( buffer ) {
             def analyzed = closure(buffer.toString())
             outputHandler.print(analyzed)
-            outputHandler.outputFile.println()
+            if( outputHandler.outputFile ) {
+                outputHandler.outputFile.println()
+            }
+            try {
 			postProcessClosure(analyzed)
+			}
+			catch(e) {
+			  e.printStackTrace()
+			}
         }
     }
 
