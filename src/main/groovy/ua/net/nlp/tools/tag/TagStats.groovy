@@ -199,8 +199,13 @@ class TagStats {
     }
 
     String getStatFilename(String suffix) {
-        def name = options.isSingleFile()
-            && options.output && options.output != "-" ? options.output.replaceFirst(/\.(txt|xml|json)$/, '') : "all"
+        def name = "all.tagged"
+//        if( options.output && options.output != "-" ) {
+//            name = options.output.replaceFirst(/\.(txt|xml|json)$/, '')
+//        }
+//        else if( options.isSingleFile() ) {
+//            name = options.inputFiles[0].replaceFirst(/\.(txt|xml|json)$/, '')
+//        }
         name += ".${suffix}.txt"
     }
 

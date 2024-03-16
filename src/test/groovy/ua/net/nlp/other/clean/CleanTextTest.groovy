@@ -241,7 +241,15 @@ def text="""
         def t = "Т. 2. -С. 212"
         assertEquals t, clean(t)
     }
-    
+
+    @Disabled
+    @Test
+    public void testHyphenWithSpace() {
+        assertEquals "свободи", clean("сво- боди")
+        //FP
+        assertEquals "теле- і радіопрограм", clean("теле- і радіопрограм")
+    }
+
 	@Test
 	void testOi() {
         def result = clean("новоствореноі")
