@@ -56,6 +56,7 @@ class CleanTextCore {
     OutputTrait out = new OutputTrait()
 
     String outDirName
+    List<String> exludeFiles = []
     
     LtModule ltModule = new LtModule()
     LatCyrModule latCyrModule = new LatCyrModule(out: out, ltModule: ltModule)
@@ -78,6 +79,10 @@ class CleanTextCore {
         }
         if( minUkrWordCount > 0 ) {
             println "Minimum word limit: $minUkrWordCount"
+        }
+        
+        if( options.excludeFromFile ) {
+            exludeFiles = new File(options.excludeFromFile).readLines()
         }
     }
 
@@ -138,7 +143,8 @@ class CleanTextCore {
             baseDir.traverse(type: groovy.io.FileType.FILES, 
                 maxDepth: maxDepth_,
                 preDir  : { File it ->
-                    if (it.name == 'good' || it.name.endsWith('-good') ) return FileVisitResult.SKIP_SUBTREE },
+                    if (it.name == 'good' || it.name.endsWith('-good') ) return FileVisitResult.SKIP_SUBTREE 
+                },
                 ) { File it ->
 //                if( it.isDirectory() && it.name == "good" )
 //                    return FileVisitResult.SKIP_SUBTREE
@@ -267,6 +273,12 @@ class CleanTextCore {
     
     @CompileStatic
     doCleanFile(File file, File outFile) {
+        if( file.name in exludeFiles ) {
+            out.println "\tExcluded file, copying as is ${file.name}"
+            copyAsIs(file, outFile)
+            return
+        }
+        
         if( file.size() == 0 ) {
             out.println "\tWARNING: Empty file ${file.name}"
             if( options.keepInvalidFiles ) {
@@ -324,6 +336,11 @@ class CleanTextCore {
 
     @CompileStatic
     String cleanText(String text, File file, File outFile) {
+        if( text =~ /\r(?!\n)/ ) {
+            out.println "\tAdding U+000A to orphaned U+000D"
+            text = text.replaceAll(/\r(?!\n)/, '\n')
+        }
+        
         int nlIdx = text.indexOf("\n")
         int dosNlIdx = text.indexOf("\r\n")
         boolean dosNlPresent = dosNlIdx >= 0 && dosNlIdx+1 == nlIdx
@@ -490,8 +507,8 @@ class CleanTextCore {
     @CompileStatic
     String fixTypos(String text) {
         text = text.replaceAll(/тсья\b/, 'ться')
-        text = text.replaceAll(/т(тт[яюі])/, '$1')
-        text = text.replaceAll(/н(нн[яюі])/, '$1')
+        text = text.replaceAll(/т(тт([яюі]|ями?|ях)?)/, '$1')
+        text = text.replaceAll(/н(нн([яюі]|ями?|ях)?)/, '$1')
 
         text = text.replace(/дербюджет/, 'держбюджет')
         text = text.replace(/фінасуванн/, /фінансуванн/)
@@ -510,7 +527,7 @@ class CleanTextCore {
         text = text.replace(/зазанач/, 'зазнач')
         text = text.replace(/йдетьсяу/, 'йдеться у')
 
-    //TODO: кКал, будьласка
+    //TODO: будьласка
     }
 
     

@@ -24,6 +24,8 @@ public class CleanOptions {
     boolean clean
     @Option(names = ["-r", "--recursive"], description = ["Process directories recursively"])
     boolean recursive
+    @Option(names = ["--exclude-file"], description = ["Don't clean files listed in this file (just copy them)"])
+    String excludeFromFile
     @Option(names = ["-d", "--debug"], description = ["Debug output"])
     boolean debug
     @Option(names = ["-z", "--markLanguages"], description = ["Mark text in another language, modes: none, mark, cut (supported language: Russian)"], defaultValue="none")
