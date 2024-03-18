@@ -507,9 +507,13 @@ class CleanTextCore {
     @CompileStatic
     String fixTypos(String text) {
         text = text.replaceAll(/тсья\b/, 'ться')
-        text = text.replaceAll(/т(тт([яюі]|ями?|ях)?)/, '$1')
-        text = text.replaceAll(/н(нн([яюі]|ями?|ях)?)/, '$1')
 
+        text = text.replaceAll(/[а-яїієґА-ЯІЇЄҐ][а-яїієґ’ʼ'-]+(ннн|ттт)[а-яїієґ][а-яїієґ'’ʼ-]*/, { all, w1 ->
+            String fix = all.replaceAll(/(?iu)н(нн)/, '$1').replaceAll(/(?iu)т(тт)/, '$1')
+            ltModule.knownWord(fix) ? fix : all
+        })
+
+        
         text = text.replace(/дербюджет/, 'держбюджет')
         text = text.replace(/фінасуванн/, /фінансуванн/)
         text = text.replace(/адмінстрац/, /адміністрац/)

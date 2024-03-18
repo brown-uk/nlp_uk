@@ -60,6 +60,8 @@ class CleanTextTest {
     @Test
     public void testTypos() {
         assertEquals "нагородження", clean("нагородженння")
+        // don't touch
+        assertEquals "Польттті", clean("Польттті")
     }
     
     @Test
