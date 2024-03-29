@@ -130,10 +130,15 @@ class TagStats {
     def collectFrequency(List<AnalyzedSentence> analyzedSentences) {
         for (AnalyzedSentence analyzedSentence : analyzedSentences) {
             analyzedSentence.getTokensWithoutWhitespace()[1..-1].each { AnalyzedTokenReadings tokenReadings ->
-                if( TagTextCore.isTagEmpty(tokenReadings.getAnalyzedToken(0).getPOSTag())
+                if( ! TagTextCore.isTagEmpty(tokenReadings.getAnalyzedToken(0).getPOSTag())
+                        && ! "unclass".equals(tokenReadings.getAnalyzedToken(0).getPOSTag())
                         && tokenReadings.getToken() =~ CYR_LETTER ) {
 //                            && ! (tokenReadings.getToken() =~ /[ыэъё]|[а-яіїєґА-ЯІЇЄҐ]'?[a-zA-Z]|[a-zA-Z][а-яіїєґА-ЯІЇЄҐ]/) ) {
-                    frequencyMap[tokenReadings.getCleanToken()] += 1
+                    def tkn = tokenReadings.getCleanToken()
+                    if( tokenReadings.getReadings().find{ it.lemma =~ /^[А-ЯІЇЄҐ]/ } == null ) {
+                      tkn = tkn.toLowerCase()
+                    }
+                    frequencyMap[tkn] += 1
                 }
             }
         }
