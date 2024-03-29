@@ -77,8 +77,9 @@ class LtModule {
     @CompileStatic
     static String normalize(String word) {
         word.replace('\u2019', '\'')
-        .replace('\u02BC', '\'')
-        .replace('\u2018', '\'')
+                .replace('\u02BC', '\'')
+                .replace('\u2018', '\'')
+                .replace('\u0301', '')
     }
 
     @CompileStatic

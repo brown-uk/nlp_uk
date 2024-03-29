@@ -177,6 +177,18 @@ class CleanTextTest {
         assert result == orig
 
         assertEquals "концентрація CO та CO2", clean("концентрація СO та CО2")
+
+        assertEquals "не всі в", clean("не всi в")
+        assertEquals "ДАІ", clean("ДАI")
+        
+        assertEquals "Бі–Бі–Сi", clean("Бі–Бі–Сi")
+        
+        assertEquals "розвиток ІТ", clean("розвиток IТ")
+        assertEquals "На лаві", clean("Hа лаві")
+
+        // Пальчикова і Кo
+        
+        assertEquals "о\u0301ргани", clean("óргани")
     }
         
     @Test

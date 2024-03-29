@@ -207,13 +207,14 @@ class LatCyrModule {
     @CompileStatic
     String fixToAllCyrillic(String text, int[] counts) {
         // 2nd tier - try all Cyrillic
-        // if we convert all Latin to Cyrillic and find it in the dictionary use conversion
+        // if we convert all Latin to Cyrillic and find it in the dictionary, use the conversion
 
         text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ\u0301'ʼ’a-zA-ZáÁéÉíÍḯḮóÓúýÝ-]+/, { String it ->
 
             if( TO_ALL_CYR_WORD.matcher(it) ) {
                 //            println "Found mix in: $it, known to LT: " + knownWord(it)
-                if( it.length() > 3 && ! ltModule.knownWord(it) ) {
+                if( (it.length() >= 3 || it =~ /[ІI][ТT]|[ТT][іiеe]|[НH][іiаaуy]/) 
+                        && ! ltModule.knownWord(it) ) {
                     def fixed = TO_ALL_CYR_SYMB.matcher(it).replaceAll{ MatchResult lat -> latToCyrMap[lat.group()] }
 //                    def fixedCleaned = fixed.replace('\u0301', '')
                     //                println "\tfixed $fixed known to LT: " + knownWord(fixedCleaned)
