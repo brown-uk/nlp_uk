@@ -29,16 +29,23 @@ dependencies {
     implementation group: 'org.apache.groovy', name: 'groovy-xml', version: groovyVersion
 
     implementation group: 'info.picocli', name: 'picocli', version: '4.7.0'
-    implementation group: 'ch.qos.logback', name:'logback-classic', version:'1.4.5'
+    implementation group: 'ch.qos.logback', name:'logback-classic', version:'1.4.+'
 
-    implementation("org.languagetool:language-uk:$ltUkVersion") {
+    implementation("org.languagetool:language-uk:$ltDevVersion") {
         exclude module: 'hunspell'
         exclude module: 'language-detector'
         exclude module: 'lucene-core'
         exclude group: 'org.apache.lucene'
         exclude group: 'io.grpc'
     }
-    implementation ("org.languagetool:language-ru:$ltVersion") {
+    implementation ("org.languagetool:language-ru:$ltBaseVersion") {
+        exclude module: 'hunspell'
+        exclude module: 'language-detector'
+        exclude module: 'lucene-core'
+        exclude group: 'org.apache.lucene'
+        exclude group: 'io.grpc'
+    }
+    implementation("org.languagetool:language-en:$ltBaseVersion") {
         exclude module: 'hunspell'
         exclude module: 'language-detector'
         exclude module: 'lucene-core'
