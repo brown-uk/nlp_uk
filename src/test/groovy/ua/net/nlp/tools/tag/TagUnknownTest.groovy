@@ -25,6 +25,7 @@ public class TagTextUnknownTest {
 	
 	@BeforeEach
 	void before() {
+        options.quiet = true
         options.tagUnknown = true
         options.unknownRate = true
         options.disambiguate = true
