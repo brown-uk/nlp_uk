@@ -49,7 +49,7 @@ public class TagOptions extends OptionsBase {
 
     @Option(names = ["-d", "--showDisambigRules"], description = "Show deterministic disambiguation rules applied")
     boolean showDisambigRules
-    @Option(names = ["-g", "--disambiguate"], description = "Use statistics for disambiguation")
+    @Option(names = ["-g", "--disambiguate"], description = "Use statistics for disambiguation (implies -t1 abd -u)")
     boolean disambiguate
     @Option(names = ["-gr", "--disambiguationRate"], description = "Show a disambiguated token ratings")
     boolean showDisambigRate
@@ -95,20 +95,28 @@ public class TagOptions extends OptionsBase {
             disambiguate = true
             singleTokenOnly = true
         }
+
         if( ! outputFormat ) {
             outputFormat = outputFormat.xml
         }
-        if( singleTokenOnly ) {
-            tokenFormat = true
+        else if( outputFormat == OutputFormat.txt ) {
+            setLemmaForUnknown = true
         }
+
         if( showDisambigRate || disambiguationDebug ) {
             disambiguate = true
         }
-        if( unknownRate ) {
+        if( disambiguate ) {
+            tokenFormat = true
+            singleTokenOnly = true
             tagUnknown = true
         }
-        if( outputFormat == OutputFormat.txt ) {
-            setLemmaForUnknown = true
+        
+        if( singleTokenOnly ) {
+            tokenFormat = true
+        }
+        if( unknownRate ) {
+            tagUnknown = true
         }
 
         if( ! quiet ) {
