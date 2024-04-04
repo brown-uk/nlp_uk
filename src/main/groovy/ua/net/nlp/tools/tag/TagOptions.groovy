@@ -44,8 +44,10 @@ public class TagOptions extends OptionsBase {
 
     @Option(names = ["-t", "--tokenFormat"], description = "Use <token> format (instead of <tokenReading>)")
     boolean tokenFormat
-    @Option(names = ["-t1", "--singleTokenOnly"], description = "Print only one token per reading (-g is recommended with this option)")
+    @Option(names = ["-t1", "--singleTokenOnly"], description = "Print only one token per reading (default for when -g is specified)")
     boolean singleTokenOnly
+    @Option(names = ["-ta", "--allTokenReadings"], description = "Print all readings of the token (default if -g is not specified)")
+    boolean allTokenReadings
 
     @Option(names = ["-d", "--showDisambigRules"], description = "Show deterministic disambiguation rules applied")
     boolean showDisambigRules
@@ -108,8 +110,10 @@ public class TagOptions extends OptionsBase {
         }
         if( disambiguate ) {
             tokenFormat = true
-            singleTokenOnly = true
             tagUnknown = true
+            if( ! allTokenReadings ) {
+                singleTokenOnly = true
+            }
         }
         
         if( singleTokenOnly ) {
@@ -119,9 +123,9 @@ public class TagOptions extends OptionsBase {
             tagUnknown = true
         }
 
-        if( ! quiet ) {
-            System.err.println "Output format: " + outputFormat
-        }
+//        if( ! quiet ) {
+//            System.err.println "Output format: " + outputFormat
+//        }
     }
 
     boolean isSingleFile() {
