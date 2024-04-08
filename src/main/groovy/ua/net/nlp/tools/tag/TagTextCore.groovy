@@ -326,8 +326,14 @@ class TagTextCore {
 //                }
 //            }
             
-            // TODO: ugly workaround for disambiguator problem
-            if( ! hasTag || "\u2014".equals(theToken) ) {
+            // TODO: temp workaround for disambiguator problem in PAIR_OF_PROPER_NOUNS in LT
+            if( "".equals(tokenReadings.getAnalyzedToken(0).getPOSTag()) ) { //&& theToken.matches("[–—-]") ) {
+                hasTag = false;
+            }
+            
+            if( ! hasTag 
+                    // TODO: ugly workaround for disambiguator problem
+                    || "\u2014".equals(theToken) ) {
                 if( tokenReadings.isLinebreak() )
                     continue // return tokenReadingsT
     

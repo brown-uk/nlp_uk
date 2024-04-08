@@ -129,6 +129,32 @@ class TagTextTest {
         assertEquals expected, tagged.tagged
     }
 
+    
+    @Test
+    public void testXml3() {
+        tagText.setOptions(new TagOptions())
+
+        TagResult tagged = tagText.tagText("4 Ви - Василь")
+
+        def expected =
+"""<sentence>
+  <tokenReading>
+    <token value="4" lemma="4" tags="number" />
+  </tokenReading>
+  <tokenReading>
+    <token value="Ви" lemma="ви" tags="noun:anim:p:v_naz:&amp;pron:pers:2" />
+  </tokenReading>
+  <tokenReading>
+    <token value="-" lemma="-" tags="punct" />
+  </tokenReading>
+  <tokenReading>
+    <token value="Василь" lemma="Василь" tags="noun:anim:m:v_naz:prop:fname" />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
+    }
+    
 	
 	@Test
 	public void testUnclass() {
