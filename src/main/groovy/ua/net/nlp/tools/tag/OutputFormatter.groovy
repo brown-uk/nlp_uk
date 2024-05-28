@@ -88,11 +88,11 @@ class OutputFormatter {
                 taggedSentence.each { tr -> tr
 //                    'tokens'() {
                         tr.tokens[0].each { t ->
-                           'token'(value: t.value, lemma: t.lemma, tags: t.tags, semtags: t.semtags, q: t.q) {
+                           'token'(value: t.value, lemma: t.lemma, tags: t.tags, semtags: t.semtags, _confidence: t.confidence, _level: t.level) {
                                if( t.alts ) {
                                    'alts'() {
                                        t.alts.each { a ->
-                                           'token'(value: a.value, lemma: a.lemma, tags: a.tags, semtags: a.semtags, q: a.q)
+                                           'token'(value: a.value, lemma: a.lemma, tags: a.tags, semtags: a.semtags, _confidence: a.confidence, _level: t.level)
                                        }                               
                                    }
                                }
@@ -213,8 +213,11 @@ class OutputFormatter {
         if( t.semtags ) {
             sb.append(" semtags=\"").append(quoteXml(t.semtags, false)).append("\"")
         }
-        if( t.q != null ) {
-            sb.append(" q=\"").append(t.q).append("\"")
+        if( t.confidence != null ) {
+            sb.append(" _confidence=\"").append(t.confidence).append("\"")
+        }
+        if( t.level != null ) {
+            sb.append(" _level=\"").append(t.level).append("\"")
         }
 
         if( t.alts ) {

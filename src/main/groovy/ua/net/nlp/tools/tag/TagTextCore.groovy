@@ -49,6 +49,7 @@ class TagTextCore {
     static final Pattern UNCLASS_PATTERN = Pattern.compile(/\p{IsLatin}[\p{IsLatin}\p{IsDigit}-]*|[0-9]+-?[а-яіїєґА-ЯІЇЄҐ]+|[а-яіїєґА-ЯІЇЄҐ]+-?[0-9]+/)
     public static final Pattern XML_TAG_PATTERN = Pattern.compile(/<\/?[a-zA-Z_0-9]+>/)
     private final Pattern CONTROL_CHAR_PATTERN_R = Pattern.compile(/[\u0000-\u0008\u000B-\u0012\u0014-\u001F\u0A0D]/, Pattern.CASE_INSENSITIVE|Pattern.UNICODE_CASE)
+    enum TaggingLevel { tagger, stats }
     
     def language = new Ukrainian() {
         @Override
@@ -266,9 +267,11 @@ class TagTextCore {
         String tags
         String semtags
         Boolean whitespaceBefore
-        BigDecimal q
         List<TaggedToken> alts
-
+        // technical attributes
+        TaggingLevel level
+        BigDecimal confidence
+        
         @Override
         public String toString() {
             "[$value / $lemma / $tags]";
@@ -367,8 +370,11 @@ class TagTextCore {
                         if( options.tagUnknown ) {
                             List<TaggedToken> taggedTokens = tagUnknown.tag(theToken, idx, tokens)
                             if( taggedTokens ) {
+                                if( options.showTaggingLevel ) {
+                                    taggedTokens.each{ it.level = TaggingLevel.stats }
+                                }
                                 if( ! options.unknownRate ) {
-                                    taggedTokens.each{ it.q = null }
+                                    taggedTokens.each{ it.confidence = null }
                                 }
                                 if( options.disambiguate ) {
                                     if( options.disambiguate && taggedTokens.size() > 1 ) {
@@ -490,7 +496,7 @@ class TagTextCore {
         tagTokens.eachWithIndex { TaggedToken t, int idx2 ->
 //            if( ! sum ) System.err.println "sum of 0 for: $tagTokens"
             BigDecimal q = sum ? rates[idx2] / sum : BigDecimal.ZERO
-            t['q'] = q.round(3)
+            t['confidence'] = q.round(3)
         }
     }
     

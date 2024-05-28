@@ -42,7 +42,7 @@ public class TagTextUnknownTest {
         
         def expected =
 """<sentence>
-  <token value="адюльтерівськими" lemma="адюльтерівський" tags="adj:p:v_oru" q="-0.5" />
+  <token value="адюльтерівськими" lemma="адюльтерівський" tags="adj:p:v_oru" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -52,7 +52,7 @@ public class TagTextUnknownTest {
                 
         expected =
 """<sentence>
-  <token value="стратомарафон" lemma="стратомарафон" tags="noun:inanim:m:v_zna" q="-0.5" />
+  <token value="стратомарафон" lemma="стратомарафон" tags="noun:inanim:m:v_zna" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -62,7 +62,7 @@ public class TagTextUnknownTest {
                 
         expected =
 """<sentence>
-  <token value="Біоміметикою" lemma="біоміметика" tags="noun:inanim:f:v_oru" q="-0.5" />
+  <token value="Біоміметикою" lemma="біоміметика" tags="noun:inanim:f:v_oru" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -75,7 +75,7 @@ public class TagTextUnknownTest {
                 
         expected =
 """<sentence>
-  <token value="дентиносупергенезом" lemma="дентиносупергенез" tags="noun:inanim:m:v_oru" q="-0.5" />
+  <token value="дентиносупергенезом" lemma="дентиносупергенез" tags="noun:inanim:m:v_oru" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -91,7 +91,7 @@ public class TagTextUnknownTest {
         def expected =
 """<sentence>
   <token value="в" lemma="в" tags="prep" />
-  <token value="доагломераційний" lemma="доагломераційний" tags="adj:m:v_zna:rinanim" q="-0.5" />
+  <token value="доагломераційний" lemma="доагломераційний" tags="adj:m:v_zna:rinanim" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -106,7 +106,7 @@ public class TagTextUnknownTest {
 
         def expected =
 """<sentence>
-  <token value="Арешонков" lemma="Арешонков" tags="noun:anim:m:v_naz:prop:lname" q="-0.6" />
+  <token value="Арешонков" lemma="Арешонков" tags="noun:anim:m:v_naz:prop:lname" _confidence="-0.6" />
 </sentence>
 <paragraph/>
 """
@@ -116,7 +116,7 @@ public class TagTextUnknownTest {
 
         expected =
 """<sentence>
-  <token value="Басуріна" lemma="Басурін" tags="noun:anim:m:v_rod:prop:lname" q="-0.5" />
+  <token value="Басуріна" lemma="Басурін" tags="noun:anim:m:v_rod:prop:lname" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -127,7 +127,7 @@ public class TagTextUnknownTest {
         // the only suggestion is :prop:lname 
         expected =
 """<sentence>
-  <token value="змієвич" lemma="змієвич" tags="noun:anim:m:v_naz" q="-0.6" />
+  <token value="змієвич" lemma="змієвич" tags="noun:anim:m:v_naz" _confidence="-0.6" />
 </sentence>
 <paragraph/>
 """
@@ -138,7 +138,7 @@ public class TagTextUnknownTest {
         expected =
 """<sentence>
   <token value="Андрій" lemma="Андрій" tags="noun:anim:m:v_naz:prop:fname" />
-  <token value="Гнідовський" lemma="Гнідовський" tags="noun:anim:m:v_naz:prop:lname" q="-0.5" />
+  <token value="Гнідовський" lemma="Гнідовський" tags="noun:anim:m:v_naz:prop:lname" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -149,7 +149,7 @@ public class TagTextUnknownTest {
         expected =
 """<sentence>
   <token value="Тетяни" lemma="Тетяна" tags="noun:anim:f:v_rod:prop:fname" />
-  <token value="Дихановської" lemma="Дихановська" tags="noun:anim:f:v_rod:prop:lname" q="-0.5" />
+  <token value="Дихановської" lemma="Дихановська" tags="noun:anim:f:v_rod:prop:lname" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -160,7 +160,7 @@ public class TagTextUnknownTest {
         expected =
 """<sentence>
   <token value="Натан" lemma="Натан" tags="noun:anim:m:v_naz:prop:fname" />
-  <token value="Кунсель" lemma="Кунсель" tags="noun:anim:m:v_naz:prop:lname" q="-0.5" />
+  <token value="Кунсель" lemma="Кунсель" tags="noun:anim:m:v_naz:prop:lname" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -171,7 +171,7 @@ public class TagTextUnknownTest {
 //        expected =
 //"""<sentence>
 //  <token value="пані" lemma="паня" tags="noun:anim:p:v_naz:xp2" />
-//  <token value="Ференцовій" lemma="Ференцова" tags="noun:anim:f:v_dav:prop:lname" q="-0.5" />
+//  <token value="Ференцовій" lemma="Ференцова" tags="noun:anim:f:v_dav:prop:lname" _confidence="-0.5" />
 //</sentence>
 //<paragraph/>
 //"""
@@ -182,7 +182,7 @@ public class TagTextUnknownTest {
                 expected =
         """<sentence>
   <token value="Наталія" lemma="Наталія" tags="noun:anim:f:v_naz:prop:fname" />
-  <token value="Алібаренко" lemma="Алібаренко" tags="noun:anim:f:v_naz:nv:prop:lname" q="-0.5" />
+  <token value="Алібаренко" lemma="Алібаренко" tags="noun:anim:f:v_naz:nv:prop:lname" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -209,7 +209,7 @@ public class TagTextUnknownTest {
 
         def expected =
 """<sentence>
-  <token value="АУФТ" lemma="АУФТ" tags="noninfl:abbr" q="-0.7" />
+  <token value="АУФТ" lemma="АУФТ" tags="noninfl:abbr" _confidence="-0.7" />
 </sentence>
 <paragraph/>
 """
@@ -223,7 +223,7 @@ public class TagTextUnknownTest {
 
         def expected =
 """<sentence>
-  <token value="АУФТ-10" lemma="АУФТ-10" tags="noninfl" q="-0.7" />
+  <token value="АУФТ-10" lemma="АУФТ-10" tags="noninfl" _confidence="-0.7" />
 </sentence>
 <paragraph/>
 """
@@ -240,7 +240,7 @@ public class TagTextUnknownTest {
 """<sentence>
   <token value="І." lemma="І." tags="noninf:abbr" />
   <token value="В." lemma="В." tags="noninf:abbr" />
-  <token value="Збарськ" lemma="Збарськ" tags="noun:inanim:m:v_naz:prop:geo" q="-0.5" />
+  <token value="Збарськ" lemma="Збарськ" tags="noun:inanim:m:v_naz:prop:geo" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -256,7 +256,7 @@ public class TagTextUnknownTest {
 
         def expected =
 """<sentence>
-  <token value="Оболонь-арені" lemma="оболонь-арена" tags="noun:inanim:f:v_mis" q="-0.5" />
+  <token value="Оболонь-арені" lemma="оболонь-арена" tags="noun:inanim:f:v_mis" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -270,7 +270,7 @@ public class TagTextUnknownTest {
 
         def expected =
 """<sentence>
-  <token value="НС-фільтрів" lemma="НС-фільтр" tags="noun:inanim:p:v_rod" q="-0.5" />
+  <token value="НС-фільтрів" lemma="НС-фільтр" tags="noun:inanim:p:v_rod" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -285,7 +285,7 @@ public class TagTextUnknownTest {
 
         def expected =
 """<sentence>
-  <token value="популяв" lemma="популяти" tags="verb:imperf:past:m" q="-0.6" />
+  <token value="популяв" lemma="популяти" tags="verb:imperf:past:m" _confidence="-0.6" />
 </sentence>
 <paragraph/>
 """
@@ -297,7 +297,7 @@ public class TagTextUnknownTest {
 
         expected =
 """<sentence>
-  <token value="популявся" lemma="популятися" tags="verb:rev:imperf:past:m" q="-0.5" />
+  <token value="популявся" lemma="популятися" tags="verb:rev:imperf:past:m" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -308,7 +308,7 @@ public class TagTextUnknownTest {
 
         expected =
 """<sentence>
-  <token value="популяється" lemma="популятися" tags="verb:rev:imperf:pres:s:3" q="-0.5" />
+  <token value="популяється" lemma="популятися" tags="verb:rev:imperf:pres:s:3" _confidence="-0.5" />
 </sentence>
 <paragraph/>
 """
@@ -316,6 +316,21 @@ public class TagTextUnknownTest {
         assertEquals expected, tagged.tagged
     }
 
+    
+    @Test
+    public void testShowLevel() {
+
+        options.showTaggingLevel = true
+        TagResult tagged = tagText.tagText("адюльтерівськими")
+        
+        def expected =
+"""<sentence>
+  <token value="адюльтерівськими" lemma="адюльтерівський" tags="adj:p:v_oru" _confidence="-0.5" _level="stats" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
     
     @Test
     public void testUnknown() {

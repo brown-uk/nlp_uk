@@ -70,9 +70,9 @@ public class TagUnknown {
     @CompileStatic
     List<TaggedToken> tagInternal(String token, int idx, AnalyzedTokenReadings[] tokens) {
         if( token ==~ /[А-ЯІЇЄҐ]+-[0-9]+[а-яіїєґА-ЯІЇЄҐ]*/ ) // ФАТ-10
-            return [new TaggedToken(value: token, lemma: token, tags: 'noninfl', q: -0.7)]
+            return [new TaggedToken(value: token, lemma: token, tags: 'noninfl', confidence: -0.7)]
         if( token ==~ /[А-ЯІЇЄҐ]{2,6}/ )
-            return [new TaggedToken(value: token, lemma: token, tags: 'noninfl:abbr', q: -0.7)]
+            return [new TaggedToken(value: token, lemma: token, tags: 'noninfl:abbr', confidence: -0.7)]
 
         def m = PREFIXED.matcher(token)
         if( m.matches() ) {
@@ -136,7 +136,7 @@ public class TagUnknown {
                     lemma = lemma.toLowerCase()
                 }
 
-                return new TaggedToken(value: token, lemma: lemma, tags: wr.postag, q: q)
+                return new TaggedToken(value: token, lemma: lemma, tags: wr.postag, confidence: q)
             }
             .findAll { it != null }
         }

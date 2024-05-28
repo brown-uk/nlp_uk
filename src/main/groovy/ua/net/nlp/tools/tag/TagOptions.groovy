@@ -48,6 +48,8 @@ public class TagOptions extends OptionsBase {
     boolean singleTokenOnly
     @Option(names = ["-ta", "--allTokenReadings"], description = "Print all readings of the token (default if -g is not specified)")
     boolean allTokenReadings
+    @Option(names = ["--taggingLevel"], description = "Add a tagging level attribute")
+    boolean showTaggingLevel
 
     @Option(names = ["-d", "--showDisambigRules"], description = "Show deterministic disambiguation rules applied")
     boolean showDisambigRules
