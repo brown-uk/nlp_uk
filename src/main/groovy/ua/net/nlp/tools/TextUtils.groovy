@@ -89,7 +89,13 @@ public class TextUtils {
         if ( ! options.noTag ) {
             if( options.outputFormat == OutputFormat.xml ) {
                 outputFile.println('<?xml version="1.0" encoding="UTF-8"?>')
-                outputFile.println('<text>\n')
+                if( options.xmlSchema ) {
+                    outputFile.println("<text xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
+                        + "\n xsi:noNamespaceSchemaLocation=\"${options.xmlSchema}\">\n")
+                }
+                else {
+                    outputFile.println('<text>\n')
+                }
             }
             else if( options.outputFormat == OutputFormat.json ) {
                 outputFile.println('{')
@@ -369,8 +375,10 @@ public class TextUtils {
         public OutputFormat outputFormat = OutputFormat.xml
         boolean singleThread = true
 
+        // internal
         boolean splitHyphenParts = true
-        
+        String xmlSchema
+    
         boolean isNoTag() {
             return false
         }

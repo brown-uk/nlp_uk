@@ -658,6 +658,9 @@ class TagTextCore {
             tagUnknown.loadStats()
         }
         
+        if( options.tokenFormat ) {
+            options.xmlSchema = "https://github.com/brown-uk/nlp_uk/raw/master/src/main/resources/schema.xsd"
+        }
 //        language.getSentenceTokenizer().setSingleLineBreaksMarksParagraph(options.singleNewLineAsParagraph)
     }
 
