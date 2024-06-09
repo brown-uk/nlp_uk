@@ -5,6 +5,7 @@ package ua.net.nlp.tools
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
 import static org.junit.jupiter.api.Assertions.assertNotEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 import org.checkerframework.framework.qual.IgnoreInWholeProgramInference
@@ -512,7 +513,15 @@ class TagTextDisambigTest {
 """
         assertEquals expected, tagged.tagged
     }
-    
+
+
+    @Test
+    public void testPani() {
+        def tagged = tagText.tagText("й пані Людмили")
+        
+        assertTrue tagged.tagged.contains("lemma=\"пані\"")
+    }
+        
 
     // що нижче по схилу
     // Дорога забрала

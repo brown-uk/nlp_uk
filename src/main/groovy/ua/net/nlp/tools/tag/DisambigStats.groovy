@@ -26,7 +26,7 @@ public class DisambigStats {
     private static final String statsFile = "/ua/net/nlp/tools/stats/lemma_freqs_hom.txt"
     static final String statsVersion = "3.2.1"
 
-    boolean disambigBySuffix = true //DisambigModule.wordEnding in options.disambiguate
+    boolean disambigBySuffix = true
     boolean disambigByContext = true
     boolean writeDerivedStats = false
 
@@ -145,9 +145,9 @@ public class DisambigStats {
             double wordRate = getRateByWord(anToken, statsForWord, ti, ctxQ_)
             double rate = wordRate
 
-            boolean prevPrep = ti.idx > 0 && hasPosTag(ti.tokens[ti.idx-1], "prep")
-            boolean unforceTag = ! prevPrep && ti.tokens[ti.idx].getCleanToken().endsWith("ів")
-
+            boolean unforceTag = statsForWord != null && ! statsForWord.any { wr, stat -> wr.lemma == anToken.lemma }
+            debugStats("     unforce: %s", unforceTag)
+            
             if( ti.idx > 0 
                     && anToken.getPOSTag().contains(":prop") 
                     && anToken.getLemma() ==~ /[А-ЯІЇЄҐ][а-яіїєґ'-]{3,}(-[А-ЯІЇЄҐ][а-яіїєґ'-]{3,})?/ ) {
@@ -169,8 +169,8 @@ public class DisambigStats {
                         sfxRate = getRateBySuffix(anToken, ti, sfx2RateSum, ctxQ, 2)
                     }
                     if( sfxRate ) {
-                        sfxRate /= 6.1e3
-//                        sfxRate /= unforceTag ? 6.1e4 : 6.1e3
+//                        sfxRate /= 6.1e3
+                        sfxRate /= unforceTag ? 6.1e5 : 6.1e3
                         debugStats("      sfx3 rate: -> %f", round(sfxRate))
                         rate += sfxRate
                         wordEndingUsed = true
@@ -183,7 +183,7 @@ public class DisambigStats {
                 double ctxQ = 6.0e7 // 4.5e7
                 double postagRate = getRateByTag(anToken, ti, withXp, tagRateSum, ctxQ)
                 if( postagRate ) {
-                    postagRate /= unforceTag ? 6.1e4 : 6.2e3
+                    postagRate /= unforceTag ? 6.1e5 : 6.2e3
                     debugStats("      tag rate: -> %f", round(postagRate))
                     rate += postagRate
                 }
