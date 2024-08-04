@@ -315,8 +315,10 @@ class LatCyrModule {
                 def t1 = removeMix(t0)
 // t0 = null // ml
 
-                if( MIX_1.matcher(t1).find() ) {
-                    out.println "\tWARNING: still Latin/Cyrillic mix"
+                def m1 = MIX_1.matcher(t1)
+                if( m1.find() ) {
+                    String context = CleanTextCore.getContext(m1, t1)
+                    out.println "\tWARNING: still Latin/Cyrillic mix: $context"
                 }
                 t0 = t1
 // t1 = null // ml

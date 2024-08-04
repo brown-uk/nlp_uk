@@ -35,6 +35,7 @@ class EncodingModule {
             
             if( ! isUTF8(bytes) ) {
                 out.println "\tWARNING: file is not in UTF-8 encoding"
+                
                 text = file.getText(UTF8)
                 text = fixEncoding(text, file)
                 if( text == null )
@@ -48,8 +49,8 @@ class EncodingModule {
         text
     }
     
-    String tryCp1251(File file) {
-        def cp1251Text = file.getText("cp1251")
+    String tryEncoding(File file, String encoding) {
+        def cp1251Text = file.getText(encoding)
         if( cp1251Text =~ /(?iu)[сц]ьк|ння|від|[іи]й|ої|ти| [ійвузао] | н[еі] | що / ) {
             return cp1251Text
         }
@@ -93,18 +94,20 @@ class EncodingModule {
             out.println "\tEncoding fixed (good lines: $goodLines, convertedLines: $convertedLines, text: " + CleanTextCore.getSample(text)
         }
         else {
-            String cp1251Text = tryCp1251(file)
-            if( cp1251Text ) {
-                out.println "\tWARNING: cp1251 encoding found"
-
-                text = cp1251Text
-
-                if( text.size() < 10 ) {
-                    out.println "\tFile size < 10 chars, probaby cp1251 conversion didn't work, skipping"
-                    return null
+            ["cp1251", "utf-16"].each { encoding ->
+                String decodedText = tryEncoding(file, encoding)
+                if( decodedText ) {
+                    out.println "\tWARNING: $encoding encoding found"
+    
+                    text = decodedText
+    
+                    if( text.size() < 10 ) {
+                        out.println "\tFile size < 10 chars, probaby $encoding conversion didn't work, skipping"
+                        return null
+                    }
+    
+                    out.println "\tEncoding converted: " + CleanTextCore.getSample(text)
                 }
-
-                out.println "\tEncoding converted: " + CleanTextCore.getSample(text)
             }
         }
 

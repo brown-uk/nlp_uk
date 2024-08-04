@@ -102,6 +102,10 @@ class HyphenModule {
 
     @CompileStatic
     String fixDanglingHyphens(String text) {
+        text = text.replaceAll(/([0-9])\s*([\u2013-])\s+(річчя|ліття|ий|го|ому|им|ої|ій|ою)\b/, '$1$2$3')
+        text = text.replaceAll(/([0-9])\s+([\u2013-])\s*(річчя|ліття|ий|го|ому|им|ої|ій|ою)\b/, '$1$2$3')
+        text = text.replaceAll(/(\b[дД])\s+([\u2013-])\s+(р)\b/, '$1$2$3')
+        
         if( text =~ /[а-яіїєґА-ЯІЇЄҐ]-[ \t]*\n/ ) {
             out.println "\tsuspect word wraps"
             def cnt = 0
@@ -168,7 +172,7 @@ class HyphenModule {
 
     
     private final Pattern LEADING_HYPHEN_PATTERN1 = Pattern.compile(/(\.\h+[-\u2013\u2014])([А-ЯІЇЄҐ][^.-])/)
-    private final Pattern LEADING_HYPHEN_PATTERN2 = Pattern.compile(/(?m)(^|[\h,:;?!])([-\u2013\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/)
+    private final Pattern LEADING_HYPHEN_PATTERN2 = Pattern.compile(/(?m)(^|(?<!\bна)\h|[,:;?!])([-\u2013\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/)
     
     @CompileStatic
     String separateLeadingHyphens(String text) {
@@ -192,7 +196,8 @@ class HyphenModule {
             out.println "\tConverted leading hyphens: ${converted}"
         }
 
-        def regex2 = ~/ -[а-яіїєґ]{4,}/
+        // skip: на -овець
+        def regex2 = ~/(?!<\bна) -[а-яіїєґ]{4,}/
         if( regex2.matcher(t1) ) {
             int cnt = 0
             def first = null

@@ -490,7 +490,7 @@ class CleanTextCore {
 
         t12 = fixSplitWords(t12)
 
-        checkForSpacing(t12)
+        t12 = checkForSpacing(t12)
 
         if( options.markLanguages != CleanOptions.MarkOption.none ) {
             def req2 = new CleanRequest(text: t12, file: request.file, outFile: request.outFile)
@@ -575,12 +575,27 @@ class CleanTextCore {
         text
     }
 
-    @CompileStatic
-	void checkForSpacing(String text) {
+    private static final String MONTHS = /січня|лютого|березня|квітня|травня|червня|липня|серпня|вересня|жовтня|листопада|грудня/
+    private static final Pattern SPACED_MONTHS_REGEX = Pattern.compile(MONTHS.replaceAll(/([а-яіїє])(?=[а-яіїє])/, '$1 '))
+    
+	String checkForSpacing(String text) {
+        // stenograms from Rada
+        text = text.replaceAll("С е с і й н и й +з а л +В е р х о в н о ї +Р а д и", "Сесійний зал Верховної Ради")
+        text = text.replace("О п л е с к и", "Оплески")
+        text = text.replace("У к р а ї н и", "України")
+        text = text.replace("П і с л я п е р е р в и", "Після перерви")
+        text = text.replaceAll(/([0-9]) р о к у\b/, '$1 року')
+        text = text.replaceAll(/([0-9]) г о д и н а\b/, '$1 година')
+        text = text.replaceAll(SPACED_MONTHS_REGEX, { String w1 ->
+            w1.replace(' ', '')
+        })
+        
 		def m = text =~ /([а-яіїєґА-ЯІЇЄҐ] ){5,}/
 		if( m.find() ) {
 			out.println "\tWARNING: Possible spacing in words, e.g \"${m.group(0)}\""
 		}
+        
+        return text
 	}
 
 
@@ -662,7 +677,8 @@ class CleanTextCore {
 //            def matcher = text =~ /(?ius)[а-яїієґ0-9,—–-]\s*\n\n[а-яіїєґ0-9]/
             def matcher = t1 =~ /(?us)[а-яїієґА-ЯІЇЄҐ,:—–-]\s*\n\n[а-яіїєґ]/
 			if( matcher ) {
-				out.println "\tWARNING: Suspect empty lines inside the sentence"
+                def context = CleanTextCore.getContext(matcher, t1)
+				out.println "\tWARNING: Suspect empty lines inside the sentence: $context"
 				return true
 			}
 
@@ -731,5 +747,13 @@ class CleanTextCore {
 
         return true
     }
+
     
+    static String getContext(java.util.regex.Matcher matcher, String text) {
+        int start = Math.max(0, matcher.start() - 10)
+        int end = Math.min(text.length(), matcher.end() + 10)
+        String CONTEXT = text.substring(start, end).replace('\n', '\\n')
+        return CONTEXT
+    }
+
 }

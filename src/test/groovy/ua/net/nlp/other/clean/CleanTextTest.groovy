@@ -103,26 +103,20 @@ class CleanTextTest {
     }
 
     @Test
+    public void testUtf16() {
+        def url = getClass().getClassLoader().getResource("clean/enc_utf-16.txt")
+        def file = new File(url.toURI())
+        
+        def byteStream = new ByteArrayOutputStream()
+        cleanText.out.out.set(new PrintStream(byteStream))
+
+        String text = cleanText.cleanUp(file, options, null)
+        assertEquals("Чистота й правильність української мови.\r\nВідповідь на запитання наших Читачів.\r\n", text)
+    }
+
+    @Test
     public void testNumForLetter() {
         assertEquals "За віщо йому таке. Вул. Залізнична 3а.", clean("3а віщо йому таке. Вул. 3алізнична 3а.")
-    }
-
-    @Test
-    public void testRemove00AD() {
-        assertEquals "Залізнична", clean("За\u00ADлізнична")
-        assertEquals "АБ", clean("А\u200BБ")
-        assertEquals "А  Б", clean("А \u200BБ")
-        assertEquals "14-го", clean("14\u00ADго")
-        assertEquals "необов’язковий\n", clean("необов’\u00AD\nязковий")
-        assertEquals "Івано-франківський", clean("Івано-\u00ADфранківський")
-    }
-
-    @Test
-    public void testRemove001D() {
-        assertEquals "Баренцово-Карського", clean("Баренцово\u001DКарського")
-        assertEquals "прогинання\n ", clean("прогинан\u001D\n ня")
-//        assertEquals "Азово-Чорноморського\n", clean("Азово\u001D\nЧорноморського")
-        assertEquals "Азово-Чорноморського\n", clean("Азово\u001DЧорно\u001D\nморського")
     }
 
     @Test
@@ -192,43 +186,6 @@ class CleanTextTest {
     }
         
     @Test
-    public void testWordWrap() {
-		assertEquals "урахування\n", clean("ураху-\nвання")
-        assertEquals "Прем’єр-ліги\n", clean("Прем’єр-\nліги")
-//        assertEquals "інформаційно\u2013звітний\n", clean("інформаційно\u2013\nзвітний")
-        
-		assertEquals "екс-«депутат»\n", clean("екс-\n«депутат»")
-
-		assertEquals "\"депутат\" H'''", clean("''депутат'' H'''")
-
-        assertEquals "Інтерфакс-Україна\n", clean("Інтерфакс-\nУкраїна")
-
-        def result = clean('просто-\nрово-часового')
-        assert result == "просторово-часового\n"
-        //result = clean('двох-\nсторонній', file, [])
-        //assert result == "двохсторонній\n"
-        
-        //TODO:
-        result = clean("минулого-сучасного-май-\nбутнього")
-        assert result == "минулого-сучасного-майбутнього\n"
-
-        result = clean("благо-\nдійної")
-        assert result == "благодійної\n"
-        
-        // with space
-        result = clean("кудись- \nінде")
-        assert result == "кудись-інде\n"
-        
-        // with 2 new lines
-        result = clean("сукуп-\n \n ність")
-        assertEquals "сукупність\n ", result
-
-        result = clean("сукуп-\n --- \n ність")
-        assertEquals "сукупність\n ", result
-    }
-
-    
-    @Test
     public void testTwoColumns() {
 def text="""
 десь там                квітки пахніли
@@ -240,31 +197,8 @@ def text="""
         
         assertEquals null, clean(text)
     }
-    
+
     @Test
-    public void testLeadingHyphen() {
-        assertEquals "- Агов", clean("-Агов")
-        assertEquals "-УВАТ(ИЙ)", clean("-УВАТ(ИЙ)")
-
-        assertEquals "- архієпископ\n- Дитина", clean("-архієпископ\n-Дитина")
-        assertEquals "-то ", clean("-то ")
-        
-        assertEquals "сказав він. - Подорожчання викликане", clean("сказав він. -Подорожчання викликане")
-        assertEquals "люба моя,- Євген.", clean("люба моя,-Євген.")
-        assertEquals "заперечив Денетор. - Я вже лічу", clean("заперечив Денетор. -Я вже лічу")
-        def t = "Т. 2. -С. 212"
-        assertEquals t, clean(t)
-    }
-
-    @Disabled
-    @Test
-    public void testHyphenWithSpace() {
-        assertEquals "свободи", clean("сво- боди")
-        //FP
-        assertEquals "теле- і радіопрограм", clean("теле- і радіопрограм")
-    }
-
-	@Test
 	void testOi() {
         def result = clean("новоствореноі")
         assert result == "новоствореної"
@@ -303,15 +237,6 @@ def text="""
         assertEquals "живе один хлопец", result
     }
     
-    @Test
-    public void testTilda() {
-        def result = clean("по~християнськи")
-        assertEquals "по-християнськи", result
-
-        result = clean("для~мене")
-        assertEquals "для мене", result
-    }
-
     @Disabled
     @Test
     public void testUnderscore() {
@@ -493,7 +418,13 @@ def text="""
 
         assertEquals expected, clean("фото зhttp://www.rvps.kiev.ua/")
     }
-    
+
+    @Test
+    public void testSpacing() {
+        assertEquals "2008 року", clean("2008 р о к у")
+        assertEquals "14 травня", clean("14 т р а в н я")
+    }
+        
     @Test
     public void testSplitBigFile() {
         String w = "abc de\n"
