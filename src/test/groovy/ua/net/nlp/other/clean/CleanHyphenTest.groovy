@@ -20,8 +20,6 @@ import ua.net.nlp.other.clean.CleanTextCore
 
 @CompileStatic
 class CleanHyphenTest {
-    final boolean NEW_TESTS = Boolean.getBoolean("ua.net.nlp.tests.new")
-    
     CleanOptions options = new CleanOptions("wordCount": 0, "debug": true)
 
     CleanTextCore cleanText = new CleanTextCore( options )
@@ -76,6 +74,8 @@ class CleanHyphenTest {
 
         result = clean("сукуп-\n --- \n ність")
         assertEquals "сукупність\n ", result
+        
+        assertEquals "сьо-годні", clean("сьо-годні")
     }
     
     @Test
@@ -110,7 +110,10 @@ class CleanHyphenTest {
         assertEquals "заперечив Денетор. - Я вже лічу", clean("заперечив Денетор. -Я вже лічу")
         def t = "Т. 2. -С. 212"
         assertEquals t, clean(t)
-        
+
+        assertEquals "будь-яким", clean("будь -яким")
+        assertEquals "будь-що-будь", clean("будь - що - будь")
+
         // skip
         assertEquals("Слова на -овець", clean("Слова на -овець"))
     }

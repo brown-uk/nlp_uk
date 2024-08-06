@@ -34,7 +34,7 @@ class EncodingModule {
             }
             
             if( ! isUTF8(bytes) ) {
-                out.println "\tWARNING: file is not in UTF-8 encoding"
+                out.println "\tNOTE: file is not in UTF-8 encoding"
                 
                 text = file.getText(UTF8)
                 text = fixEncoding(text, file)
@@ -97,7 +97,7 @@ class EncodingModule {
             ["cp1251", "utf-16"].each { encoding ->
                 String decodedText = tryEncoding(file, encoding)
                 if( decodedText ) {
-                    out.println "\tWARNING: $encoding encoding found"
+                    out.println "\tencoding found: $encoding"
     
                     text = decodedText
     

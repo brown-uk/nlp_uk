@@ -40,6 +40,8 @@ public class CleanOptions {
     List<String> disabledRules = []
     //        @Option(names = ["--singleThread"], description = ["Always use single thread (default is to use multithreading if > 2 cpus are found)"])
     //        boolean singleThread
+    @Option(names = ["--simple"], description = ["Simple pass"], hidden = true)
+    boolean simple
     @Option(names = ["-q", "--quiet"], description = ["Less output"])
     boolean quiet
     @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")

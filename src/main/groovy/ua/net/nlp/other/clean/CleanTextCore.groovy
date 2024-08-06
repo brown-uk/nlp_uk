@@ -242,6 +242,9 @@ class CleanTextCore {
 				Path pathBase = Paths.get(baseDir.absolutePath)
 				Path pathRelative = pathBase.relativize(pathAbsolute);
                 out.println "Looking at $pathRelative"
+                if( file.name.startsWith(" ") || file.name.endsWith(" ") ) {
+                    out.println "\tWARNING: filename has leading or trailing spaces"
+                }
             }
 
             
@@ -470,38 +473,42 @@ class CleanTextCore {
         // digit 3 instead of letter З
         t10 = t10.replaceAll(/\b3[аa]([\h\v]*[а-яіїєґА-ЯІЇЄҐ])/, 'За$1')
 
+        if( ! options.simple ) {
 
-        def t12 = latCyrModule.fixCyrLatMix(t10)
-//t10 = null // ml
-        if( ! t12 )
-            return null
+            def t12 = latCyrModule.fixCyrLatMix(t10)
+    //t10 = null // ml
+            if( ! t12 )
+                return null
+    
+            if( ! checkTwoColumns(t12) )
+                return null
+    
+    //        if( options.modules ) {
+    //            t12 = runModules(t12, request, options)
+    //        }
+            t10 = t12
+        }
+            
+        t10 = hyphenModule.separateLeadingHyphens(t10)
 
-        if( ! checkTwoColumns(t12) )
-            return null
-
-
-//        if( options.modules ) {
-//            t12 = runModules(t12, request, options)
-//        }
-
-        t12 = hyphenModule.separateLeadingHyphens(t12)
-
-        t12 = hyphenModule.fixDanglingHyphens(t12)
-
-        t12 = fixSplitWords(t12)
-
-        t12 = checkForSpacing(t12)
-
-        if( options.markLanguages != CleanOptions.MarkOption.none ) {
-            def req2 = new CleanRequest(text: t12, file: request.file, outFile: request.outFile)
-            t12 = markLanguageModule.markRussian(request.forText(t12), outDirName)
+        if( ! options.simple ) {
+            t10 = hyphenModule.fixDanglingHyphens(t10)
+    
+            t10 = fixSplitWords(t10)
+    
+            t10 = checkForSpacing(t10)
+    
+            if( options.markLanguages != CleanOptions.MarkOption.none ) {
+                def req2 = new CleanRequest(text: t10, file: request.file, outFile: request.outFile)
+                t10 = markLanguageModule.markRussian(request.forText(t10), outDirName)
+            }
         }
 
         if( request.dosNl ) {
-            t12 = t12.replaceAll(/(?!<\r)\n/, "\r\n")
+            t10 = t10.replaceAll(/(?!<\r)\n/, "\r\n")
         }
         
-        t12
+        t10
     }
     
     @CompileStatic
@@ -579,11 +586,7 @@ class CleanTextCore {
     private static final Pattern SPACED_MONTHS_REGEX = Pattern.compile(MONTHS.replaceAll(/([а-яіїє])(?=[а-яіїє])/, '$1 '))
     
 	String checkForSpacing(String text) {
-        // stenograms from Rada
-        text = text.replaceAll("С е с і й н и й +з а л +В е р х о в н о ї +Р а д и", "Сесійний зал Верховної Ради")
-        text = text.replace("О п л е с к и", "Оплески")
         text = text.replace("У к р а ї н и", "України")
-        text = text.replace("П і с л я п е р е р в и", "Після перерви")
         text = text.replaceAll(/([0-9]) р о к у\b/, '$1 року')
         text = text.replaceAll(/([0-9]) г о д и н а\b/, '$1 година')
         text = text.replaceAll(SPACED_MONTHS_REGEX, { String w1 ->
@@ -602,7 +605,7 @@ class CleanTextCore {
     @CompileStatic
 	String fixSplitWords(String text) {
 		int cnt = 0
-		String regex = /([а-яіїєґА-ЯІЇЄҐ'ʼ’-]*)\n([ \t]*)([а-яіїєґ][а-яіїєґ'ʼ’-]*)([,;.!?])?/
+		String regex = /([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)\n([ \t]*)([а-яіїєґ][а-яіїєґ'ʼ’-]*)([,;.!?])?/
 		def t1 = text.replaceAll(regex, { List<String> it ->
 			if( it[4] != "."	// we don't want to join ММК ім. Ілліча
 				&& it[1].length() + it[3].length() >= 4

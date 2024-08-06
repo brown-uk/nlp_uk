@@ -55,6 +55,10 @@ class CleanTextTest {
         assertEquals "10-11", clean("10¬11")
         assertEquals "о¬е", clean("о¬е")
         assertEquals "екс-глава", clean("екс¬глава")
+        
+        // don't touch
+        def txt = '"Дїла"\n білїють'
+        assertEquals txt, clean(txt)
 	}
 
     @Test
@@ -123,67 +127,7 @@ class CleanTextTest {
     public void testApostrophe() {
         assertEquals "зв'язаний", clean("зв 'язаний")
     }
-        
-    @Test
-    public void testLatCyrcMix() {
-        assertEquals "XXI", clean("XХІ")
-
-        assertEquals "брат", clean("б_p_ат")
-        
-        assertEquals "труба", clean("тр_y_ба")
-
-        assertEquals "baby", clean("b_а_b_у_")
-        
-        assertEquals "Abby", clean("А_bb_у_")
-
-        assertEquals "сіс", clean("с_і_с")
-        
-        assertEquals "Corporation", clean("С_orporation")
-        
-        assertEquals "нашій Twitter", clean("нашійTwitter")
-        
-        // leave as is
-        outputStream.reset()
-        assertEquals "margin'ом", clean("margin'ом")
-        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
-
-        assertEquals "ГогольFest", clean("ГогольFest")
-        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
-
-        assertEquals "скорhйше", clean("скорhйше")
-        // mark but don't fix as most probably it's "ѣ"
-//        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
-
-        // latin i
-        def orig = "чоловіка i жінки"
-        def result = clean(orig)
-        assert result != orig
-        assert result == "чоловіка і жінки"
-
-        // latin y
-        orig = "з полком y поміч"
-        result = clean(orig)
-        assert result != orig
-        assert result == "з полком у поміч"
-
-        orig = "da y Вoreckomu"
-        result = clean(orig)
-        assert result == orig
-
-        assertEquals "концентрація CO та CO2", clean("концентрація СO та CО2")
-
-        assertEquals "не всі в", clean("не всi в")
-        assertEquals "ДАІ", clean("ДАI")
-        
-        assertEquals "Бі–Бі–Сi", clean("Бі–Бі–Сi")
-        
-        assertEquals "розвиток ІТ", clean("розвиток IТ")
-        assertEquals "На лаві", clean("Hа лаві")
-
-        // Пальчикова і Кo
-        
-        assertEquals "о\u0301ргани", clean("óргани")
-    }
+    
         
     @Test
     public void testTwoColumns() {

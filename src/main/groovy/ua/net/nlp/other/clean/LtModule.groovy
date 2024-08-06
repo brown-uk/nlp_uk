@@ -28,11 +28,25 @@ class LtModule {
     SRXSentenceTokenizer ukSentTokenizer = ukLanguage.getSentenceTokenizer()
     UkrainianWordTokenizer ukWordTokenizer = ukLanguage.getWordTokenizer()
 
-        
+
+    @CompileStatic
+    boolean knownWordUk(String word) {
+        if( ! tag(ukTagger, normalize(word))[0].hasNoTag() )
+            return true
+            
+        // TODO: use more conversions from ModZheleh
+        if( word.contains("ї") || word.contains("Ї") ) {
+            def w = word.replaceAll(/(?ui)([бвгґджзклмнпрстфхцчшщ])ї/, '$1і')
+            return ! tag(ukTagger, normalize(w))[0].hasNoTag()
+        }
+        return false
+    }
+    
+            
     @CompileStatic
     boolean knownWord(String word) {
         try {
-            return ! tag(ukTagger, normalize(word))[0].hasNoTag()
+            return knownWordUk(word)
         }
         catch (Exception e) {
             System.err.println("Failed on word: $word")
@@ -43,7 +57,7 @@ class LtModule {
     @CompileStatic
     boolean knownWordTwoLang(String word) {
         try {
-            return ! tag(ukTagger, normalize(word))[0].hasNoTag() \
+            return knownWordUk(word) \
                 || ! tag(ruTagger, word)[0].hasNoTag()
         }
         catch (Exception e) {

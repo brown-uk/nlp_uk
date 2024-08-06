@@ -32,6 +32,7 @@ class LatCyrModule {
         'p' : 'р',
         'x' : 'х',
         'y' : 'у',
+        'r' : 'г',
         'A' : 'А',
         'B' : 'В',
         'C' : 'С',
@@ -201,8 +202,8 @@ class LatCyrModule {
     }
 
     // ignoring best man'ом
-    private static Pattern TO_ALL_CYR_WORD = ~/[а-яіїєґА-ЯІЇЄҐ]['’ʼ]?[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]|[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ][а-яіїєґА-ЯІЇЄҐ]/
-    private static Pattern TO_ALL_CYR_SYMB = ~/[aceiopxyABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/
+    private static Pattern TO_ALL_CYR_WORD = ~/[а-яіїєґА-ЯІЇЄҐ]['’ʼ]?[aceiopxyrABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]|[aceiopxyrABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ][а-яіїєґА-ЯІЇЄҐ]/
+    private static Pattern TO_ALL_CYR_SYMB = ~/[aceiopxyrABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/
     
     @CompileStatic
     String fixToAllCyrillic(String text, int[] counts) {
@@ -301,7 +302,9 @@ class LatCyrModule {
 
         
         if( MIX_1.matcher(t0).find() ) {
-            t0 = t0.replaceAll(/(?iu)([а-яіїєґ])(Fest|Inform|SOS|Art|City|News)/, '$1\uE117$2')
+            t0 = t0.replaceAll(/(?iu)([а-яіїєґ])(Fest|Train|Inform|SOS|Art|City|News)/, '$1\uE117$2')
+            // this does not allow to split "нашійTwitter"
+//            t0 = t0.replaceAll(/(?iu)([а-яіїєґ])([A-Z])/, '$1\uE117$2')
             
             KNOWN_MIXES.each { String k, String v ->
                 t0 = t0.replace(k, v)

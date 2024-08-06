@@ -102,11 +102,14 @@ class HyphenModule {
 
     @CompileStatic
     String fixDanglingHyphens(String text) {
-        text = text.replaceAll(/([0-9])\s*([\u2013-])\s+(річчя|ліття|ий|го|ому|им|ої|ій|ою)\b/, '$1$2$3')
-        text = text.replaceAll(/([0-9])\s+([\u2013-])\s*(річчя|ліття|ий|го|ому|им|ої|ій|ою)\b/, '$1$2$3')
-        text = text.replaceAll(/(\b[дД])\s+([\u2013-])\s+(р)\b/, '$1$2$3')
-        
-        if( text =~ /[а-яіїєґА-ЯІЇЄҐ]-[ \t]*\n/ ) {
+        text = text.replaceAll(/(?ui)([0-9])\s*([\u2013-])\s+(річчя|ліття|ий|го|ому|им|ої|ій|ою)\b/, '$1$2$3')
+        text = text.replaceAll(/(?ui)([0-9])\s+([\u2013-])\s*(річчя|ліття|ий|го|ому|им|ої|ій|ою)\b/, '$1$2$3')
+        text = text.replaceAll(/\b([дД])\s+([\u2013-])\s+(р)\b/, '$1$2$3')
+        text = text.replaceAll(/(?ui)\b(будь)\s+([\u2013-])\h*(що)\h*([\u2013-])\h*(будь)\b/, '$1$2$3$4$5')
+        text = text.replaceAll(/(?ui)\b(будь)\s+([\u2013-])\h*(як(ий|им|ого|ому|ім|а|ої|ій|у|е|і|их|им|ими)?|що|чого|чому|чим|чім)\b/, '$1$2$3')
+
+        def m = text =~ /[а-яіїєґА-ЯІЇЄҐ]-[ \t]*\n/
+        if( m ) {
             out.println "\tsuspect word wraps"
             def cnt = 0
             int cntWithHyphen = 0
@@ -139,6 +142,9 @@ class HyphenModule {
 
             out.println "\t\t$cnt word wraps removed, $cntWithHyphen newlines after hyphen removed"
             if( cnt == 0 && cntWithHyphen == 0 ) {
+                if( first == null ) {
+                    first = CleanTextCore.getContext(m, text)
+                }
                 out.println "\t\tfirst match: \"$first\""
             }
         }
@@ -197,7 +203,7 @@ class HyphenModule {
         }
 
         // skip: на -овець
-        def regex2 = ~/(?!<\bна) -[а-яіїєґ]{4,}/
+        def regex2 = ~/(?<!\bна) -[а-яіїєґ]{4,}/
         if( regex2.matcher(t1) ) {
             int cnt = 0
             def first = null
