@@ -102,8 +102,8 @@ class HyphenModule {
 
     @CompileStatic
     String fixDanglingHyphens(String text) {
-        text = text.replaceAll(/(?ui)([0-9])\s*([\u2013-])\s+(річчя|ліття|ий|го|ому|им|ої|ій|ою)\b/, '$1$2$3')
-        text = text.replaceAll(/(?ui)([0-9])\s+([\u2013-])\s*(річчя|ліття|ий|го|ому|им|ої|ій|ою)\b/, '$1$2$3')
+        text = text.replaceAll(/(?ui)([0-9])\s*([\u2013-])\s+(річчя|ліття|ий|го|ому|им|ої|ій|ою|ї)\b/, '$1$2$3')
+        text = text.replaceAll(/(?ui)([0-9])\s+([\u2013-])\s*(річчя|ліття|ий|го|ому|им|ої|ій|ою|ї)\b/, '$1$2$3')
         text = text.replaceAll(/\b([дД])\s+([\u2013-])\s+(р)\b/, '$1$2$3')
         text = text.replaceAll(/(?ui)\b(будь)\s+([\u2013-])\h*(що)\h*([\u2013-])\h*(будь)\b/, '$1$2$3$4$5')
         text = text.replaceAll(/(?ui)\b(будь)\s+([\u2013-])\h*(як(ий|им|ого|ому|ім|а|ої|ій|у|е|і|их|им|ими)?|що|чого|чому|чим|чім)\b/, '$1$2$3')
