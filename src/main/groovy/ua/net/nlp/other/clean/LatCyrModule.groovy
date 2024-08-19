@@ -19,6 +19,8 @@ class LatCyrModule {
         "СхідSide": "Схід\uE117Side",
         "ГолосUA": "Голос\uE117UA",
         "ОsтаNNя": "Оsта\uE117NNя",
+        "DepоДніпро": "Depo\uE117Дніпро",
+        "DepoДніпро": "Depo\uE117Дніпро"
         // ЧорнобильRenaissance
         // НашSoft
     ]
@@ -292,6 +294,7 @@ class LatCyrModule {
         // фото зhttp://www
         def t0 = text.replaceAll(/(?iu)([а-яіїєґ])(http)/, '$1 $2')
         
+        t0 = t0.replaceAll(/([A-ZŁА-ЯІЇЄҐ]\.?)\h+(О[рp]\.)\h+([сc][іi])/, '$1 Op. ci')
         
         // CO/CO2 with cyr/lat mix
         t0 = t0.replaceAll(/\b(СO|CО)(2?)\b/, 'CO$2')
@@ -321,7 +324,9 @@ class LatCyrModule {
                 def m1 = MIX_1.matcher(t1)
                 if( m1.find() ) {
                     String context = CleanTextCore.getContext(m1, t1)
-                    out.println "\tWARNING: still Latin/Cyrillic mix: $context"
+                    def totalLines = t1.lines().count()
+                    def mixLines = t1.lines().filter{l -> MIX_1.matcher(l).find()}.count()
+                    out.println "\tWARNING: still Latin/Cyrillic mix: $context: $mixLines of $totalLines lines"
                 }
                 t0 = t1
 // t1 = null // ml

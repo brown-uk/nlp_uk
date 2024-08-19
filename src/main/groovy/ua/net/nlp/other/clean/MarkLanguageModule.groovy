@@ -202,7 +202,7 @@ class MarkLanguageModule {
     }
 
     @CompileStatic
-    private static List<String> splitWithDelimiters(String str, Pattern delimPattern) {
+    static List<String> splitWithDelimiters(String str, Pattern delimPattern) {
         List<String> parts = new ArrayList<String>();
     
         Matcher matcher = delimPattern.matcher(str);

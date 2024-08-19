@@ -25,12 +25,14 @@ class GracModule {
         text = text.replaceAll(/(?iu)(Гоголь|Пуленк) (FEST|Train)/, '$1$2')
         text = text.replaceAll(/([a-z])(Переглянути)/, '$1$2')
         text = text.replace('Ник Life', 'НикLife')
-        // stenograms from Rada
-        text = text.replaceAll("(?iu)С е с і й н и й +з а л +В е р х о в н о ї +Р а д и", "Сесійний зал Верховної Ради")
-        text = text.replace("О п л е с к и", "Оплески")
-        text = text.replace("П і с л я п е р е р в и", "Після перерви")
-
+        
         text = text.replace("пагороджен", "нагороджен")
+        text = text.replace("голсоування", "голосування")
+        text = text.replace("річ-чя", "річчя")
+        text = text.replaceAll(/(Івано)\h+(Франківськ)/, '$1-$2')
+        text = text.replaceAll(/(Івано)\h+([\u2013-])\h+(Франківськ)/, '$1$2$3')
+        
+        text = text.replaceAll(/([дД]епутата?)([А-ЯІЇЄҐ])/, '$1 $2')
         
 //        text = t01.replaceAll(/йдетсь?я/, 'йдетьсья')
         // байдужосте, відповідальносте, відсутносте, досконалосте, діяльносте, промисловосте

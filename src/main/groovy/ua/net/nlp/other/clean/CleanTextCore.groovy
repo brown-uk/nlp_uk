@@ -66,6 +66,7 @@ class CleanTextCore {
     ControlCharModule controlCharModule = new ControlCharModule(out: out, ltModule: ltModule)
     ApostropheModule apostropheModule = new ApostropheModule(out: out, ltModule: ltModule)
     GracModule gracModule = new GracModule(out: out, ltModule: ltModule)
+    SpacingModule spacingModule = new SpacingModule(out: out, ltModule: ltModule)
     
     
     CleanTextCore(CleanOptions options) {
@@ -496,7 +497,7 @@ class CleanTextCore {
     
             t10 = fixSplitWords(t10)
     
-            t10 = checkForSpacing(t10)
+            t10 = spacingModule.cleanupSpacing(t10)
     
             if( options.markLanguages != CleanOptions.MarkOption.none ) {
                 def req2 = new CleanRequest(text: t10, file: request.file, outFile: request.outFile)
@@ -506,6 +507,11 @@ class CleanTextCore {
 
         if( request.dosNl ) {
             t10 = t10.replaceAll(/(?!<\r)\n/, "\r\n")
+        }
+        
+        def lineLimit = 4096
+        if( t10.lines().filter{ s -> s.length() > lineLimit }.findAny() ) {
+            out.println "\t\tNOTE: found lines longer than $lineLimit"
         }
         
         t10
@@ -581,26 +587,7 @@ class CleanTextCore {
         }
         text
     }
-
-    private static final String MONTHS = /січня|лютого|березня|квітня|травня|червня|липня|серпня|вересня|жовтня|листопада|грудня/
-    private static final Pattern SPACED_MONTHS_REGEX = Pattern.compile(MONTHS.replaceAll(/([а-яіїє])(?=[а-яіїє])/, '$1 '))
     
-	String checkForSpacing(String text) {
-        text = text.replace("У к р а ї н и", "України")
-        text = text.replaceAll(/([0-9]) р о к у\b/, '$1 року')
-        text = text.replaceAll(/([0-9]) г о д и н а\b/, '$1 година')
-        text = text.replaceAll(SPACED_MONTHS_REGEX, { String w1 ->
-            w1.replace(' ', '')
-        })
-        
-		def m = text =~ /([а-яіїєґА-ЯІЇЄҐ] ){5,}/
-		if( m.find() ) {
-			out.println "\tWARNING: Possible spacing in words, e.g \"${m.group(0)}\""
-		}
-        
-        return text
-	}
-
 
     @CompileStatic
 	String fixSplitWords(String text) {

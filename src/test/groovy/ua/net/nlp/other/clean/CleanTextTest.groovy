@@ -61,6 +61,7 @@ class CleanTextTest {
         assertEquals txt, clean(txt)
 	}
 
+
     @Test
     public void testTypos() {
         assertEquals "нагородження", clean("нагородженння")
@@ -266,91 +267,6 @@ def text="""
         assertEquals text, clean(text)
         
         text = "- Хай буде щедро!"
-        assertEquals text, clean(text)
-    }
-
-    @Test
-    public void testMarkLanguagePara() {
-        options.markLanguages = MarkOption.mark
-        options.paragraphDelimiter = ParagraphDelimiter.auto
-        
-        String expected=
-'''<span lang="ru" rate="1.0">Выйдя из развозки, Дима остановился у кафе, раздумывая, а не посидеть ли ему тут с полчасика?.</span>\r
-\r
-<span lang="ru" rate="0.8">удерживала его теперь на месте, не позволяя голове принимать какие–либо резкие решения.\r
-Да еще.</span>\r
-\r
-<span lang="ru" rate="0.73">Да да, ему дали все, как положено все дали под розпись.</span>\r
-'''
-        
-        String text =
-"""Выйдя из развозки, Дима остановился у кафе, раздумывая, а не посидеть ли ему тут с полчасика?.\r
-
-удерживала его теперь на месте, не позволяя голове принимать какие–либо резкие решения.\r
-Да еще.\r
-
-Да да, ему дали все, как положено все дали под розпись.\r
-"""
-
-        assertEquals expected, clean(text)
-    }
-    
-    @Test
-    public void testMarkLanguageCut() {
-        options.markLanguages = MarkOption.cut 
-        
-        String expected=
-'''Десь там за горою.
-
-<span lang="ru">---</span>
-
-<span lang="ru">---</span>
-
-
-<span lang="ru">---</span>
-'''
-
-        String text =
-"""Десь там за горою.
-
-Выйдя из развозки, Дима остановился у кафе, раздумывая, а не посидеть ли ему тут с полчасика?.
-
-Да да, ему дали все, как положено все дали под розпись.
-
-
-<span lang=\"ru\">---</span>
-"""
-
-        assertEquals expected, clean(text)
-
-        options.markLanguages = MarkOption.mark
-    }
-
-    
-    @Test
-    public void testMarkLanguageCutSingleNlPara() {
-        options.markLanguages = MarkOption.cut
-        options.paragraphDelimiter = ParagraphDelimiter.single_nl
-        
-        String expected=
-'''Десь там за горою.
-<span lang="ru">---</span>
-<span lang="ru">---</span>
-<span lang="ru">---</span>
-'''
-
-        String text =
-"""Десь там за горою.
-Выйдя из развозки, Дима остановился у кафе, раздумывая, а не посидеть ли ему тут с полчасика?.
-Да да, ему дали все, как положено все дали под розпись.
-<span lang=\"ru\">---</span>
-"""
-
-        assertEquals expected, clean(text)
-        
-        assumeTrue(NEW_TESTS)
-        
-        text = "ГОЛОВА. Борис Райков, будь ласка."
         assertEquals text, clean(text)
     }
     

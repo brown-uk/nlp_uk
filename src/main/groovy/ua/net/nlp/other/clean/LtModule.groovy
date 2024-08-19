@@ -1,6 +1,7 @@
 package ua.net.nlp.other.clean
 
 import org.languagetool.AnalyzedToken
+import org.languagetool.AnalyzedTokenReadings
 import org.languagetool.language.Ukrainian
 import org.languagetool.tagging.Tagger
 import org.languagetool.tagging.en.EnglishTagger
@@ -25,24 +26,29 @@ class LtModule {
         protected synchronized List<?> getPatternRules() { return [] }
     }
     UkrainianTagger ukTagger = ukLanguage.getTagger()
-    SRXSentenceTokenizer ukSentTokenizer = ukLanguage.getSentenceTokenizer()
+//    SRXSentenceTokenizer ukSentTokenizer = ukLanguage.getSentenceTokenizer()
     UkrainianWordTokenizer ukWordTokenizer = ukLanguage.getWordTokenizer()
 
 
     @CompileStatic
     boolean knownWordUk(String word) {
-        if( ! tag(ukTagger, normalize(word))[0].hasNoTag() )
+        if( ! tag(ukTagger, normalize(word))[0].hasNoTag() ) {
             return true
-            
-        // TODO: use more conversions from ModZheleh
-        if( word.contains("ї") || word.contains("Ї") ) {
-            def w = word.replaceAll(/(?ui)([бвгґджзклмнпрстфхцчшщ])ї/, '$1і')
-            return ! tag(ukTagger, normalize(w))[0].hasNoTag()
         }
+            
+        // TODO: use more conversions from ModZheleh or remove once LT does this
+//        if( word.contains("ї") || word.contains("Ї") ) {
+//            def w = word.replaceAll(/(?ui)([бвгґджзклмнпрстфхцчшщ])ї/, '$1і')
+//            return ! tag(ukTagger, normalize(w))[0].hasNoTag()
+//        }
         return false
     }
     
-            
+    @CompileStatic
+    List<AnalyzedToken> tagWord(String word) {
+        return tag(ukTagger, normalize(word))
+    }
+    
     @CompileStatic
     boolean knownWord(String word) {
         try {
@@ -97,12 +103,18 @@ class LtModule {
     }
 
     @CompileStatic
-    List<AnalyzedToken> tag(Tagger tagger, String word) {
+    private List<AnalyzedToken> tag(Tagger tagger, String word) {
         tagger.tag(Arrays.asList(word)).get(0).getReadings()
     }
     
     @CompileStatic
     List<String> getLemmas(String word) {
         tag(ukTagger, normalize(word))*.getLemma()
+    }
+
+    @CompileStatic
+    List<AnalyzedTokenReadings> tagSent(String sent) {
+        def tk = ukWordTokenizer.tokenize(sent)
+        return ukTagger.tag(tk)
     }
 }

@@ -19,7 +19,7 @@ import ua.net.nlp.other.clean.CleanTextCore
 
 
 @CompileStatic
-class LatCyrTest {
+class CleanLatCyrTest {
     
     CleanOptions options = new CleanOptions("wordCount": 0, "debug": true)
 
@@ -105,6 +105,8 @@ class LatCyrTest {
         
         // old spelling
         assertEquals "роздїлив", clean("p_оздїлив")
+        
+        assertEquals "Ł. Op. cit.", clean("Ł. Оp. cit.") // Cyrillic "Ор"
         
         // don't touch
         assertUntouched "senior'и"
