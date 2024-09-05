@@ -50,12 +50,6 @@ class CleanTextTest {
         
 		assertEquals "on throughпортал в", clean("on throughпортал в")
         
-        assertEquals "загальновідоме", clean("загальновідо¬ме")
-        assertEquals "по-турецьки", clean("по¬турецьки")
-        assertEquals "10-11", clean("10¬11")
-        assertEquals "о¬е", clean("о¬е")
-        assertEquals "екс-глава", clean("екс¬глава")
-        
         // don't touch
         def txt = '"Дїла"\n білїють'
         assertEquals txt, clean(txt)
@@ -283,6 +277,12 @@ def text="""
     public void testSpacing() {
         assertEquals "2008 року", clean("2008 р о к у")
         assertEquals "14 травня", clean("14 т р а в н я")
+    }
+
+    @Test
+    public void testFirtka() {
+        assertEquals "погіршення", clean("пог і ршення")
+        assertEquals "директор і бухгалтер", clean("директор і бухгалтер")
     }
         
     @Test

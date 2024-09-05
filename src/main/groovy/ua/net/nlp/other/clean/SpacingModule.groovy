@@ -84,7 +84,7 @@ class SpacingModule {
 
         def t = new StringBuilder(text.length())
         text.readLines().eachWithIndex { l, idx ->
-            println "line $idx :: $l"
+            debug "line $idx :: $l"
             t.append( removeSpacingLine(l) ).append('\n')
         }
                 
@@ -98,12 +98,11 @@ class SpacingModule {
     
     String removeSpacingLine(String text) { 
         
-        List<String> chunks = MarkLanguageModule.splitWithDelimiters(text, ~ /(?iu)[^ .а-яіїєґa-z0-9\u0301'\u2019\u02BC\u2013-]+/)
+        List<String> chunks = MarkLanguageModule.splitWithDelimiters(text, ~ /(?iu)[^ .а-яіїєґa-z0-9\u0301'\u2019\u02BC\u2013\u2011-]+/)
 
         chunks = (List<String>)chunks.collect{ it.split(/  +/) as List }.flatten()
         
-//        debug "chunks: $chunks"
-        println "chunks size: ${chunks.size()}"
+        debug "chunks size: ${chunks.size()}"
         
         List<String> chunks2 = (List<String>)chunks.collect { String cnk ->
             List<String> newChunks = []
@@ -124,7 +123,7 @@ class SpacingModule {
         }
         .flatten()
 
-        println "chunks2 size: ${chunks2.size()}"
+        debug "chunks2 size: ${chunks2.size()}"
         
         def dags = chunks2.parallelStream().map { c ->
             
@@ -152,7 +151,7 @@ class SpacingModule {
             }
         }
         .toList()
-        println "-- $dags"
+        debug "-- $dags"
      
         def sb = new StringBuilder(1024)
         dags.each { 
@@ -250,7 +249,7 @@ class SpacingModule {
     List<String> getText(Node node, String parentBase) {
         if( parentBase.length() > nested ) {
             nested = parentBase.length()
-            println "Nested: $nested"
+            debug "Nested: $nested"
         }
         
         List<String> out = []
@@ -318,6 +317,6 @@ class SpacingModule {
 
     
     private static void debug(String text) {
-        println "DBG: $text"
+        //println "DBG: $text"
     }    
 }

@@ -13,8 +13,8 @@ import groovy.transform.PackageScope
 @CompileStatic
 class HyphenModule {
     
-    private final Pattern SOFT_HYPHEN_PATTERN1 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’][-\u2013\u2014]?)\u00AD+(\n[ \t]*)([-\u2013\u2014]?[а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’-]+)([,;.!?])?/)
-    private final Pattern SOFT_HYPHEN_PATTERN3 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’:. ][-\u2013\u2014]?)\u00AD+([-\u2013\u2014]?[а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’ -])/)
+    private final Pattern SOFT_HYPHEN_PATTERN1 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’][-\u2013\u2014\u2011]?)\u00AD+(\n[ \t]*)([-\u2013\u2014\u2011]?[а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’-]+)([,;.!?])?/)
+    private final Pattern SOFT_HYPHEN_PATTERN3 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’:. ][-\u2013\u2014\u2011]?)\u00AD+([-\u2013\u2014\u2011]?[а-яіїєґА-ЯІЇЄҐa-zA-Z'ʼ’ -])/)
     private final Pattern SOFT_HYPHEN_PATTERN2 = Pattern.compile(/([0-9])\u00AD+([а-яіїєґА-ЯІЇЄҐa-zA-Z])/)
     
     OutputTrait out
@@ -48,13 +48,14 @@ class HyphenModule {
         return text
     }
 
-    private final Pattern AC_HYPHEN_PATTERN1 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]*[а-яіїєґА-ЯІЇЄҐ])\u00AC([а-яіїєґА-ЯІЇЄҐ][а-яіїєґА-ЯІЇЄҐ'ʼ’-]*)/)
+    private final Pattern AC_HYPHEN_PATTERN1 = Pattern.compile(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]*[а-яіїєґА-ЯІЇЄҐ])\u00AC ?([а-яіїєґА-ЯІЇЄҐ][а-яіїєґА-ЯІЇЄҐ'ʼ’-]*)/)
     
     @CompileStatic
     String remove00ACHyphens(String text) {
         def t0 = text
         if( t0.contains("\u00AC") ) { // ¬
             out.println "\tremoving U+00AC hyphens: "
+            // 10¬ий
             def t1 = t0.replaceAll(/([0-9])\u00AC([а-яіїєґА-ЯІЇЄҐ0-9])/, '$1-$2')
 // t0 = null // ml
             def m2 = AC_HYPHEN_PATTERN1.matcher(t1)
@@ -102,13 +103,13 @@ class HyphenModule {
 
     @CompileStatic
     String fixDanglingHyphens(String text) {
-        text = text.replaceAll(/(?ui)([0-9])\s*([\u2013-])\s+(річчя|ліття|ий|го|ому|им|ої|ій|ою|ї)\b/, '$1$2$3')
-        text = text.replaceAll(/(?ui)([0-9])\s+([\u2013-])\s*(річчя|ліття|ий|го|ому|им|ої|ій|ою|ї)\b/, '$1$2$3')
-        text = text.replaceAll(/\b([дД])\s+([\u2013-])\s+(р)\b/, '$1$2$3')
-        text = text.replaceAll(/(?ui)\b(будь)\s+([\u2013-])\h*(що)\h*([\u2013-])\h*(будь)\b/, '$1$2$3$4$5')
-        text = text.replaceAll(/(?ui)\b(будь)\s+([\u2013-])\h*(як(ий|им|ого|ому|ім|а|ої|ій|у|е|і|их|им|ими)?|що|чого|чому|чим|чім)\b/, '$1$2$3')
+        text = text.replaceAll(/(?ui)([0-9])\s*([\u2013\u2011-])\s+(річчя|ліття|ий|го|ому|им|ої|ій|ою|ї)\b/, '$1$2$3')
+        text = text.replaceAll(/(?ui)([0-9])\s+([\u2013\u2011-])\s*(річчя|ліття|ий|го|ому|им|ої|ій|ою|ї)\b/, '$1$2$3')
+        text = text.replaceAll(/\b([дД])\s+([\u2013\u2011-])\s+(р)\b/, '$1$2$3')
+        text = text.replaceAll(/(?ui)\b(будь)\s+([\u2013\u2011-])\h*(що)\h*([\u2013\u2011-])\h*(будь)\b/, '$1$2$3$4$5')
+        text = text.replaceAll(/(?ui)\b(будь)\s+([\u2013\u2011-])\h*(як(ий|им|ого|ому|ім|а|ої|ій|у|е|і|их|им|ими)?|що|чого|чому|чим|чім)\b/, '$1$2$3')
 
-        def m = text =~ /[а-яіїєґА-ЯІЇЄҐ]-[ \t]*\n/
+        def m = text =~ /[а-яіїєґА-ЯІЇЄҐ][-\u2013\u2011][ \t]*\n/
         if( m ) {
             out.println "\tsuspect word wraps"
             def cnt = 0
@@ -121,10 +122,11 @@ class HyphenModule {
             })
 
             def first = null
-            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)-[ \t]*\n(?:[ \t]*(?:---)?[ \t]*\n)?([ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, { List<String> it ->
-                if( ! first )
+            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)[-\u2013\u2011][ \t]*\n(?:[ \t]*(?:---)?[ \t]*\n)?([ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, { List<String> it ->
+                if( ! first ) {
                     first = it[0] ? it[0].replace('\n', "\\n") : it[0]
-                //            println "== " + (it[1] + "-" + it[3]) + ", known: " + knownWord(it[1] + "-" + it[3])
+                    // println "== " + (it[1] + "-" + it[3]) + ", known: " + knownWord(it[1] + "-" + it[3])
+                }
                 // consider words with two or more hyphens with one of them before end of line to be rare
                 boolean knownWithHyphen = ltModule.knownWord(it[1] + "-" + it[3]) && ! isHyphenBadLemma(it[3])
                 if( knownWithHyphen )
@@ -155,7 +157,7 @@ class HyphenModule {
             out.println "\t\t¬ word wraps removed"
         }
 
-        if( text =~ /[а-яіїєґА-ЯІЇЄҐ][-–¬][ \t]*\n/ ) {
+        if( text =~ /[а-яіїєґА-ЯІЇЄҐ][-–\u2011¬][ \t]*\n/ ) {
             out.println "\t\tNOTE: still contains word wraps"
         }
         
@@ -177,8 +179,8 @@ class HyphenModule {
     }
 
     
-    private final Pattern LEADING_HYPHEN_PATTERN1 = Pattern.compile(/(\.\h+[-\u2013\u2014])([А-ЯІЇЄҐ][^.-])/)
-    private final Pattern LEADING_HYPHEN_PATTERN2 = Pattern.compile(/(?m)(^|(?<!\bна)\h|[,:;?!])([-\u2013\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/)
+    private final Pattern LEADING_HYPHEN_PATTERN1 = Pattern.compile(/(\.\h+[-\u2013\u2011\u2014])([А-ЯІЇЄҐ][^.-])/)
+    private final Pattern LEADING_HYPHEN_PATTERN2 = Pattern.compile(/(?m)(^|(?<!\bна)\h|[,:;?!])([-\u2013\u2011\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/)
     
     @CompileStatic
     String separateLeadingHyphens(String text) {

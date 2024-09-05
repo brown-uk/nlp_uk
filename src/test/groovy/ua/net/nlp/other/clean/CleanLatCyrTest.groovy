@@ -67,6 +67,9 @@ class CleanLatCyrTest {
         assertEquals "ГогольFest", clean("ГогольFest")
         assertFalse(new String(outputStream.toByteArray()).contains("mix"))
 
+        assertEquals "Narodow-ої", clean("Narodow-ої")
+        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
+
         assertEquals "скорhйше", clean("скорhйше")
         // mark but don't fix as most probably it's "ѣ"
 //        assertFalse(new String(outputStream.toByteArray()).contains("mix"))

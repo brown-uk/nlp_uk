@@ -441,6 +441,7 @@ class CleanTextCore {
         t00 = controlCharModule.removeControlChars(t00)
         
         t00 = gracModule.fix(t00)
+//        t00 = gracModule.firtka(t00)
         
         t00 = fixTypos(t00)
         
@@ -508,12 +509,37 @@ class CleanTextCore {
         if( request.dosNl ) {
             t10 = t10.replaceAll(/(?!<\r)\n/, "\r\n")
         }
-        
-        def lineLimit = 4096
-        if( t10.lines().filter{ s -> s.length() > lineLimit }.findAny() ) {
-            out.println "\t\tNOTE: found lines longer than $lineLimit"
+
+        def pageNum = ~ /^\h*[-_\u2013\u2014~]\h*[0-9]{1,4}\h*[-_\u2013\u2014~]\h*$/
+        def pageNumLines = t10.lines().findAll{String it -> pageNum.matcher(it).matches() }
+        if( pageNumLines.size() >= 3 ) {
+            out.println "\t\tNOTE: suspect page numbers (${pageNumLines.size()}) in the text: ${pageNumLines[0]}"
         }
-        
+                
+        def lineLimit = 4096
+        def longLineCnt = t10.lines().filter{ s -> s.length() > lineLimit }.count()
+        if( longLineCnt ) {
+            def longest = t10.lines().map{ s -> s.length()}.filter{ l -> l > lineLimit }.max{ a,b -> a.compareTo(b) }.get()
+            out.println "\t\tNOTE: found lines longer than $lineLimit: $longLineCnt lines, longest: $longest"
+        }
+
+        def longWord = Pattern.compile("[а-яіїєґА-ЯІЇЄҐ'\u2019\u02BC]{36}")
+        def longWordLines = t10.lines().filter{ s -> longWord.matcher(s).find() }.toList()
+        if( longWordLines.size() ) {
+            def m = longWord.matcher(t10)
+            m.find()
+            def sample = m.group(0)
+            out.println "\t\tWARNING: found words longer than 36: ${longWordLines.size()} lines: $sample"
+        }
+
+        def wordBroken = Pattern.compile(/[\h-]([вжтч]ання|[вжчт]ення|лись|н?ість|нів|н?ня|ної|ност[іи]|вської|обов(?!['\u2019\u02BC])|ою|ої|ств[оа]|ськ(а|ий|им|ого|ому|ої)|шої|ться|[ює]ть|[єю]ться|ючи)\b/)
+        def wordBrokenCnt = t10.lines().filter{ s -> wordBroken.matcher(s).find() }.count()
+        if( wordBrokenCnt > 5 ) {
+            def m = wordBroken.matcher(t10)
+            m.find()
+            out.println "\t\tWARNING: found words potentially broken: $wordBrokenCnt lines: ${getContext(m, t10)}"
+        }
+
         t10
     }
     
@@ -714,7 +740,9 @@ class CleanTextCore {
             out.println "\tERROR: Less than $minUkrWordCount Ukrainian words ($ukrWordCount): " + getSample(text) // + "\n\t" + ukrWords
             return false
         }
-        out.println "\tUkrainian words: $ukrWordCount"
+        
+        def lines = text.lines().count()
+        out.println "\tUkrainian words: $ukrWordCount ($lines lines)"
         //    if( ukrWordCount < 300 ) println "\t\t: " + ukrWords
 
         // for really big text counting chars takes long time

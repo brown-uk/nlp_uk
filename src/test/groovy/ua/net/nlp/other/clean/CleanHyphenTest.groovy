@@ -76,8 +76,16 @@ class CleanHyphenTest {
         assertEquals "сукупність\n ", result
         
         assertEquals "сьо-годні", clean("сьо-годні")
+        
+        assertEquals "єдності\n", clean("єднос‑\nті")
+        
+        outputStream.reset()
+        def txt = "кількістю макро-\n та мікропор.\nу таблиці 1.\n---\n  Для"
+        assertEquals txt, clean(txt)
+        println ":: " + new String(outputStream.toByteArray())
+        assertFalse(new String(outputStream.toByteArray()).contains("---"))
     }
-    
+
     @Test
     public void testRemove00AD() {
         assertEquals "Залізнична", clean("За\u00ADлізнична")
@@ -96,6 +104,17 @@ class CleanHyphenTest {
         assertEquals "Азово-Чорноморського\n", clean("Азово\u001DЧорно\u001D\nморського")
     }
 
+    @Test
+    public void testRemove00AC() {
+        assertEquals "загальновідоме", clean("загальновідо¬ме")
+        assertEquals "по-турецьки", clean("по¬турецьки")
+        assertEquals "10-11", clean("10¬11")
+        assertEquals "о¬е", clean("о¬е")
+        assertEquals "екс-глава", clean("екс¬глава")
+        assertEquals "конкурент", clean("конку¬ рент")
+        // too hard for now
+//        assertEquals "загальновідоме", clean("загально¬відо¬ме")
+    }
     
     @Test
     public void testLeadingHyphen() {

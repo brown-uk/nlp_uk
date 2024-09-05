@@ -244,7 +244,7 @@ class LatCyrModule {
                 if( ! ltModule.knownWord(it) ) {
                     def fixed = it.replaceAll(/[асеіорхуАВСЕНІКМОРТХУ]/, { String cyr -> cyrToLatMap[cyr] })
                     if( ltModule.knownWordEn(fixed) ) {
-                        out.debug "mix: 2 - all English"
+//                        out.debug "mix: 2 - all English"
                         counts[0] += 1
                         return fixed
                     }
@@ -296,14 +296,21 @@ class LatCyrModule {
         
         t0 = t0.replaceAll(/([A-ZŁА-ЯІЇЄҐ]\.?)\h+(О[рp]\.)\h+([сc][іi])/, '$1 Op. ci')
         
+        t0 = t0.replace("СOVID", "COVID") // Cyillic C
         // CO/CO2 with cyr/lat mix
         t0 = t0.replaceAll(/\b(СO|CО)(2?)\b/, 'CO$2')
         // CO2 with cyr
         t0 = t0.replaceAll(/\bСО2\b/, 'CO2')
         // degree Celcius with cyr
         t0 = t0.replaceAll(/\b[\u00B0\u00BA][СC]\b/, '\u00B0C')
+        // 70-oї
+        t0 = t0.replaceAll(/-oї/, '-ої')
+        // -iон
+        t0 = t0.replaceAll(/-iон/, '-іон')
+        // 70-pічний
+        t0 = t0.replaceAll(/-pіч/, '-річ')
 
-        
+
         if( MIX_1.matcher(t0).find() ) {
             t0 = t0.replaceAll(/(?iu)([а-яіїєґ])(Fest|Train|Inform|SOS|Art|City|News)/, '$1\uE117$2')
             // this does not allow to split "нашійTwitter"
