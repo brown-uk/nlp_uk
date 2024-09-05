@@ -63,18 +63,23 @@ class LatCyrModule {
         "Ý" : "У́"
     ]
 
-    Map<String,String> cyrToLatMap = [:]
+    private static final Map<String,String> cyrToLatMap = [:]
+    
+    static {
+        latToCyrMap.each{ String k, String v -> cyrToLatMap[v] = k }
+    }
+
     OutputTrait out
     LtModule ltModule
     
-    LatCyrModule() {
-        latToCyrMap.each{ String k, String v -> cyrToLatMap[v] = k }
-    }
         
     @CompileStatic
     String fixLatinDigits(String text, int[] counts) {
         def t0 = text
-        
+
+        t0 = t0.replaceAll(/\b[XХ]VП/, 'XVII') 
+        t0 = t0.replaceAll(/\b[XХ]VШ/, 'XVIII')
+                
         boolean cont = true
         for(int ii=0; ii<10; ii++) {
             cont = false
@@ -232,23 +237,25 @@ class LatCyrModule {
         })
     }
 
+    private static final Pattern toLatinPattern = ~/[a-zA-Z]['’ʼ]?[асеіорхуАВСЕНІКМОРТХУ]|[асеіорхуАВСЕНІКМОРТХУ]['’ʼ]?[a-zA-Z]/
+    
     @CompileStatic
     String fixToAllEnglish(String text, int[] counts) {
         // 2nd tier - try all Latin
-        // if we convert all Cyrillic to Lating and find it in the English dictionary use conversion
+        // if we convert all Cyrillic to Latin and find it in the English dictionary use conversion
 
-        text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-Z-]+/, { String it ->
+        text.replaceAll(/[а-яіїєґА-ЯІЇЄҐa-zA-Z][а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-Z-]{3,}(?![0-9])/, { String it ->
 
-            if( it =~ /[a-zA-Z]['’ʼ]?[aceiopxyABCEIKMHOPTXY]|[aceiopxyABCEIKMHOPTXY]['’ʼ]?[a-zA-Z]/ ) {
-                //            println "Found mix in: $it, known to LT: " + knownWord(it)
-                if( ! ltModule.knownWord(it) ) {
+            if( toLatinPattern.matcher(it) ) {
+                //println "Found mix in: $it, known to LT: " // + knownWord(it)
+//                if( ! ltModule.knownWord(it) ) {
                     def fixed = it.replaceAll(/[асеіорхуАВСЕНІКМОРТХУ]/, { String cyr -> cyrToLatMap[cyr] })
                     if( ltModule.knownWordEn(fixed) ) {
 //                        out.debug "mix: 2 - all English"
                         counts[0] += 1
                         return fixed
                     }
-                }
+//                }
             }
             return it
         })
@@ -263,6 +270,7 @@ class LatCyrModule {
         // 1st tier
 
         def t2 = fixReliableCyr(t1, counts)
+        
 // t1 = null // ml
         def t3 = fixReliableLat(t2, counts)
 // t2 = null // ml
@@ -279,6 +287,7 @@ class LatCyrModule {
         // 3nd tier - least reliable
 
         def t6 = fixCharBetweenOthers(t5, counts)
+        
 // t4 = null // ml
         out.println "\tconverted ${counts[0]} lat->cyr, ${counts[1]} cyr->lat"
 
@@ -330,10 +339,10 @@ class LatCyrModule {
 
                 def m1 = MIX_1.matcher(t1)
                 if( m1.find() ) {
-                    String context = CleanTextCore.getContext(m1, t1)
+                    String context = CleanTextCore2.getContext(m1, t1)
                     def totalLines = t1.lines().count()
                     def mixLines = t1.lines().filter{l -> MIX_1.matcher(l).find()}.count()
-                    out.println "\tWARNING: still Latin/Cyrillic mix: $context: $mixLines of $totalLines lines"
+                    out.println "\t\tWARNING: still Latin/Cyrillic mix: $context: $mixLines of $totalLines lines"
                 }
                 t0 = t1
 // t1 = null // ml

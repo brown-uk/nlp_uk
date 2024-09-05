@@ -122,7 +122,7 @@ class HyphenModule {
             })
 
             def first = null
-            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)[-\u2013\u2011][ \t]*\n(?:[ \t]*(?:---)?[ \t]*\n)?([ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, { List<String> it ->
+            text = text.replaceAll(/([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)[-\u2013\u2011][ \t]*\n(?:[ \t]*\n)?([ \t]*)([а-яіїєґА-ЯІЇЄҐ'ʼ’-]+)([,;.!?])?/, { List<String> it ->
                 if( ! first ) {
                     first = it[0] ? it[0].replace('\n', "\\n") : it[0]
                     // println "== " + (it[1] + "-" + it[3]) + ", known: " + knownWord(it[1] + "-" + it[3])
@@ -145,7 +145,7 @@ class HyphenModule {
             out.println "\t\t$cnt word wraps removed, $cntWithHyphen newlines after hyphen removed"
             if( cnt == 0 && cntWithHyphen == 0 ) {
                 if( first == null ) {
-                    first = CleanTextCore.getContext(m, text)
+                    first = CleanTextCore2.getContext(m, text)
                 }
                 out.println "\t\tfirst match: \"$first\""
             }
@@ -157,8 +157,10 @@ class HyphenModule {
             out.println "\t\t¬ word wraps removed"
         }
 
-        if( text =~ /[а-яіїєґА-ЯІЇЄҐ][-–\u2011¬][ \t]*\n/ ) {
-            out.println "\t\tNOTE: still contains word wraps"
+        def m2 = text =~ /[а-яіїєґА-ЯІЇЄҐ][-–\u2011¬][ \t]*\n/
+        if( m2 ) {
+            def ctx = CleanTextCore2.getContext(m2, text)
+            out.println "\t\tNOTE: still contains word wraps: $ctx"
         }
         
         return text

@@ -65,7 +65,7 @@ class SpacingModule {
             def lines = text.lines()
             long cnt = lines.filter{l -> SPACING_PATTERN.matcher(l).find()}.count()
             
-            out.println "\tWARNING: Possible spacing in words, e.g \"${m.group(0)}\": ${cnt} of ${text.lines().count()} lines"
+            out.println "\tWARNING: Possible spacing in words, e.g \"${CleanTextCore2.getContext(m, text)}\": ${cnt} of ${text.lines().count()} lines"
 
             if( fullSpacing ) {
                 text = removeSpacing(text)
@@ -134,7 +134,7 @@ class SpacingModule {
 //                debug "Got dags: ${dags}"
                 
                 if( dags.size() == 0 ) {
-                    println "\tFailed to merge: $c"
+                    out.println "\tFailed to merge: $c"
                     return c
                 }
                 

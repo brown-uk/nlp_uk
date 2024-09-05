@@ -26,6 +26,7 @@ class MarkLanguageTest {
     CleanOptions options = new CleanOptions("wordCount": 0, "debug": true)
 
     CleanTextCore cleanText = new CleanTextCore( options )
+    CleanTextCore2 cleanTextCore2
 
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
     
@@ -33,13 +34,13 @@ class MarkLanguageTest {
     public void init() {
 //        cleanText.out.init()
         
-        cleanText.out.out.set(new PrintStream(outputStream))
+        cleanText.out.out = new PrintStream(outputStream)
+        cleanTextCore2 = new CleanTextCore2(cleanText.out, options, cleanText.ltModule)
     }
             
-    @CompileStatic
     String clean(String str) {
         str = str.replace('_', '')
-        cleanText.cleanText(str, null, null)
+        cleanText.cleanText(str, null, null, cleanText.out)
     }
 
     
@@ -130,10 +131,10 @@ class MarkLanguageTest {
 
     @Test
     public void testGetText() {
-        def txt = cleanText.spacingModule.getText(new Node(word: "голова"), "")
+        def txt = cleanTextCore2.spacingModule.getText(new Node(word: "голова"), "")
         assertEquals( ["голова"], txt )
 
-        txt = cleanText.spacingModule.getText(new Node(word: "голова", 
+        txt = cleanTextCore2.spacingModule.getText(new Node(word: "голова", 
             children: ([new Node(word:"його"), new Node(word:"її", 
                 children: ([new Node(word: "кудлата")]))])), "")
         assertEquals (["голова його", "голова її кудлата"], txt)

@@ -36,11 +36,6 @@ class LtModule {
             return true
         }
             
-        // TODO: use more conversions from ModZheleh or remove once LT does this
-//        if( word.contains("ї") || word.contains("Ї") ) {
-//            def w = word.replaceAll(/(?ui)([бвгґджзклмнпрстфхцчшщ])ї/, '$1і')
-//            return ! tag(ukTagger, normalize(w))[0].hasNoTag()
-//        }
         return false
     }
     

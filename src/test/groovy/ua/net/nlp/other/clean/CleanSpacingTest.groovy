@@ -24,21 +24,21 @@ class CleanSpacingTest {
     
     CleanOptions options = new CleanOptions("wordCount": 0, "debug": true)
 
-    CleanTextCore cleanText = new CleanTextCore( options )
-
+    CleanTextCore cleanText0 = new CleanTextCore( options )
+    CleanTextCore2 cleanText
+    
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
     
     @BeforeEach
     public void init() {
-//        cleanText.out.init()
-        
-        cleanText.out.out.set(new PrintStream(outputStream))
+        cleanText0.out.out = new PrintStream(outputStream)
+        cleanText = new CleanTextCore2(cleanText0.out, options, cleanText0.ltModule)
     }
             
     @CompileStatic
     String clean(String str) {
         str = str.replace('_', '')
-        cleanText.cleanText(str, null, null)
+        cleanText0.cleanText(str, null, null, cleanText.out)
     }
 
     
@@ -55,10 +55,6 @@ class CleanSpacingTest {
     
     @Test
     public void testSpacing() {
-        
-        def byteStream = new ByteArrayOutputStream()
-        cleanText.out.out.set(new PrintStream(byteStream))
-
         // simple cases
         assertEquals "Сесійний зал Верховної Ради", clean("С е с і й н и й\u00A0 з а л\u00A0 В е р х о в н о ї\u00A0 Р а д и")
 

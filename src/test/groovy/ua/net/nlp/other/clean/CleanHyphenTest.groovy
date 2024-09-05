@@ -28,15 +28,13 @@ class CleanHyphenTest {
     
     @BeforeEach
     public void init() {
-//        cleanText.out.init()
-        
-        cleanText.out.out.set(new PrintStream(outputStream))
+        cleanText.out.out = new PrintStream(outputStream)
     }
             
     @CompileStatic
     String clean(String str) {
         str = str.replace('_', '')
-        cleanText.cleanText(str, null, null)
+        cleanText.cleanText(str, null, null, cleanText.out)
     }
 
         
@@ -72,8 +70,8 @@ class CleanHyphenTest {
         result = clean("сукуп-\n \n ність")
         assertEquals "сукупність\n ", result
 
-        result = clean("сукуп-\n --- \n ність")
-        assertEquals "сукупність\n ", result
+//        result = clean("сукуп-\n --- \n ність")
+//        assertEquals "сукупність\n ", result
         
         assertEquals "сьо-годні", clean("сьо-годні")
         
@@ -82,7 +80,7 @@ class CleanHyphenTest {
         outputStream.reset()
         def txt = "кількістю макро-\n та мікропор.\nу таблиці 1.\n---\n  Для"
         assertEquals txt, clean(txt)
-        println ":: " + new String(outputStream.toByteArray())
+//        println ":: " + new String(outputStream.toByteArray())
         assertFalse(new String(outputStream.toByteArray()).contains("---"))
     }
 

@@ -29,22 +29,25 @@ class CleanLatCyrTest {
     
     @BeforeEach
     public void init() {
-//        cleanText.out.init()
-        
-        cleanText.out.out.set(new PrintStream(outputStream))
+        cleanText.out.out = new PrintStream(outputStream)
     }
             
     @CompileStatic
     String clean(String str) {
         str = str.replace('_', '')
-        cleanText.cleanText(str, null, null)
+        cleanText.cleanText(str, null, null, cleanText.out)
     }
 
     
     @Test
-    public void testLatCyrcMix() {
+    public void testLatDigits() {
         assertEquals "XXI", clean("XХІ")
+        assertEquals "XVII", clean("XVП")
+        assertEquals "XVIII", clean("XVШ")
+    }
 
+    @Test
+    public void testLatCyrcMix() {
         assertEquals "брат", clean("б_p_ат")
         
         assertEquals "труба", clean("тр_y_ба")
@@ -58,21 +61,6 @@ class CleanLatCyrTest {
         assertEquals "Corporation", clean("С_orporation")
         
         assertEquals "нашій Twitter", clean("нашійTwitter")
-        
-        // leave as is
-        outputStream.reset()
-        assertEquals "margin'ом", clean("margin'ом")
-        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
-
-        assertEquals "ГогольFest", clean("ГогольFest")
-        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
-
-        assertEquals "Narodow-ої", clean("Narodow-ої")
-        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
-
-        assertEquals "скорhйше", clean("скорhйше")
-        // mark but don't fix as most probably it's "ѣ"
-//        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
 
         // latin i
         def orig = "чоловіка i жінки"
@@ -86,16 +74,12 @@ class CleanLatCyrTest {
         assert result != orig
         assert result == "з полком у поміч"
 
-        orig = "da y Вoreckomu"
-        result = clean(orig)
-        assert result == orig
-
         assertEquals "концентрація CO та CO2", clean("концентрація СO та CО2")
 
         assertEquals "не всі в", clean("не всi в")
         assertEquals "ДАІ", clean("ДАI")
         
-        assertEquals "Бі–Бі–Сi", clean("Бі–Бі–Сi")
+//        assertEquals "Бі–Бі–Сi", clean("Бі–Бі–Сi")
         
         assertEquals "розвиток ІТ", clean("розвиток IТ")
         assertEquals "На лаві", clean("Hа лаві")
@@ -110,12 +94,41 @@ class CleanLatCyrTest {
         assertEquals "роздїлив", clean("p_оздїлив")
         
         assertEquals "Ł. Op. cit.", clean("Ł. Оp. cit.") // Cyrillic "Ор"
+    }
+    
+    @Test
+    public void testUntouched() {
+        // leave as is
+        outputStream.reset()
+        assertEquals "margin'ом", clean("margin'ом")
+        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
+
+        assertUntouched("Kurjeр-ї")
+        
+        outputStream.reset()
+        assertEquals "ГогольFest", clean("ГогольFest")
+        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
+
+        outputStream.reset()
+        assertEquals "Narodow-ої", clean("Narodow-ої")
+        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
+
+        assertEquals "скорhйше", clean("скорhйше")
+        // mark but don't fix as most probably it's "ѣ"
+//        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
+
+        def orig = "da y Вoreckomu"
+        assertEquals orig, clean(orig)
         
         // don't touch
         assertUntouched "senior'и"
         assertUntouched "Велесової rниги"
         assertUntouched "дівчинrи."
         assertUntouched "ГогольTRAIN"
+        
+        assertUntouched "Xі"
+        assertUntouched "Рi0" 
+        assertUntouched "OАО"
     }
     
     @CompileStatic

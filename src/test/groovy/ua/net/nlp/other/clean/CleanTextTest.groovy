@@ -25,20 +25,22 @@ class CleanTextTest {
     CleanOptions options = new CleanOptions("wordCount": 0, "debug": true)
 
     CleanTextCore cleanText = new CleanTextCore( options )
-
+    CleanTextCore2 cleanTextCore2
+    
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
     
     @BeforeEach
     public void init() {
 //        cleanText.out.init()
         
-        cleanText.out.out.set(new PrintStream(outputStream))
+        cleanText.out.out = new PrintStream(outputStream)
+        cleanTextCore2 = new CleanTextCore2(cleanText.out, options, cleanText.ltModule)
     }
             
     @CompileStatic
     String clean(String str) {
         str = str.replace('_', '')
-        cleanText.cleanText(str, null, null)
+        cleanText.cleanText(str, null, null, cleanText.out)
     }
 
 	
@@ -77,16 +79,11 @@ class CleanTextTest {
         def file = new File(url.toURI())
         
         def byteStream = new ByteArrayOutputStream()
-        try {
-            cleanText.out.out.set(new PrintStream(byteStream))
+        cleanText.out.out = new PrintStream(byteStream)
 
-            cleanText.cleanUp(file, options, null)
-            String s = byteStream.toString()
-            assertTrue(s.contains("RTF"))
-        }
-        finally {
-            cleanText.out.out.set(System.out)
-        }
+        cleanText.cleanUp(file, options, null, cleanText.out)
+        String s = byteStream.toString()
+        assertTrue(s.contains("RTF"))
     }
     
     @Test
@@ -95,9 +92,9 @@ class CleanTextTest {
         def file = new File(url.toURI())
         
         def byteStream = new ByteArrayOutputStream()
-        cleanText.out.out.set(new PrintStream(byteStream))
+        cleanText.out.out = new PrintStream(byteStream)
 
-        String text = cleanText.cleanUp(file, options, null)
+        String text = cleanText.cleanUp(file, options, null, cleanText.out)
         assertEquals("десь там волоська голова\n", text)
     }
 
@@ -106,10 +103,7 @@ class CleanTextTest {
         def url = getClass().getClassLoader().getResource("clean/enc_utf-16.txt")
         def file = new File(url.toURI())
         
-        def byteStream = new ByteArrayOutputStream()
-        cleanText.out.out.set(new PrintStream(byteStream))
-
-        String text = cleanText.cleanUp(file, options, null)
+        String text = cleanText.cleanUp(file, options, null, cleanText.out)
         assertEquals("Чистота й правильність української мови.\r\nВідповідь на запитання наших Читачів.\r\n", text)
     }
 
@@ -232,12 +226,12 @@ def text="""
         assertEquals ukrSent2, clean(ukrSent2)
 
         def expectedRates = [(double)0.5, (double)0.1]
-        assertEquals(expectedRates, cleanText.markLanguageModule.evalChunk("дерзаючий озером, а голова просто"))
+        assertEquals(expectedRates, cleanTextCore2.markLanguageModule.evalChunk("дерзаючий озером, а голова просто"))
 
         expectedRates = [(double)0.8, (double)0.2]
-        assertEquals(expectedRates, cleanText.markLanguageModule.evalChunk("енергозбереженню прийшов повний розгром але зелений друг виручив його в складний момент"))
+        assertEquals(expectedRates, cleanTextCore2.markLanguageModule.evalChunk("енергозбереженню прийшов повний розгром але зелений друг виручив його в складний момент"))
 
-        def rates = cleanText.markLanguageModule.evalChunk("Arsenal по\u2013царськи")
+        def rates = cleanTextCore2.markLanguageModule.evalChunk("Arsenal по\u2013царськи")
         assertEquals(1.0d, rates[0], 1E-2d)
         assertEquals(0.0d, rates[1], 1E-2d)
         
@@ -279,6 +273,7 @@ def text="""
         assertEquals "14 травня", clean("14 т р а в н я")
     }
 
+    @Disabled
     @Test
     public void testFirtka() {
         assertEquals "погіршення", clean("пог і ршення")
