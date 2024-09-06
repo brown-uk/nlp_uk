@@ -134,8 +134,9 @@ class ContextToken {
         }
         return w
     }
-    
-    private static final USE_RIGHT_CTX_PATTERN = ~/є|її|це|саме|[ву]с[еі]|всередині|перед|протягом|брати|англійською|українською|рівні|доросл.*/
+
+    // його|що    
+    private static final USE_RIGHT_CTX_PATTERN = ~/є|її|це|саме|[ву]с[еі]|всередині|перед|протягом|брати|(українськ|англійськ)(а|у|ою|ій)|рівні|доросл.*|майбутн(є|ього|ім|ому)|більше/
     
     static boolean useRightContext(String token) {
 //        token.toLowerCase() ==~ /це|його|її|їх|як|є|саме|все/
