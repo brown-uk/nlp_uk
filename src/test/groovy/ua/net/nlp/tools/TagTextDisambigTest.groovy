@@ -452,18 +452,45 @@ class TagTextDisambigTest {
     }
     
     
-        @Test
-        public void testPropCountryNoun() {
-            assumeTrue(NEW_TESTS)
-    
-            def tagged = tagText.tagText("і Чилі, Перу")
-            
-            def expected =
-    """<sentence>
+    @Test
+    public void testPropCountryNoun1() {
+        assumeTrue(NEW_TESTS)
+
+        def tagged = tagText.tagText("і Чилі, Перу")
+        
+        def expected =
+"""<sentence>
   <token value="і" lemma="і" tags="part" />
   <token value="Чилі" lemma="Чилі" tags="noun:inanim:f:v_rod:nv:prop:geo" />
   <token value="," lemma="," tags="punct" />
   <token value="Перу" lemma="Перу" tags="noun:inanim:f:v_rod:nv:prop:geo" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+    
+    @Test
+    public void testPropCountryNoun2() {
+        def tagged = tagText.tagText("і Аргентина")
+        
+        def expected =
+"""<sentence>
+  <token value="і" lemma="і" tags="part" />
+  <token value="Аргентина" lemma="Аргентина" tags="noun:inanim:f:v_naz:prop:geo" />
+</sentence>
+<paragraph/>
+"""
+            assertEquals expected, tagged.tagged
+
+        assumeTrue(NEW_TESTS)
+            
+        tagged = tagText.tagText(", Панами")
+        
+        expected =
+"""<sentence>
+  <token value="," lemma="," tags="punct" />
+  <token value="Панами" lemma="Панама" tags="noun:inanim:f:v_rod:prop:geo" />
 </sentence>
 <paragraph/>
 """
