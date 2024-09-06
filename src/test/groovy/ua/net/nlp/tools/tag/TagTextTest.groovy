@@ -1,6 +1,6 @@
 #!/bin/env groovy
 
-package ua.net.nlp.tools
+package ua.net.nlp.tools.tag
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
@@ -331,7 +331,7 @@ class TagTextTest {
     <token value="Мабуть" lemma="мабуть" tags="adv:&amp;insert" />
   </tokenReading>
   <tokenReading>
-    <token value="кх" lemma="" tags="unknown" />
+    <token value="кх" lemma="кх" tags="noninfl:onomat" />
   </tokenReading>
   <tokenReading>
     <token value="." lemma="." tags="punct" />

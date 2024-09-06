@@ -1,4 +1,4 @@
-package ua.net.nlp.tools
+package ua.net.nlp.tools.tag
 
 import static org.junit.jupiter.api.Assertions.*
 import static org.junit.jupiter.api.Assumptions.assumeTrue

@@ -1,6 +1,6 @@
 #!/bin/env groovy
 
-package ua.net.nlp.tools
+package ua.net.nlp.tools.tag
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 

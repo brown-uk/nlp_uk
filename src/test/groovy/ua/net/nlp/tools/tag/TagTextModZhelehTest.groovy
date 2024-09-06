@@ -1,6 +1,6 @@
 #!/bin/env groovy
 
-package ua.net.nlp.tools
+package ua.net.nlp.tools.tag
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 
@@ -29,7 +29,7 @@ class TagTextModZhelehTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value="миготїнь" lemma="миготіння" tags="noun:inanim:p:v_rod" />
+    <token value="миготїнь" lemma="миготіння" tags="noun:inanim:p:v_rod:alt" />
   </tokenReading>
   <tokenReading>
     <token value="купаєть" lemma="купатися" tags="verb:rev:imperf:pres:s:3" />
@@ -112,11 +112,7 @@ class TagTextModZhelehTest {
         expected =
 """<sentence>
   <tokenReading>
-    <token value="пізнїйше" lemma="пізніше" tags="adv:compc:&amp;predic" />
-    <token value="пізнїйше" lemma="пізніше" tags="prep" />
-    <token value="пізнїйше" lemma="пізніший" tags="adj:n:v_kly:compc" />
-    <token value="пізнїйше" lemma="пізніший" tags="adj:n:v_naz:compc" />
-    <token value="пізнїйше" lemma="пізніший" tags="adj:n:v_zna:compc" />
+    <token value="пізнїйше" lemma="пізнійше" tags="adv:&amp;predic:bad:alt" />
   </tokenReading>
 </sentence>
 """
