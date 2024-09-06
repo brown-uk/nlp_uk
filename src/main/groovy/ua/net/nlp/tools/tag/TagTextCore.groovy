@@ -566,7 +566,7 @@ class TagTextCore {
       if( fileInfo.filename
             && ( stats.knownCnt || stats.unknownMap || stats.unclassMap ) ) {
           def notKnownCnt = stats.unknownMap.values().sum(0) + stats.unclassMap.values().sum(0)
-          this.stats.unknownPctMap[fileInfo.filename] = (notKnownCnt)*1000 / (stats.knownCnt + notKnownCnt)
+          this.stats.unknownPctMap[fileInfo.filename] = [(notKnownCnt)*1000 / (stats.knownCnt + notKnownCnt), stats.knownCnt]
       }
       if( options.progress ) {
         def sz = this.stats.unknownPctMap.size()

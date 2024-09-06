@@ -38,7 +38,7 @@ class TagStats {
     Map<String, Integer> knownMap = [:].withDefault { 0 }
     int knownCnt = 0
     // filename -> unknown/unclass pct
-    Map<String, Integer> unknownPctMap = [:]
+    Map<String, List<Integer>> unknownPctMap = [:]
     @Lazy
     RussianTagger ruTagger = { RussianTagger.INSTANCE }()
 
@@ -249,9 +249,9 @@ class TagStats {
             def outputFile = new File(getStatFilename('unknownPcts'))
             outputFile.text = ''
             unknownPctMap
-                .sort { -it.value }
+                .sort { -it.value[0] }
                 .each { k, v ->
-                    def str = String.format("%s\t%.1f\n", k, ((float)v)/10.0)
+                    def str = String.format("%s\t%.1f (%d lines)\n", k, ((float)v[0])/10.0, v[1])
                     outputFile << str
                 }
         }
