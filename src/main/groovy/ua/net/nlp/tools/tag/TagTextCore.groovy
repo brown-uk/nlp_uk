@@ -102,6 +102,26 @@ class TagTextCore {
                     if( sb.length() > 0 ) sb.append(",\n");
                     sb.append(s)
                 }
+                else if( options.outputFormat == OutputFormat.vertical ) {
+                    if( sb.length() > 0 ) {
+                        sb.append("\n")
+                    }
+                    sb.append("<s>\n")
+                    
+                    taggedSent.each { TTR token ->
+                        def tkn = token.tokens[0]
+                        if( tkn.tags == 'punct' && ! tkn.whitespaceBefore ) {
+                            sb.append('<g/>\n')
+                        } 
+                        sb.append("${tkn.value}\t${tkn.tags}\t${tkn.lemma}")
+                        if( options.semanticTags ) {
+                            sb.append("\t${tkn.semtags?:''}")
+                        }
+                        sb.append('\n')
+                    }
+
+                    sb.append("</s>\n")
+                }
                 else { // legacy text
                     if( sb.length() > 0 ) sb.append("\n")
 
@@ -341,9 +361,7 @@ class TagTextCore {
                     continue // return tokenReadingsT
     
                 if( PUNCT_PATTERN.matcher(theToken).matches() ) {
-                    def tkn = /*options.tokenFormat ||*/ options.outputFormat != OutputFormat.txt
-                        ? new TaggedToken(value: theToken, lemma: cleanToken, tags: 'punct')
-                        : new TaggedToken(value: theToken, lemma: cleanToken, tags: 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore())
+                    def tkn = new TaggedToken(value: theToken, lemma: cleanToken, tags: 'punct', 'whitespaceBefore': tokenReadings.isWhitespaceBefore())
                     tokenReadingsT << new TTR(tokens: [tkn])
                     continue // return tokenReadingsT
                 }
@@ -676,7 +694,7 @@ class TagTextCore {
             options.input = "-"
         }
         if( ! options.output ) {
-            def fileExt = "." + options.outputFormat // ? ".xml" : ".txt"
+            def fileExt = "." + options.outputFormat.getExtension() // ? ".xml" : ".txt"
             def adj = options.lemmaOnly ? 'lemmatized' : 'tagged'
             def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/(\.[a-z]+)?$/, ".$adj${fileExt}")
             options.output = outfile

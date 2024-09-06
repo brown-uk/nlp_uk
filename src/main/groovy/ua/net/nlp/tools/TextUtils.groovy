@@ -360,7 +360,13 @@ public class TextUtils {
         }
     }
     
-    enum OutputFormat { txt, xml, json }
+    enum OutputFormat { txt, xml, json, vertical
+        
+        String getExtension() {
+            return this == vertical ? "vertical.txt" : this.name()
+        }
+        
+    }
     
     public static class OptionsBase {
         @Option(names = ["-i", "--input"], arity="1", description = ["Input file. Default: stdin"], defaultValue = "-")
@@ -371,7 +377,7 @@ public class TextUtils {
         public boolean quiet
         @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
         boolean helpRequested
-        @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt}", defaultValue = "xml")
+        @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt, vertical}", defaultValue = "xml")
         public OutputFormat outputFormat = OutputFormat.xml
         boolean singleThread = true
 
