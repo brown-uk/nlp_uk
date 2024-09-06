@@ -238,8 +238,8 @@ public class TagTextUnknownTest {
 
         def expected =
 """<sentence>
-  <token value="І." lemma="І." tags="noninf:abbr" />
-  <token value="В." lemma="В." tags="noninf:abbr" />
+  <token value="І." lemma="І." tags="noninfl:abbr" />
+  <token value="В." lemma="В." tags="noninfl:abbr" />
   <token value="Збарськ" lemma="Збарськ" tags="noun:inanim:m:v_naz:prop:geo" _confidence="-0.5" />
 </sentence>
 <paragraph/>
