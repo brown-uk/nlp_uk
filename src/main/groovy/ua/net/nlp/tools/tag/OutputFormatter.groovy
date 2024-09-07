@@ -156,7 +156,6 @@ class OutputFormatter {
                 taggedSentence.each { tr -> tr
                     'tokenReading'() {
                         tr.tokens.each { t ->
-                            'token'(value: t.value, lemma: t.lemma, tags: t.tags, whitespaceBefore: t.whitespaceBefore, semtags: t.semtags)
                             t.tags == 'punct'
                                 ? 'token'(value: t.value, lemma: t.lemma, tags: t.tags, whitespaceBefore: t.whitespaceBefore)
                                 : 'token'(value: t.value, lemma: t.lemma, tags: t.tags, semtags: t.semtags)
@@ -179,7 +178,7 @@ class OutputFormatter {
 
     @CompileStatic
     CharSequence xmlDirect(List<TTR> taggedSentence) {
-        if( taggedSentence.size() == 0 )
+        if( ! taggedSentence )
             return "<paragraph/>"
         
         StringBuilder sb = new StringBuilder(1024)

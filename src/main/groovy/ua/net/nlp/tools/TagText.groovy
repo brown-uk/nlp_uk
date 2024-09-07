@@ -9,6 +9,7 @@ package ua.net.nlp.tools
 //@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='6.3.1-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
+@Grab(group='org.apache.commons', module='commons-csv', version='1.11.0')
 
 import java.nio.charset.StandardCharsets
 

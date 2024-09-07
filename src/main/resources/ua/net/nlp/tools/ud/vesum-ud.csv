@@ -1,0 +1,109 @@
+UD,VESUM,Comments
+Upos=NOUN,noun,іменник
+Animacy=Anim,anim,істота
+NameType=Giv,fname,ім'я
+NameType=Sur,lname,прізвище
+NameType=Pat,pname,по батькові
+Animacy=Inan,inanim,неістота
+"Animacy=Anim,Inan",unanim,"невизначена категорія істота/неістота (бактерія тощо, також деякі займ.: він, вони...)"
+Upos=PROPN,prop,власна назва
+NameType=Geo,geo,
+Upos=VERB,verb,дієслово
+Aspect=Imp,imperf,недоконаний вид
+Aspect=Perf,perf,доконаний вид
+Reflex=Yes,rev,"зворотна форма (дієслова) (тег є неявним ключем, оскільки лема на #NAME? завжди відрізняється від прямого дієслова)"
+VerbForm=Inf,inf,інфінітив
+Tense=Fut; Mood=Ind,futr,майбутній час
+Tense=Past; Mood=Ind,past,минулий час
+Tense=Pres; Mood=Ind,pres,теперішній час
+Mood=Imp,impr,наказова форма
+VerbForm=Fin; Person=0; Mood=Ind,impers,безособова форма
+VerbForm=Fin; Person=1,1,1-а особа
+VerbForm=Fin; Person=2,2,2-а особа
+VerbForm=Fin; Person=3,3,3-а особа
+Upos=ADJ,adj,прикметник
+Degree=Pos,compb,базова форма
+Degree=Cmp,compc,порівняльна форма
+Degree=Sup,comps,найвища форма
+Variant=Short,short,"короткі форми прикметників, короткі форми дієслів 3-ї особи, інфінітиви на #NAME?"
+Variant=Uncontr ,long,"нестягнені форми прикметників, наказові форми на #NAME?"
+VerbForm=Part,adjp,дієприкметник: (:&adjp - лише дієприкметник; :&&adjp - дієприкметник і прикметник)
+Voice=Act,actv,активний
+Voice=Pass,pasv,пасивний
+Animacy=Inan,v_zna:rinanim,знахідний для неістот (лише ч.р. та мн.)
+Animacy=Anim,v_zna:ranim,знахідний для істот (лише ч.р. та мн.)
+Upos=ADV,adv,прислівник
+Upos=VERB; VerbForm=Conv,advp,дієприслівник
+Aspect=Perf,perf,
+Aspect=Imp,imperf,
+Upos=ADP,prep,прийменник
+-,conj,сполучник
+Upos=SCONJ,conj:subord,сполучник підрядний
+Upos=CCONJ,conj:coord,сполучник сурядний
+Upos=PART,part,частка
+Upos=INTJ,intj,вигук
+Upos=NUM,numr,числівник
+Uninflect=Yes,noninfl,"невідмінювані частини (най-най, брутто, екстра...)"
+Upos=ADV; Uninflect=Yes,noninfl:&predic,"можна, треба, немає"
+Foreign=Yes,foreign,"запозичені слова невизначеної частини мови (Альгемайне, Юнайтед, ла (Ла Страда) тощо)"
+-,onomat,"(клас звуконаслідувальних слів) Але може бути |intj:onomat|, тоді не дублювати"
+Case=Nom,v_naz,називний
+Case=Gen,v_rod,родовий
+Case=Dat,v_dav,давальний
+Case=Acc,v_zna,знахідний
+Case=Ins,v_oru,орудний
+Case=Loc,v_mis,місцевий
+Case=Voc,v_kly,кличний
+InflClass=Ind,nv,не відмінюється
+Number=Ptan,ns,множинний іменник
+Number=Plur,p,множина
+Number=Sing,s,однина
+Gender=Masc,m,чоловічий
+Gender=Fem,f,жіночий
+Gender=Neut,n,середній
+Abbr=Yes,abbr,абревіатура
+BadStyle=Yes,bad,покруч/помилкове написання
+-,subst,нестандартні форма
+Style=Rare,rare,рідковживана форма (також другий зн. в. для істот - в президенти)
+-,coll,розмовне слово/розмовна форма (наразі не генерується на виході)
+Style=Arch,arch,застаріле/архаїчне/(інколи) діалектне.
+-,slang,сленг та (проф)жаргонізми
+Orth=Alt,alt,альтернативне написання (не за чинним правописом)
+-,vulg,вульгарне
+-,ua_1992,за правописом 1992
+-,ua_2019,за правописом 2019
+Animacy[gram]=Anim,var,варіативний знах. відм.
+-,:xp[1-9],"омоніми, що відрізняються парадигмою відмінювання (напр. бар - р.в. бару, бар - р.в. бара)"
+-,#,"в коментарях також :xv[1-9] омоніми, що відрізняються семантично (напр. глупий (дурний, має вищий ступінь глупіший) і глупий - глупа ніч,"
+-,v-u,"паралельні форми на в-/у- (для правил милозвучності, не генерується за уставою)"
+-,&pron,"- наразі всі займенники мають теги відповідних частин мови (noun/adj/adv), але всі мають додатковий тег &pron (тег        &pron разом з наступним класифікатором стає ключем леми)"
+NumType=Ord,&numr,"- слова, що є порядковими числівниками"
+NumType=Card,&&numr,"- слова, що є і іменниками і кількісними числівниками"
+-,&insert,- може бути вставним словом
+-,&predic,- може бути предикативом
+PronType=Prs,pers,особовий
+Poss=Yes|PronType=Prs|Reflex=Yes,refl,зворотний
+Poss=Yes|PronType=Prs,pos,присвійний
+PronType=Dem,dem,вказівний
+PronType=Rel,def,означальний
+PronType=Int,int,питальний
+PronType=Rel,rel,відносний
+PronType=Neg,neg,заперечний
+PronType=Ind,ind,неозначений
+PronType=Tot,gen,узагальнювальний
+PronType=Emp,emph,підсилювальний
+Upos=NUM,number,- число
+-,latin,- число латинськими цифрами
+Upos=NUM,date,- дата
+Upos=NUM,time,- час
+Upos=NUM,hashtag,- хештег
+Upos=PUNCT,punct,- пунктуація (лише TagText.groovy)
+Upos=SYM,symb,- символ (лише TagText.groovy)
+Upos=X,unknown,- невідомі українські слова (лише TagText.groovy)
+Upos=X,unclass,- неукраїнські слова (лише TagText.groovy)
+Upos=AUX,,"у ВЕСУМі part, verb (в укр. м. AUX це ""б, би"" і ""бути, бувати"", але не у всіх випадках)"
+Mood=Cnd,,дієслово в формі минулого часу з б/би
+Upos=PRON,noun.*pron,
+Upos=ADV,adv.*pron,
+Upos=DET,numr.*pron,
+Upos=DET,adj.*pron,

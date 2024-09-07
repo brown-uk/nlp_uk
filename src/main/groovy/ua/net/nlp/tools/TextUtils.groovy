@@ -360,10 +360,12 @@ public class TextUtils {
         }
     }
     
-    enum OutputFormat { txt, xml, json, vertical
+    enum OutputFormat { txt, xml, json, vertical, conllu
         
         String getExtension() {
-            return this == vertical ? "vertical.txt" : this.name()
+            return this == vertical ? "vertical.txt"
+                 : this == conllu ? "conllu.txt"
+                     : this.name()
         }
         
     }

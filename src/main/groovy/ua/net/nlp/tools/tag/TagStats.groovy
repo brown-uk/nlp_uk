@@ -10,6 +10,7 @@ import org.languagetool.tagging.ru.RussianTagger
 
 import ua.net.nlp.tools.tag.TagTextCore
 import ua.net.nlp.tools.tag.TagTextCore.TTR
+import ua.net.nlp.tools.tag.TagTextCore.TaggedSentence
 import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 import ua.net.nlp.tools.tag.TagOptions
 
@@ -60,9 +61,9 @@ class TagStats {
     }
 
     @CompileStatic
-    def collectUnknown(List<List<TTR>> analyzedSentences) {
-        for (List<TTR> sentTTR : analyzedSentences) {
-            sentTTR.each { TTR ttr ->
+    def collectUnknown(List<TaggedSentence> analyzedSentences) {
+        for (TaggedSentence sent: analyzedSentences) {
+            sent.tokens.each { TTR ttr ->
                 TaggedToken tk = ttr.tokens[0]
                 if( tk.tags == 'unknown' ) {
                     if( goodForStats(tk.value) ) {

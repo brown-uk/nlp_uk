@@ -2,11 +2,6 @@
 
 package ua.net.nlp.tools.tag
 
-import java.math.RoundingMode
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -23,21 +18,14 @@ import org.languagetool.LtBuildInfo
 import org.languagetool.MultiThreadedJLanguageTool
 import org.languagetool.language.Ukrainian
 
-import ua.net.nlp.tools.TextUtils
-import ua.net.nlp.tools.TextUtils.IOFiles
-import ua.net.nlp.tools.TextUtils.OutputFormat
-import ua.net.nlp.tools.TextUtils.ResultBase
-import ua.net.nlp.tools.tag.DisambigStats
-import ua.net.nlp.tools.tag.ModZheleh
-import ua.net.nlp.tools.tag.OutputFormatter
-import ua.net.nlp.tools.tag.SemTags
-import ua.net.nlp.tools.tag.TagStats
-import ua.net.nlp.tools.tag.TagOptions
-
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
 import picocli.CommandLine
 import picocli.CommandLine.ParameterException
+import ua.net.nlp.tools.TextUtils
+import ua.net.nlp.tools.TextUtils.IOFiles
+import ua.net.nlp.tools.TextUtils.OutputFormat
+import ua.net.nlp.tools.TextUtils.ResultBase
 
 
 class TagTextCore {
@@ -59,6 +47,8 @@ class TagTextCore {
     JLanguageTool langTool = new MultiThreadedJLanguageTool(language)
 
     TagOptions options
+    UdModule udModule = new UdModule()
+    VerticalModule verticalModule = new VerticalModule()
     
 	@Canonical
 	public static class TagResult extends ResultBase {
@@ -84,70 +74,68 @@ class TagTextCore {
         def stats = new TagStats()
         stats.options = options
 
-        List<List<TTR>> taggedSentences = tagTextCore(text, stats)
+        List<TaggedSentence> taggedSentences = tagTextCore(text, stats)
 
         def outputFormats = new OutputFormatter(options)
         outputFormats.init()
 
         def sb = new StringBuilder()
         
-        for(List<TTR> taggedSent: taggedSentences) {
+        int sentId = 1
+        for(TaggedSentence taggedSent: taggedSentences) {
             if ( ! options.noTag ) {
                 if( options.outputFormat == OutputFormat.xml ) {
-                    CharSequence x = outputFormats.outputSentenceXml(taggedSent)
+                    CharSequence x = outputFormats.outputSentenceXml(taggedSent.tokens)
                     sb.append(x).append("\n")
                 }
                 else if( options.outputFormat == OutputFormat.json ) {
-                    def s = outputFormats.outputSentenceJson(taggedSent)
-                    if( sb.length() > 0 ) sb.append(",\n");
-                    sb.append(s)
+                    if( taggedSent.tokens ) {
+                        def s = outputFormats.outputSentenceJson(taggedSent.tokens)
+                        if( sb.length() > 0 ) sb.append(",\n");
+                        sb.append(s)
+                    }
                 }
                 else if( options.outputFormat == OutputFormat.vertical ) {
-                    if( sb.length() > 0 ) {
-                        sb.append("\n")
-                    }
-                    sb.append("<s>\n")
-                    
-                    taggedSent.each { TTR token ->
-                        def tkn = token.tokens[0]
-                        if( tkn.tags == 'punct' && ! tkn.whitespaceBefore ) {
-                            sb.append('<g/>\n')
-                        } 
-                        sb.append("${tkn.value}\t${tkn.tags}\t${tkn.lemma}")
-                        if( options.semanticTags ) {
-                            sb.append("\t${tkn.semtags?:''}")
-                        }
-                        sb.append('\n')
-                    }
-
-                    sb.append("</s>\n")
+                    verticalModule.printSentence(taggedSent, sb, sentId)
+                }
+                else if( options.outputFormat == OutputFormat.conllu ) {
+                    udModule.printSentence(taggedSent, sb, sentId)
                 }
                 else { // legacy text
                     if( sb.length() > 0 ) sb.append("\n")
 
-                    def prevToken = null
-                    taggedSent.each { TTR token ->
-                        if( prevToken != null && (token.tokens[0].whitespaceBefore == null || token.tokens[0].whitespaceBefore == true) ) {
-                            sb.append(" ")
-                        }
-                        if( options.lemmaOnly ) {
-                            sb.append(token.tokens[0].lemma)
-                        }
-                        else {
-                            def lemmasAndTags = token.tokens.collect{ t -> 
+                    if( taggedSent.tokens ) {
+                        def prevToken = null
+                        taggedSent.tokens.each { TTR token ->
+                            if( prevToken != null && (token.tokens[0].whitespaceBefore == null || token.tokens[0].whitespaceBefore == true) ) {
+                                sb.append(" ")
+                            }
+                            if( options.lemmaOnly ) {
+                                sb.append(token.tokens[0].lemma)
+                            }
+                            else {
+                                def lemmasAndTags = token.tokens.collect{ t ->
                                     options.lemmaOnly ? t.lemma : "${t.lemma}/${t.tags}"
                                 }.join(",")
-                            sb.append("${token.tokens[0].value}[$lemmasAndTags]")
+                                sb.append("${token.tokens[0].value}[$lemmasAndTags]")
+                            }
+                            prevToken = token
                         }
-                        prevToken = token
                     }
                 }
             }
+            sentId++
         }
         
         return new TagResult(sb.toString(), stats)
     }
 
+    static class TaggedSentence {
+        List<TTR> tokens
+        String text
+    }
+    
+    
     @CompileStatic
     void tagTextStream(InputStream input, OutputStream output) {
 
@@ -161,18 +149,18 @@ class TagTextCore {
 
         TextUtils.processFile(input, printStream, options, { String buffer ->
             
-            List<List<TTR>> taggedSentences = tagTextCore(buffer, stats)
+            List<TaggedSentence> taggedSentences = tagTextCore(buffer, stats)
 
             def sb = new StringBuilder()
 
-            for(List<TTR> taggedSent: taggedSentences) {
+            for(TaggedSentence taggedSent: taggedSentences) {
                 if ( ! options.noTag ) {
                     if( options.outputFormat == OutputFormat.xml ) {
-                        CharSequence x = outputFormats.outputSentenceXml(taggedSent)
+                        CharSequence x = outputFormats.outputSentenceXml(taggedSent.tokens)
                         sb.append(x).append("\n")
                     }
                     else if( options.outputFormat == OutputFormat.json ) {
-                        def s = outputFormats.outputSentenceJson(taggedSent)
+                        def s = outputFormats.outputSentenceJson(taggedSent.tokens)
                         if( sb.length() > 0 ) sb.append(",\n");
                         sb.append(s)
                     }
@@ -187,7 +175,7 @@ class TagTextCore {
     }
 
     @CompileStatic
-    List<List<TTR>> tagTextCore(String text, TagStats stats) {
+    List<TaggedSentence> tagTextCore(String text, TagStats stats) {
         // remove control chars so we don't create broken xml
         def m = text =~ CONTROL_CHAR_PATTERN_R
         if( m ) {
@@ -207,13 +195,13 @@ class TagTextCore {
     }
 
     @CompileStatic
-    public List<List<TTR>> tagTextCore(List<AnalyzedSentence> analyzedSentences) {
+    public List<TaggedSentence> tagTextCore(List<AnalyzedSentence> analyzedSentences) {
         tagTextCore(analyzedSentences, null);
     }
         
     @CompileStatic
-    List<List<TTR>> tagTextCore(List<AnalyzedSentence> analyzedSentences, TagStats stats) {
-        List<List<TTR>> taggedSentences = 
+    List<TaggedSentence> tagTextCore(List<AnalyzedSentence> analyzedSentences, TagStats stats) {
+        List<TaggedSentence> taggedSentences = 
           analyzedSentences.parallelStream().map { AnalyzedSentence analyzedSentence ->
             
             cleanup(analyzedSentence)
@@ -222,11 +210,11 @@ class TagTextCore {
 
             List<TTR> taggedObjects = tagAsObject(tokens, stats)
 
-            def ret = [taggedObjects]
+            List<TaggedSentence> ret = [new TaggedSentence(tokens: taggedObjects, text: analyzedSentence.text)]
             
             if( options.tokenFormat ) {
                 if( tokens[-1].hasPosTag(JLanguageTool.PARAGRAPH_END_TAGNAME) ) {
-                    ret << []
+                    ret << new TaggedSentence()
                 }
             }
             
@@ -291,6 +279,10 @@ class TagTextCore {
         // technical attributes
         TaggingLevel level
         BigDecimal confidence
+        
+        Boolean isWhitepaceBefore() {
+            tags != 'punct' ? null : whitespaceBefore
+        }
         
         @Override
         public String toString() {
@@ -686,6 +678,15 @@ class TagTextCore {
             options.xmlSchema = "https://github.com/brown-uk/nlp_uk/raw/master/src/main/resources/schema.xsd"
         }
 //        language.getSentenceTokenizer().setSingleLineBreaksMarksParagraph(options.singleNewLineAsParagraph)
+
+        if( options.outputFormat == OutputFormat.conllu ) {
+            udModule.options = options
+            udModule.language = language
+            udModule.init()
+        }
+        else if( options.outputFormat == OutputFormat.vertical ) {
+            verticalModule.options = options
+        }
     }
 
     void setInputOutput(TagOptions options) {

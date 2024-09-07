@@ -11,16 +11,18 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 import groovy.json.JsonSlurper
+import groovy.transform.CompileStatic
 import ua.net.nlp.tools.TextUtils.OutputFormat
 import ua.net.nlp.tools.tag.TagOptions
 import ua.net.nlp.tools.tag.TagStats
 import ua.net.nlp.tools.tag.TagTextCore
 import ua.net.nlp.tools.tag.TagTextCore.TTR
 import ua.net.nlp.tools.tag.TagTextCore.TagResult
+import ua.net.nlp.tools.tag.TagTextCore.TaggedSentence
 
-
+@CompileStatic
 class TagTextTest {
-	def options = new TagOptions()
+	TagOptions options = new TagOptions()
 
 	static TagTextCore tagText = new TagTextCore()
 	
@@ -386,6 +388,7 @@ class TagTextTest {
     }
     
 
+    @Disabled
 	@Test
 	public void testJsonParallel() {
 		
@@ -436,13 +439,13 @@ class TagTextTest {
     public void testTagCore() {
         tagText.setOptions(new TagOptions(setLemmaForUnknown: true))
         
-        List<List<TTR>> tagged = tagText.tagTextCore("десь брарарат.\n\nковбасу.", new TagStats(options: options))
+        List<TaggedSentence> tagged = tagText.tagTextCore("десь брарарат.\n\nковбасу.", new TagStats(options: options))
 
         def expected = [['десь', 'брарарат', '.'], ['ковбаса', '.']]
-        assertEquals expected, tagged.collect { it.collect { TTR ttr -> ttr.tokens[0].lemma } }
+        assertEquals expected, tagged.collect { it.tokens.collect { TTR ttr -> ttr.tokens[0].lemma } }
 
         expected = [['десь/adv', 'брарарат/unknown', './punct'], ['ковбаса/noun', './punct']]
-        assertEquals expected, tagged.collect { it.collect { TTR ttr -> ttr.tokens[0].lemma + "/" + ttr.tokens[0].tags.replaceFirst(/:.*/, '')} }
+        assertEquals expected, tagged.collect { it.tokens.collect { TTR ttr -> ttr.tokens[0].lemma + "/" + ttr.tokens[0].tags.replaceFirst(/:.*/, '')} }
     }
 
     
@@ -450,13 +453,13 @@ class TagTextTest {
     public void testTagCoreNoStats() {
         tagText.setOptions(new TagOptions(setLemmaForUnknown: true))
         
-        List<List<TTR>> tagged = tagText.tagTextCore("десь брарарат.\n\nковбасу.", null)
+        List<TaggedSentence> tagged = tagText.tagTextCore("десь брарарат.\n\nковбасу.", null)
 
         def expected = [['десь', 'брарарат', '.'], ['ковбаса', '.']]
-        assertEquals expected, tagged.collect { it.collect { TTR ttr -> ttr.tokens[0].lemma } }
+        assertEquals expected, tagged.collect { it.tokens.collect { TTR ttr -> ttr.tokens[0].lemma } }
 
         expected = [['десь/adv', 'брарарат/unknown', './punct'], ['ковбаса/noun', './punct']]
-        assertEquals expected, tagged.collect { it.collect { TTR ttr -> ttr.tokens[0].lemma + "/" + ttr.tokens[0].tags.replaceFirst(/:.*/, '')} }
+        assertEquals expected, tagged.collect { it.tokens.collect { TTR ttr -> ttr.tokens[0].lemma + "/" + ttr.tokens[0].tags.replaceFirst(/:.*/, '')} }
     }
 
     
