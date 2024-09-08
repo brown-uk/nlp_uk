@@ -40,25 +40,25 @@ class TagTextVerticalOutputTest {
 
         def expected = 
 """<s>
-Десь\tadv:&pron:ind\tдесь
+Десь adv:&pron:ind десь
 <g/>
-,\tpunct\t,
-там\tadv:&pron:dem\tтам
-за\tprep\tза
-горою\tadv\tгорою
-ходила\tverb:imperf:past:f\tходити
-Галя\tnoun:anim:f:v_naz:prop:fname\tГаля
+, punct ,
+там adv:&pron:dem там
+за prep за
+горою adv горою
+ходила verb:imperf:past:f ходити
+Галя noun:anim:f:v_naz:prop:fname Галя
 <g/>
-.\tpunct\t.
+. punct .
 </s>
 
 <s>
-А\tconj:coord\tа
-далі\tadv:compc:&predic\tдалі
--\tpunct\t-
-озеро\tnoun:inanim:n:v_naz\tозеро
+А conj:coord а
+далі adv:compc:&predic далі
+- punct -
+озеро noun:inanim:n:v_naz озеро
 <g/>
-...\tpunct\t...
+... punct ...
 </s>
 """
 
@@ -75,12 +75,12 @@ class TagTextVerticalOutputTest {
 
         def expected =
 """<s>
-А\tconj:coord\tа\t
-далі\tadv:compc:&predic\tдалі\t1:dist:2:time
--\tpunct\t-\t
-озеро\tnoun:inanim:n:v_naz\tозеро\t
+А conj:coord а 
+далі adv:compc:&predic далі 1:dist:2:time
+- punct - 
+озеро noun:inanim:n:v_naz озеро 
 <g/>
-...\tpunct\t...\t
+... punct ... 
 </s>
 """
 
@@ -92,22 +92,24 @@ class TagTextVerticalOutputTest {
     public void testTxtFormatWithUD() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.conllu, semanticTags: true))
         
-        def text = "А треба далі воно - озеро..."
+        def text = "А треба далі воно - озеро Світязь яке..."
         TagResult tagged = tagText.tagText(text)
 
         def expected =
 """# sent_id = 1
 # text = $text
-1\tА\tа\tCCONJ\tconj:coord\t_\t_\t_\t_
-2\tтреба\tтреба\tADV\tnoninfl:&predic\tUninflect=Yes\t_\t_\t_
-3\tдалі\tдалі\tADV\tadv:compc:&predic\tDegree=Cmp\t_\t_\t1:dist:2:time
-4\tвоно\tвоно\tNOUN\tnoun:unanim:n:v_naz:&pron:pers:3\tAnimacy=Anim,Inan|Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs|VerbForm=Fin\t_\t_\t1:conc:deictic
-5\t-\t-\tPUNCT\tpunct\t_\t_\t_\t_
-6\tозеро\tозеро\tNOUN\tnoun:inanim:n:v_naz\tAnimacy=Inan|Case=Nom|Gender=Neut|Number=Sing\t_\t_\tSpaceAfter=No
-7\t...\t...\tPUNCT\tpunct\t_\t_\t_\t_
+1 А а CCONJ conj:coord _ _ _ _
+2 треба треба ADV noninfl:&predic _ _ _ Uninflect=Yes
+3 далі далі ADV adv:compc:&predic Degree=Cmp _ _ SemTags=1:dist:2:time
+4 воно воно NOUN noun:unanim:n:v_naz:&pron:pers:3 Animacy=Anim,Inan|Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs _ _ SemTags=1:conc:deictic
+5 - - PUNCT punct _ _ _ _
+6 озеро озеро NOUN noun:inanim:n:v_naz Animacy=Inan|Case=Nom|Gender=Neut|Number=Sing _ _ _
+7 Світязь Світязь Upos=PROPN noun:inanim:m:v_naz:prop:geo:xp1 Animacy=Inan|Case=Nom|Gender=Masc|NameType=Geo|Number=Sing _ _ SemTags=1:conc:loc
+8 яке який ADJ adj:n:v_naz:&pron:int:rel:def Case=Nom|Gender=Neut|Number=Sing|PronType=Int|PronType=Rel _ _ SpaceAfter=No
+9 ... ... PUNCT punct _ _ _ _
 """.toString()
 
-        assertEquals expected, tagged.tagged
+        assertEquals expected, adjustResult(tagged.tagged)
 
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.conllu, semanticTags: false))
         
@@ -118,26 +120,26 @@ class TagTextVerticalOutputTest {
         expected =
 """# sent_id = 1
 # text = $text
-1\tШановні\tшановний\tADJ\tadj:p:v_kly:compb\tCase=Voc|Degree=Pos|Number=Plur\t_\t_\t_
-2\tколеги\tколега\tNOUN\tnoun:anim:f:v_rod\tAnimacy=Anim|Case=Gen|Gender=Fem|Number=Sing\t_\t_\tSpaceAfter=No
-3\t,\t,\tPUNCT\tpunct\t_\t_\t_\t_
-4\tпрошу\tпросити\tVERB\tverb:imperf:pres:s:1\tAspect=Imp|Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin\t_\t_\t_
-5\tвставте\tвставити\tVERB\tverb:perf:impr:p:2\tAspect=Perf|Mood=Imp|Number=Plur|Person=2|VerbForm=Fin\t_\t_\t_
-6\tкартки\tкартка\tNOUN\tnoun:inanim:f:v_rod\tAnimacy=Inan|Case=Gen|Gender=Fem|Number=Sing\t_\t_\tSpaceAfter=No
-7\t,\t,\tPUNCT\tpunct\t_\t_\t_\t_
-8\tзараз\tзараз\tADV\tadv:&pron:dem\tPronType=Dem\t_\t_\t_
-9\tпроведемо\tпровести\tVERB\tverb:perf:futr:p:1\tAspect=Perf|Mood=Ind|Number=Plur|Person=1|Tense=Fut|VerbForm=Fin\t_\t_\t_
-10\tреєстрацію\tреєстрація\tNOUN\tnoun:inanim:f:v_zna\tAnimacy=Inan|Case=Acc|Gender=Fem|Number=Sing\t_\t_\t_
-11\tнатисканням\tнатискання\tNOUN\tnoun:inanim:n:v_oru\tAnimacy=Inan|Case=Ins|Gender=Neut|Number=Sing\t_\t_\t_
-12\tзеленої\tзелений\tADJ\tadj:f:v_rod:compb\tCase=Gen|Degree=Pos|Gender=Fem|Number=Sing\t_\t_\t_
-13\tкнопки\tкнопка\tNOUN\tnoun:inanim:f:v_rod\tAnimacy=Inan|Case=Gen|Gender=Fem|Number=Sing\t_\t_\t_
-14\tприладів\tприлад\tNOUN\tnoun:inanim:p:v_rod\tAnimacy=Inan|Case=Gen|Gender=Masc|Number=Plur\t_\t_\tSpaceAfter=No
-15\t.\t.\tPUNCT\tpunct\t_\t_\t_\t_
+1 Шановні шановний ADJ adj:p:v_naz:compb Case=Nom|Degree=Pos|Number=Plur _ _ _
+2 колеги колега NOUN noun:anim:p:v_naz Animacy=Anim|Case=Nom|Gender=Fem|Number=Plur _ _ SpaceAfter=No
+3 , , PUNCT punct _ _ _ _
+4 прошу просити VERB verb:imperf:pres:s:1 Aspect=Imp|Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin _ _ _
+5 вставте вставити VERB verb:perf:impr:p:2 Aspect=Perf|Mood=Imp|Number=Plur|Person=2|VerbForm=Fin _ _ _
+6 картки картка NOUN noun:inanim:p:v_zna Animacy=Inan|Case=Acc|Gender=Fem|Number=Plur _ _ SpaceAfter=No
+7 , , PUNCT punct _ _ _ _
+8 зараз зараз ADV adv:&pron:dem PronType=Dem _ _ _
+9 проведемо провести VERB verb:perf:futr:p:1 Aspect=Perf|Mood=Ind|Number=Plur|Person=1|Tense=Fut|VerbForm=Fin _ _ _
+10 реєстрацію реєстрація NOUN noun:inanim:f:v_zna Animacy=Inan|Case=Acc|Gender=Fem|Number=Sing _ _ _
+11 натисканням натискання NOUN noun:inanim:p:v_dav Animacy=Inan|Case=Dat|Gender=Neut|Number=Plur _ _ _
+12 зеленої зелений ADJ adj:f:v_rod:compb Case=Gen|Degree=Pos|Gender=Fem|Number=Sing _ _ _
+13 кнопки кнопка NOUN noun:inanim:f:v_rod Animacy=Inan|Case=Gen|Gender=Fem|Number=Sing _ _ _
+14 приладів прилад NOUN noun:inanim:p:v_rod Animacy=Inan|Case=Gen|Gender=Masc|Number=Plur _ _ SpaceAfter=No
+15 . . PUNCT punct _ _ _ _
 """.toString()
     
-//        println tagged.tagged.replace("\t", '\\t')
+//        println tagged.tagged.replace(" ", '\ ')
        
-        assertEquals expected, tagged.tagged
+        assertEquals expected, adjustResult(tagged.tagged)
     }
 
 
@@ -153,5 +155,11 @@ class TagTextVerticalOutputTest {
         list = []
         tagText.udModule.addPluralGender(new TaggedToken(value: 'статтей', tags: 'noun:inanim:p:v_rod:subst', lemma: 'стаття'), list)
         assertEquals(['Gender=Fem'], list)
+    }
+    
+    private static String adjustResult(String txt) {
+        txt.replace('\t', ' ')
+            .replaceAll(/\|TagConfidence=[0-9.]+/, '')
+            .replaceAll(/TagConfidence=[0-9.]+/, '_')
     }
 }

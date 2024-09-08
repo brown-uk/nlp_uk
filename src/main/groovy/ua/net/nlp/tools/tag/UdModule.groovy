@@ -19,17 +19,21 @@ class UdModule {
     private Map<String, String> VESUM_TO_UD = [:]
     private static final Pattern PLURAL_PATTERN = ~ /noun.*:p:(?!.*:(ns|&pron|nv:abbr))/
     private static final Pattern PLURAL_GENDER_PATTERN = ~ /noun.*:([mfn])(?!.*:(ns|&pron)).*/
+    private static List<String> NEGATIVES
     
-    Ukrainian language    
+    Ukrainian language
     TagOptions options
     
     
     void printSentence(TaggedSentence taggedSent, StringBuilder sb, int sentId) {
+        if( ! taggedSent.tokens ) // <p>
+            return
+
         if( sb.length() > 0 ) {
             sb.append("\n")
         }
         sb.append("# sent_id = $sentId\n")
-        sb.append("# text = ${taggedSent.text}\n")
+        sb.append("# text = ${taggedSent.text?.trim()}\n")
         
         taggedSent.tokens.eachWithIndex { TTR token, int idx ->
             sb.append("${idx+1}\t")
@@ -74,32 +78,62 @@ class UdModule {
                 udTags += udPosParts[1..-1]
             }
 
-            addPluralGender(tkn, udTags)            
+            if( udTags.remove("Upos=PROPN") ) {
+                udPos = "Upos=PROPN"
+            }
+            
+            if( tkn.lemma in NEGATIVES ) {
+                udTags << "Polarity=Neg"
+            }
+            
+            addPluralGender(tkn, udTags)
 
+            def misc = []
+            
             String udTagsStr
             if( udTags ) {
-                udTagsStr = udTags.collect {
+                udTags = (List<String>) udTags.collect {
                     it.split(/; |\|/)
-                } .flatten()
-                .sort()
-                .join('|')
+                }
+                .flatten()
+                .unique()
+                .sort{ ((String)it).toLowerCase() }
+                
+                if( udTags.removeIf{ it == "Uninflect=Yes" } ) {
+                    misc << "Uninflect=Yes"
+                }
+            }
+            
+            if( ! tkn.tags.startsWith("verb") ) {
+                udTags.remove("VerbForm=Fin")
+            }
+            
+            if( udTags ) {
+                udTagsStr = udTags.join('|')
             }
             else {
                 udTagsStr = '_'
             }
             
                 
-            def misc = []
-            
             if( tkn.semtags ) {
-                misc << "${tkn.semtags}"
+                misc << "SemTags=${tkn.semtags}"
             }
+
             if( idx < taggedSent.tokens.size()-1 ) {
                 def whiteBeforeNext = taggedSent.tokens[idx+1].tokens[0].isWhitepaceBefore()
                 if( whiteBeforeNext != null && ! whiteBeforeNext ) {
                     misc << "SpaceAfter=No"
                 }
             }
+            
+            if( tkn.level ) {
+                misc << "TagLevel=${tkn.level}"
+            }
+            if( tkn.confidence ) {
+                misc << "TagConfidence=${tkn.confidence}"
+            }
+
             
             def miscStr = misc ? misc.join("|") : "_"
             
@@ -188,5 +222,7 @@ class UdModule {
         }
         
         println "Got ${VESUM_TO_UD.size()} UD conversions"
+        
+        NEGATIVES = new File(getClass().getResource('/ua/net/nlp/tools/ud/negatives.txt').toURI()).readLines('UTF-8')
     }
 }

@@ -106,6 +106,11 @@ public class TagOptions extends OptionsBase {
         else if( outputFormat == OutputFormat.txt ) {
             setLemmaForUnknown = true
         }
+        else if( outputFormat == OutputFormat.conllu || outputFormat == OutputFormat.vertical ) {
+            setLemmaForUnknown = true
+            disambiguate = true
+            showDisambigRate = true
+        }
 
         if( showDisambigRate || disambiguationDebug ) {
             disambiguate = true

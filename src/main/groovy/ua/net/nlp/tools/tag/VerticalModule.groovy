@@ -12,6 +12,9 @@ class VerticalModule {
     TagOptions options
     
     void printSentence(TaggedSentence taggedSent, StringBuilder sb, int sentId) {
+        if( ! taggedSent.tokens ) // <p>
+            return
+        
         if( sb.length() > 0 ) {
             sb.append("\n")
         }
