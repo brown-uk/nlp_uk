@@ -20,6 +20,9 @@ ext.artifactId = 'nlp_uk'
 repositories {
     mavenCentral()
     mavenLocal()
+    maven {
+        url = uri("https://repo.languagetool.org/ui/native/languagetool-os-snapshot")
+    }
 }
 
 

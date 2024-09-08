@@ -3,10 +3,12 @@
 package ua.net.nlp.tools
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='languagetool-core', version='6.4')
-@Grab(group='org.languagetool', module='language-uk', version='6.4')
+@GrabResolver(name="ltSnapshots", root="https://repo.languagetool.org/ui/native/languagetool-os-snapshot")
+@Grab(group='org.languagetool', module='languagetool-core', version='6.5-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='6.5-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='6.4')
 //@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='6.3.1-SNAPSHOT')
+
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 @Grab(group='org.apache.commons', module='commons-csv', version='1.11.0')

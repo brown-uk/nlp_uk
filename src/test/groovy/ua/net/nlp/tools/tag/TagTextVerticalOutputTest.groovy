@@ -45,7 +45,7 @@ class TagTextVerticalOutputTest {
 , punct ,
 там adv:&pron:dem там
 за prep за
-горою adv горою
+горою noun:inanim:f:v_oru гора
 ходила verb:imperf:past:f ходити
 Галя noun:anim:f:v_naz:prop:fname Галя
 <g/>
@@ -62,7 +62,7 @@ class TagTextVerticalOutputTest {
 </s>
 """
 
-		assertEquals expected, tagged.tagged
+		assertEquals expected, adjustResult(tagged.tagged)
 	}
 
     
@@ -84,7 +84,7 @@ class TagTextVerticalOutputTest {
 </s>
 """
 
-        assertEquals expected, tagged.tagged
+        assertEquals expected, adjustResult(tagged.tagged)
     }
     
 

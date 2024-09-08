@@ -18,38 +18,29 @@ import ua.net.nlp.tools.tag.TagOptions
 import groovy.transform.CompileStatic;
 
 
+@CompileStatic
 public class SemTags {
-    @groovy.transform.SourceURI
-    static SOURCE_URI
-    // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
-    static File SCRIPT_DIR = SOURCE_URI.scheme == "data"
-        ? null // new File("src/main/groovy/ua/net/nlp/tools/tag")
-        : new File(SOURCE_URI).getParentFile()
-    static final String baseDir = "/ua/net/nlp/tools/semtags"
+    static final String baseDir = "/ua/net/nlp/dict_uk/semtags"
 
     def categories = ["noun", "adj", "adv", "verb", "numr"]
         
     TagOptions options
     Map<String, Map<String,List<String>>> semanticTags = new HashMap<>()
     
-//    @CompileStatic
     def loadSemTags() {
         if( semanticTags.size() > 0 )
             return
 
-        URL nounFile = getClass().getResource("$baseDir/noun.csv")
-
-        if( nounFile == null ) {
-            def dir = new File(baseDir)
-            throw new IllegalStateException("Semantic stats not found, run \"TagText.groovy --download\" to download it from github, and then retry")
-        }
-
-
         long tm1 = System.currentTimeMillis()
         int semtagCount = 0
+        
         categories.each { cat ->
 
-            String text = getClass().getResource("/ua/net/nlp/tools/semtags/${cat}.csv").getText('UTF-8')
+            def fileName = "$baseDir/${cat}.csv"
+            def csvFile = getClass().getResource(fileName)
+            assert csvFile, "$fileName not found"
+            
+            String text = csvFile.getText('UTF-8')
             
             if( text.startsWith("\uFEFF") ) {
                 text = text.substring(1)
@@ -143,23 +134,5 @@ public class SemTags {
         true
     }
 
-    void download() {
-        if( SCRIPT_DIR == null ) { // should not happen - jar will bundle the stats
-            System.err.println "Can't download from inside the jar"
-            System.exit 1
-        }
-        
-        String base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/sem"
-        File targetDir = new File(SCRIPT_DIR, "../../../../../../resources/$baseDir")
-        targetDir.mkdirs()
-//        assert targetDir.isDirectory()
-        
-        categories.each { cat ->
-            System.err.println("Downloading $base/$cat...")
-            def statTxt = new URL("$base/${cat}.csv").getText('UTF-8')
-            File targetFile = new File(targetDir, "${cat}.csv")
-            targetFile.setText(statTxt, 'UTF-8')
-        }
-    }
     
 }
