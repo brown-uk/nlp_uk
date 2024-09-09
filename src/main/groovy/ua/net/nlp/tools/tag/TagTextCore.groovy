@@ -19,6 +19,7 @@ import org.languagetool.MultiThreadedJLanguageTool
 import org.languagetool.language.Ukrainian
 
 import groovy.transform.Canonical
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import picocli.CommandLine
 import picocli.CommandLine.ParameterException
@@ -28,6 +29,7 @@ import ua.net.nlp.tools.TextUtils.OutputFormat
 import ua.net.nlp.tools.TextUtils.ResultBase
 
 
+@CompileStatic
 class TagTextCore {
 
     public static final Pattern PUNCT_PATTERN = Pattern.compile(/[,.:;!?\/()\[\]{}«»„“"'…\u2013\u2014\u201D\u201C•■♦-]+/)               // "
@@ -39,7 +41,7 @@ class TagTextCore {
     private final Pattern CONTROL_CHAR_PATTERN_R = Pattern.compile(/[\u0000-\u0008\u000B-\u0012\u0014-\u001F\u0A0D]/, Pattern.CASE_INSENSITIVE|Pattern.UNICODE_CASE)
     enum TaggingLevel { tagger, stats }
     
-    def language = new Ukrainian() {
+    Ukrainian language = new Ukrainian() {
         @Override
         protected synchronized List<?> getPatternRules() { return [] }
     }
@@ -187,19 +189,17 @@ class TagTextCore {
         tagTextCore(analyzedSentences, stats)
     }
     
-//    @CompileDynamic
+    @CompileDynamic
     List<AnalyzedSentence> analyzeText(String text) {
         options.sentencePerLine
             ? langTool.analyzeSentences( text.split("\n") as List )
             : langTool.analyzeText(text)
     }
 
-    @CompileStatic
     public List<TaggedSentence> tagTextCore(List<AnalyzedSentence> analyzedSentences) {
         tagTextCore(analyzedSentences, null);
     }
         
-    @CompileStatic
     List<TaggedSentence> tagTextCore(List<AnalyzedSentence> analyzedSentences, TagStats stats) {
         List<TaggedSentence> taggedSentences = 
           analyzedSentences.parallelStream().map { AnalyzedSentence analyzedSentence ->
@@ -248,7 +248,7 @@ class TagTextCore {
         taggedSentences
     }
 
-    @CompileStatic
+
     void cleanup(AnalyzedSentence analyzedSentence) {
         // multiwords are very LT-specific
         analyzedSentence.getTokens().each { AnalyzedTokenReadings t ->
@@ -261,13 +261,11 @@ class TagTextCore {
         }
     }
         
-    @CompileStatic
     private static boolean hasPosTag(AnalyzedTokenReadings tokenReadings) {
         tokenReadings.getReadings().stream()
             .anyMatch{ t -> ! isTagEmpty(t.getPOSTag()) }
     }   
 
-    @CompileStatic
     @Canonical
     static class TaggedToken {
         String value
@@ -541,6 +539,7 @@ class TagTextCore {
     }
 
 
+    @CompileDynamic
     def process() {
 //        def stats = new TagStats()
 //        stats.options = options
@@ -554,6 +553,7 @@ class TagTextCore {
         });
     }
 
+    @CompileDynamic
     def process(IOFiles fileInfo) {
         def stats = new TagStats()
         stats.options = options
@@ -571,6 +571,7 @@ class TagTextCore {
         addUnknownPct(stats, fileInfo)
     }
 
+    @CompileDynamic
     def addUnknownPct(TagStats stats, IOFiles fileInfo) {
 //    println "== ${fileInfo.filename}, ${stats.knownCnt}, ${stats.unknownMap}"
       if( fileInfo.filename
@@ -606,14 +607,10 @@ class TagTextCore {
         }
     }
 
-    
-    @CompileStatic
     static boolean isTagEmpty(String posTag) {
         posTag == null || posTag.endsWith("_END")
     }
     
-
-    @CompileStatic
     static TagOptions parseOptions(String[] argv) {
         TagOptions options = new TagOptions()
         CommandLine commandLine = new CommandLine(options)
@@ -657,17 +654,11 @@ class TagTextCore {
                 System.err.println ("Semantic tagging only available in xml/json output")
                 System.exit 1
             }
-            
             semTags.loadSemTags()
         }
 
         disambigStats.setOptions(options)
         if( options.disambiguate ) {
-//            if( options.outputFormat == OutputFormat.txt ) {
-//                System.err.println ("Disambiguation only available in xml/json output")
-//                System.exit 1
-//            }
-
             disambigStats.loadDisambigStats()
         }
         if( options.tagUnknown ) {
@@ -703,12 +694,6 @@ class TagTextCore {
 
     }
     
-    void download() {
-        disambigStats.download()
-        tagUnknown.download()
-        semTags.download()
-    }
-    
 	
     static void main(String[] args) {
 
@@ -722,11 +707,6 @@ class TagTextCore {
         catch(IllegalStateException e) {
             System.err.println(e.getMessage())
             System.exit(1)
-        }
-        
-        if( options.download ) {
-            nlpUk.download()
-            return
         }
 
         if( ! options.quiet ) {

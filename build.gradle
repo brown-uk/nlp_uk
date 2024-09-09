@@ -17,6 +17,9 @@ compileJava.options.encoding = 'UTF-8'
 group = 'ua.net.nlp'
 ext.artifactId = 'nlp_uk'
 
+ext.statsArtifactId="${artifactId}-stats"
+ext.statsJarName="${statsArtifactId}-${project.version}"
+
 repositories {
     mavenCentral()
     mavenLocal()
@@ -106,29 +109,6 @@ eclipse {
   }
 }
 
-task downloadResources(type: JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = "ua.net.nlp.tools.tag.TagTextCore"
-    args "--download"
-
-    // ugly hack - downloadResources depends on compiling and thus processResources
-    // but after the download we need to call/force processResources again
-    // TODO: find how to do it nicely
-    // for now - just copy the files manually
-    doLast {
-        def outputDir = tasks.processResources.outputs.files.files.iterator().next()
-        File semtags = new File(outputDir, "/ua/net/nlp/tools/semtags")
-        semtags.mkdirs()
-        File stats = new File(outputDir, "/ua/net/nlp/tools/stats")
-        stats.mkdirs()
-        tasks.processResources.inputs.files.files
-            .findAll { File file -> file.name =~ /\.(csv|txt)$/ }
-            .each { File file ->
-                def toDir = file.path.contains("semtag") ? semtags : stats
-                Files.copy(file.toPath(), new File(toDir, file.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
-            }
-    }
-}
 
 test {
     useJUnitPlatform()
@@ -216,6 +196,14 @@ jar {
     exclude("ua/net/nlp/tools/StressText.class")
 }
 
+task statsJar(type: Jar) {
+    setArchiveFileName "${statsJarName}.jar"
+    version=statsVersion
+    
+    from('src/main/resources') {
+        include '/ua/net/nlp/tools/stats/*.txt'
+    }
+}
 
 task sourceJar(type: Jar) {
     archiveClassifier = "sources"
@@ -236,7 +224,7 @@ if( project.hasProperty("ossrhUsername") ) {
 
 publishing {
     publications {
-        maven(MavenPublication) {
+        mainJar(MavenPublication) {
 //            groupId = group
             artifactId = artifactId
 //            version = version
@@ -274,6 +262,43 @@ publishing {
                   url = "https://github.com/brown-uk/nlp_uk.git"
                 }
             }
+        
+        }
+
+        statsJarPublication(MavenPublication) {
+            artifact statsJar {
+//                classifier = 'stats'
+            }
+//                groupId = 'com.example'
+            artifactId = statsArtifactId
+            version=statsVersion
+            
+            pom {
+                name = 'NLP Stats for Ukrainian'
+                description = 'NLP statistic files for Ukrainian language'
+
+                url = "https://github.com/brown-uk/nlp_uk"
+                
+                licenses {
+                  license {
+                    name = 'GNU General Public License v3'
+                    url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
+                  }
+                }
+                
+                developers {
+                  developer {
+                    id = 'arysin'
+                    name = 'Andriy Rysin'
+                    email = 'arysin@gmail.com'
+                  }
+                }
+                
+                scm {
+                  url = "https://github.com/brown-uk/nlp_uk.git"
+                }
+            }
+
         }
     }
 

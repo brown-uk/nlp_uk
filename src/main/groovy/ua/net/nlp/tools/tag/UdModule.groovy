@@ -221,7 +221,9 @@ class UdModule {
             VESUM_TO_UD[vesum]=ud
         }
         
-        println "Got ${VESUM_TO_UD.size()} UD conversions"
+        if( ! options.quiet ) {
+            println "Got ${VESUM_TO_UD.size()} UD conversions"
+        }
         
         NEGATIVES = new File(getClass().getResource('/ua/net/nlp/tools/ud/negatives.txt').toURI()).readLines('UTF-8')
     }

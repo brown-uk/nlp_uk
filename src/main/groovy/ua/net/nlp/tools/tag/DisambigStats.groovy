@@ -1,6 +1,5 @@
 package ua.net.nlp.tools.tag;
 
-import java.util.function.Consumer
 import java.util.regex.Pattern
 import java.util.stream.Collectors
 
@@ -13,10 +12,7 @@ import groovy.transform.ToString
 import ua.net.nlp.bruk.ContextToken
 import ua.net.nlp.bruk.WordContext
 import ua.net.nlp.bruk.WordReading
-import ua.net.nlp.tools.tag.TagTextCore
-import ua.net.nlp.tools.tag.TagTextCore.TTR
 import ua.net.nlp.tools.tag.TagTextCore.TokenInfo
-import ua.net.nlp.tools.tag.TagOptions
 
 
 @CompileStatic
@@ -88,12 +84,6 @@ public class DisambigStats {
     // lemma_xpN -> rate
     Map<String, Map<String, Double>> statsForLemmaXp = new HashMap<>(256).withDefault{ new HashMap<>() }
     
-    @groovy.transform.SourceURI
-    static URI SOURCE_URI
-    // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
-    static File SCRIPT_DIR = SOURCE_URI.scheme == "data"
-        ? null // new File("src/main/groovy/ua/net/nlp/tools/tag")
-        : new File(SOURCE_URI).getParentFile()
 
     @CompileStatic
     static double round(double d) {
@@ -629,26 +619,6 @@ public class DisambigStats {
         [new WordContext(contextToken, offset)] as Set
     }
 
-    void download() {
-        if( SCRIPT_DIR == null ) { // should not happen - jar will bundle the stats
-            System.err.println "Can't download from inside the jar"
-            System.exit 1
-        }
-        
-        def targetDir = new File(SCRIPT_DIR, "../../../../../../resources/")
-        targetDir.mkdirs()
-        assert targetDir.isDirectory()
-
-        File targetFile = new File(targetDir, statsFile)
-        targetFile.parentFile.mkdirs()
-        
-        def remoteStats = "https://github.com/brown-uk/nlp_uk/releases/download/v${statsVersion}/lemma_freqs_hom.txt"
-        System.err.println("Downloading $remoteStats...");
-        def statTxt = new URL(remoteStats).getText('UTF-8')
-        
-        targetFile.setText(statTxt, 'UTF-8')
-    }
-    
     
     @CompileStatic
     def loadDisambigStats() {
@@ -658,10 +628,6 @@ public class DisambigStats {
         long tm1 = System.currentTimeMillis()
 
         def statsFileRes = getClass().getResource(statsFile)
-        if( statsFileRes == null ) {
-            throw new IllegalStateException("Disambiguation stats not found, run \"TagText.groovy --download\" to download it from github, and then retry")
-        }
-        
         
         String word
         WordReading wordReading

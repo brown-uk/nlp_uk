@@ -27,6 +27,7 @@ public class SemTags {
     TagOptions options
     Map<String, Map<String,List<String>>> semanticTags = new HashMap<>()
     
+
     def loadSemTags() {
         if( semanticTags.size() > 0 )
             return
@@ -85,7 +86,7 @@ public class SemTags {
         }
     }
 
-    @CompileStatic
+
     String getSemTags(AnalyzedToken tkn, String posTag) {
         if( options.semanticTags && tkn.getLemma() != null && posTag != null ) {
             def lemma = tkn.getLemma()
@@ -108,7 +109,6 @@ public class SemTags {
     }
 
     
-    @CompileStatic
     private static boolean filterSemtag(String lemma, String posTag, String semtag) {
         if( posTag.contains("pron") )
             return semtag =~ ":deictic|:quantif"
@@ -133,6 +133,5 @@ public class SemTags {
         }
         true
     }
-
     
 }

@@ -5,7 +5,7 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 Це — проект демонстрації API для обробляння природної мови в LanguageTool для української мови.
 
 Використовує мову [groovy](http://www.groovy-lang.org/), засоби для токенізації та тегування також мають скрипти-обгортки для python3 та java.
-Рекомендована версія groovy - 4.0.10 або новіше.
+Рекомендована версія groovy - 4.0.22 або новіше.
 
 Для запуску скриптів потрібно встановити мову [groovy](http://www.groovy-lang.org/) 
 

@@ -5,19 +5,15 @@ import java.util.regex.Pattern
 import org.languagetool.AnalyzedTokenReadings
 import org.languagetool.tools.StringTools
 
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import ua.net.nlp.bruk.WordReading
 import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 
+
+@CompileStatic
 public class TagUnknown {
     private static final String statsFile = "/ua/net/nlp/tools/stats/lemma_suffix_freqs.txt"
-
-    @groovy.transform.SourceURI
-    static SOURCE_URI
-    // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
-    static File SCRIPT_DIR = SOURCE_URI.scheme == "data"
-        ? null // new File("src/main/groovy/ua/net/nlp/tools/tag")
-        : new File(SOURCE_URI).getParentFile()
 
     Map<String, Map<WordReading, Integer>> lemmaSuffixStatsF = [:].withDefault { [:].withDefault { 0 } }
     int lemmaSuffixLenB = 4
@@ -25,15 +21,13 @@ public class TagUnknown {
     TagUnknown() {
     }
 
+    @CompileDynamic
     void loadStats() {
         if( lemmaSuffixStatsF.size() > 0 )
             return
         
         def statsFileRes = getClass().getResource(statsFile)
-        if( statsFileRes == null ) {
-            System.err.println "Lemma stats not found, run with --download to download it from github"
-            System.exit 1
-        }
+        assert statsFileRes, "Disambig stats not found :$statsFile"
 
         statsFileRes.eachLine { String line ->
             def (suffix, rs, postag, cnt) = line.split("\t+")
@@ -44,7 +38,6 @@ public class TagUnknown {
         
 //    private static Pattern DASHED = ~/(?iu)([а-яіїєґ']{4,})-([а-яіїєґ']{4,})/
     
-    @CompileStatic
     List<TaggedToken> tag(String token, int idx, AnalyzedTokenReadings[] tokens) {
 //        def m = DASHED.matcher(token)
 //        m.find()
@@ -67,7 +60,6 @@ public class TagUnknown {
     // НС-фільтрів
     static final Pattern PREFIXED = Pattern.compile(/([А-ЯІЇЄҐA-Z0-9]+[-\u2013])([а-яіїєґ].*)/)
     
-    @CompileStatic
     List<TaggedToken> tagInternal(String token, int idx, AnalyzedTokenReadings[] tokens) {
         if( token ==~ /[А-ЯІЇЄҐ]+-[0-9]+[а-яіїєґА-ЯІЇЄҐ]*/ ) // ФАТ-10
             return [new TaggedToken(value: token, lemma: token, tags: 'noninfl', confidence: -0.7)]
@@ -147,14 +139,12 @@ public class TagUnknown {
     static Pattern mascPrefix = ~/пан|містер|гер|сеньйор|монсеньйор|добродій|князь/
     static Pattern femPrefix = ~/пані|міс|місіс|княгиня|фрау|сеньора|сеньйоріта|мадам|маде?муазель|добродійка/
 
-    @CompileStatic
     private static String gen(String postag) {
         def m = postag =~ /:[mf]:/
         return m ? m[0] : null
     }
 
         
-    @CompileStatic
     private static int getCoeff(Map.Entry<WordReading, Integer> e, String token, int idx, AnalyzedTokenReadings[] tokens) {
         if( e.key.postag.contains("prop") ) {
             if( ! StringTools.isCapitalizedWord(token) ) {
@@ -188,24 +178,4 @@ public class TagUnknown {
         return e.value
     }
     
-    void download() {
-        if( SCRIPT_DIR == null ) { // should not happen - jar will bundle the stats
-            System.err.println "Can't download from inside the jar"
-            System.exit 1
-        }
-        
-        def targetDir = new File(SCRIPT_DIR, "../../../../../../resources/")
-        targetDir.mkdirs()
-        assert targetDir.isDirectory()
-
-        File targetFile = new File(targetDir, statsFile)
-        targetFile.parentFile.mkdirs()
-        
-        def remoteStats = "https://github.com/brown-uk/nlp_uk/releases/download/v${DisambigStats.statsVersion}/lemma_suffix_freqs.txt"
-        System.err.println("Downloading $remoteStats...");
-        def statTxt = new URL(remoteStats).getText('UTF-8')
-        
-        targetFile.setText(statTxt, 'UTF-8')
-    }
-
 }
