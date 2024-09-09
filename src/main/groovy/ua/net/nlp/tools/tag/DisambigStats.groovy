@@ -647,12 +647,12 @@ public class DisambigStats {
                     statsVersionFound = (line - starter).trim()                
                 }
                 if( statsVersion != statsVersionFound ) {
-                    System.err.println "Disambiguation stats version mismatch, expected \"$statsVersion\", run \"TagText.groovy --download\" to download it from github, and then retry"
+                    System.err.println "Disambiguation stats version mismatch, expected \"$statsVersion\", found \"$statsVersionFound\""
                     System.exit 1
                 }
                 return
             }
-            
+
             def p = line.split(/\h+/)
 
             if( ! line.startsWith('\t') ) {

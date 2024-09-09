@@ -63,6 +63,8 @@ dependencies {
         implementation("ua.net.nlp:morfologik-ukrainian-lt:${morfologik_ukrainian_lt_version}")
     }
 
+    implementation group: 'ua.net.nlp', name: 'nlp_uk-stats', version: '3.3.5'
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.+'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.+'
 }
