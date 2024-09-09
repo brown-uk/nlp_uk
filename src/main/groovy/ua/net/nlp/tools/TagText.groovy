@@ -3,7 +3,7 @@
 package ua.net.nlp.tools
 
 @GrabConfig(systemClassLoader=true)
-@GrabResolver(name="ltSnapshots", root="https://repo.languagetool.org/ui/native/languagetool-os-snapshot")
+@GrabResolver(name="ltSnapshots", root="https://repo.languagetool.org/artifactory/languagetool-os-snapshot/")
 @Grab(group='org.languagetool', module='languagetool-core', version='6.5-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-uk', version='6.5-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='6.4')
