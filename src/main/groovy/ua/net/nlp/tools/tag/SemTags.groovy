@@ -93,16 +93,12 @@ public class SemTags {
             String posTagKey = posTag.replaceFirst(/:.*/, '')
             String key = "$lemma $posTagKey"
 
-            def potentialSemTags = semanticTags.get(key)
+            Map<String, List<String>> potentialSemTags = semanticTags.get(key)
             if( potentialSemTags ) {
-                Map<String, List<String>> potentialSemTags2 = semanticTags.get(key)
-                List<String> potentialSemTags3 = null
-                if( potentialSemTags2 ) {
-                    potentialSemTags2 = potentialSemTags2.findAll { k,v -> !k || posTag.contains(k) }
-                    List<String> values = (java.util.List<java.lang.String>) potentialSemTags2.values().flatten()
-                    potentialSemTags3 = values.findAll { filterSemtag(lemma, posTag, it) }
-                    return potentialSemTags3 ? potentialSemTags3.join(';') : null
-                }
+                potentialSemTags = potentialSemTags.findAll { k,v -> ! k || posTag.contains(k) }
+                List<String> values = (java.util.List<java.lang.String>) potentialSemTags.values().flatten()
+                def resultSemTags = values.findAll { filterSemtag(lemma, posTag, it) }
+                return resultSemTags ? resultSemTags.join(';') : null
             }
         }
         return null
@@ -131,7 +127,8 @@ public class SemTags {
 
             return ! (semtag =~ /:hum|:supernat|:animal/)
         }
-        true
+
+        return true
     }
     
 }
