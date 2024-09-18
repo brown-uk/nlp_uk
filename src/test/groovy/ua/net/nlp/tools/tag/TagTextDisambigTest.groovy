@@ -524,6 +524,40 @@ class TagTextDisambigTest {
         assertEquals expected, tagged.tagged
     }
 
+    
+    @Test
+    public void testAdjAdjNoun() {
+        
+        def tagged = tagText.tagText("Американські збройні сили")
+        
+        def expected = """<sentence>
+  <token value="Американські" lemma="американський" tags="adj:p:v_naz" />
+  <token value="збройні" lemma="збройний" tags="adj:p:v_zna:rinanim" />
+  <token value="сили" lemma="сила" tags="noun:inanim:p:v_zna" />
+</sentence>
+<paragraph/>
+"""
+
+        assertEquals expected, tagged.tagged
+
+
+        assumeTrue(NEW_TESTS)
+        
+        tagged = tagText.tagText("на такий великий кавун")
+        
+        expected = """<sentence>
+  <token value="на" lemma="на" tags="prep" />
+  <token value="такий" lemma="такий" tags="adj:m:v_zna:rinanim:&amp;pron:dem" />
+  <token value="великий" lemma="великий" tags="adj:m:v_zna:rinanim:compb" />
+  <token value="кавун" lemma="кавун" tags="noun:inanim:m:v_zna" />
+</sentence>
+<paragraph/>
+"""
+
+        assertEquals expected, tagged.tagged
+    }
+
+    
     @Test
     public void testIgnoreParts() {
         assumeTrue(NEW_TESTS)
