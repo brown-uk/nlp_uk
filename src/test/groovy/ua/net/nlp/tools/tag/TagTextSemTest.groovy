@@ -24,7 +24,6 @@ class TagTextSemTest {
 	}
 
 
-    
     @Test
     public void testSemantic() {
         def expected=
@@ -74,5 +73,24 @@ class TagTextSemTest {
         TagResult tagged = tagText.tagText("Слово усе голова аахенська Вашингтон акту один-другий.")
         assertEquals expected, tagged.tagged
     }
+    
 
+    @Test
+    public void testSemanticAlt() {
+        def expected=
+"""<sentence>
+  <tokenReading>
+    <token value="колеґа" lemma="колеґа" tags="noun:anim:f:v_naz:alt" semtags="1:conc:hum" />
+    <token value="колеґа" lemma="колеґа" tags="noun:anim:m:v_naz:alt" semtags="1:conc:hum" />
+  </tokenReading>
+  <tokenReading>
+    <token value="по-турецьки" lemma="по-турецьки" tags="adv" semtags="1:manner" />
+  </tokenReading>
+</sentence>
+"""
+
+        tagText.setOptions(new TagOptions(semanticTags: true))
+        TagResult tagged = tagText.tagText("колеґа по\u2013турецьки")
+        assertEquals expected, tagged.tagged
+    }
 }

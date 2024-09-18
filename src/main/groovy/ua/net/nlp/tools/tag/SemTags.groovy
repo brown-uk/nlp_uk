@@ -94,6 +94,22 @@ public class SemTags {
             String key = "$lemma $posTagKey"
 
             Map<String, List<String>> potentialSemTags = semanticTags.get(key)
+            
+            if( ! potentialSemTags ) {
+                if( key.contains("ґ") ) {
+                    potentialSemTags = semanticTags.get(key.replace("ґ", "г"))
+                }
+                else if( key.contains("ія") ) {
+                    potentialSemTags = semanticTags.get(key.replace("ія", "іа"))
+                }
+                else if( key.contains("тер") ) {
+                    potentialSemTags = semanticTags.get(key.replaceFirst(/тер$/, "тр"))
+                }
+                else if( key.contains("льо") ) {
+                    potentialSemTags = semanticTags.get(key.replace("льо", "ло"))
+                }
+            }
+            
             if( potentialSemTags ) {
                 potentialSemTags = potentialSemTags.findAll { k,v -> ! k || posTag.contains(k) }
                 List<String> values = (java.util.List<java.lang.String>) potentialSemTags.values().flatten()
@@ -110,10 +126,6 @@ public class SemTags {
             return semtag =~ ":deictic|:quantif"
 
         if( posTag.startsWith("noun") ) {
-            
-            if( Character.isUpperCase(lemma.charAt(0)) && posTag.contains(":geo") ) {
-                return semtag.contains(":loc")
-            }
 
             if( posTag.contains(":anim") ) {
                 if( posTag.contains("name") )
@@ -121,10 +133,13 @@ public class SemTags {
                 else
                     return semtag =~ ":hum|:supernat|:animal"
             }
-
-            if( posTag.contains(":unanim") )
+            else if( posTag.contains(":unanim") ) {
                 return semtag.contains(":animal")
-
+            }
+            else if( Character.isUpperCase(lemma.charAt(0)) && posTag.contains(":geo") ) {
+                return semtag.contains(":loc")
+            }
+    
             return ! (semtag =~ /:hum|:supernat|:animal/)
         }
 
