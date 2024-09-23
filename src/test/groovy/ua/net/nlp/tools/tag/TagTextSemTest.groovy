@@ -73,6 +73,27 @@ class TagTextSemTest {
         TagResult tagged = tagText.tagText("Слово усе голова аахенська Вашингтон акту один-другий.")
         assertEquals expected, tagged.tagged
     }
+
+    
+    @Test
+    public void testSemanticOrg() {
+        def expected=
+"""<sentence>
+  <tokenReading>
+    <token value="хімвиробник" lemma="хімвиробник" tags="noun:anim:m:v_naz" semtags="1:conc:org" />
+  </tokenReading>
+  <tokenReading>
+    <token value="півча" lemma="півча" tags="noun:inanim:f:v_naz" semtags="1:conc:hum:group" />
+    <token value="півча" lemma="півчий" tags="adj:f:v_naz:bad" />
+  </tokenReading>
+</sentence>
+"""
+
+        tagText.setOptions(new TagOptions(semanticTags: true))
+        TagResult tagged = tagText.tagText("хімвиробник півча")
+        assertEquals expected, tagged.tagged
+    }
+
     
 
     @Test

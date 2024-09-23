@@ -131,7 +131,7 @@ public class SemTags {
                 if( posTag.contains("name") )
                     return semtag =~ ":hum|:supernat"
                 else
-                    return semtag =~ ":hum|:supernat|:animal"
+                    return semtag =~ ":hum|:supernat|:animal|:org"
             }
             else if( posTag.contains(":unanim") ) {
                 return semtag.contains(":animal")
@@ -140,7 +140,7 @@ public class SemTags {
                 return semtag.contains(":loc")
             }
     
-            return ! (semtag =~ /:hum|:supernat|:animal/)
+            return semtag =~ /:hum:group/ || ! (semtag =~ /:hum|:supernat|:animal/)
         }
 
         return true
