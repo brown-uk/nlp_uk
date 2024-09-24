@@ -88,7 +88,11 @@ class UdModule {
             if( tkn.lemma in NEGATIVES ) {
                 udTags << "Polarity=Neg"
             }
-            
+
+            if( tkn.tags =~ /^verb(?!.*(:inf|:impers))/ ) {
+                udTags << "VerbForm=Fin"
+            }
+
             addPluralGender(tkn, udTags)
 
             def misc = []
