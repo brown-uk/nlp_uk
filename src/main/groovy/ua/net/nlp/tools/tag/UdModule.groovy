@@ -81,6 +81,9 @@ class UdModule {
             if( udTags.remove("Upos=PROPN") ) {
                 udPos = "PROPN"
             }
+            if( udPos == "NOUN" && udTags.contains("PronType=Prs") ) {
+                udPos = "PRON"
+            }
             
             if( tkn.lemma in NEGATIVES ) {
                 udTags << "Polarity=Neg"
