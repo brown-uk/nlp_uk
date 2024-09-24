@@ -383,8 +383,10 @@ public class TextUtils {
         public OutputFormat outputFormat = OutputFormat.xml
         boolean singleThread = true
 
-        // internal
+        @Option(names = ["--splitHypenParts"], description = "If true parts in words like \"якби-то\" etc will be separate tokens.", defaultValue = "true")
         boolean splitHyphenParts = true
+        
+        // internal
         String xmlSchema
     
         boolean isNoTag() {

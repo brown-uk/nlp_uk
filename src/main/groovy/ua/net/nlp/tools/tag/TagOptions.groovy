@@ -106,6 +106,9 @@ public class TagOptions extends OptionsBase {
             setLemmaForUnknown = true
             disambiguate = true
             showDisambigRate = true
+            if( outputFormat == OutputFormat.conllu ) {
+                splitHyphenParts = false
+            }
         }
 
         if( showDisambigRate || disambiguationDebug ) {
