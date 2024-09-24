@@ -33,8 +33,6 @@ public class TagOptions extends OptionsBase {
 
     @Option(names = ["-e", "--semanticTags"], description = "Add semantic tags")
     boolean semanticTags
-    @Option(names = ["-l", "--tokenPerLine"], description = "One token per line (for .txt output only)")
-    boolean tokenPerLine
     @Option(names = ["-k", "--noTag"], description = "Do not write tagged text (only perform stats)")
     boolean noTag
     @Option(names = ["--setLemmaForUnknown"], description = "Fill lemma for unknown words (default: empty lemma)")
