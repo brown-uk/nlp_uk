@@ -27,7 +27,12 @@ class VerticalModule {
             }
             sb.append("${tkn.value}\t${tkn.tags}\t${tkn.lemma}")
             if( options.semanticTags ) {
-                sb.append("\t${tkn.semtags?:''}")
+                if( tkn.semtags ) {
+                    sb.append("\tsemTags=${tkn.semtags}")
+                }
+                else {
+                    sb.append("\t_")
+                }
             }
             sb.append('\n')
         }

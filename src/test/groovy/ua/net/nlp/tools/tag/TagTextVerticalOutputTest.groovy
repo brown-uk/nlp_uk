@@ -75,12 +75,12 @@ class TagTextVerticalOutputTest {
 
         def expected =
 """<s>
-А conj:coord а 
-далі adv:compc:&predic далі 1:dist:2:time
-- punct - 
-озеро noun:inanim:n:v_naz озеро 
+А conj:coord а _
+далі adv:compc:&predic далі semTags=1:dist:2:time
+- punct - _
+озеро noun:inanim:n:v_naz озеро _
 <g/>
-... punct ... 
+... punct ... _
 </s>
 """
 
