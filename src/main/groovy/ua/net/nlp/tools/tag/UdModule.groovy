@@ -79,7 +79,7 @@ class UdModule {
             }
 
             if( udTags.remove("Upos=PROPN") ) {
-                udPos = "Upos=PROPN"
+                udPos = "PROPN"
             }
             
             if( tkn.lemma in NEGATIVES ) {

@@ -104,7 +104,7 @@ class TagTextVerticalOutputTest {
 4 воно воно NOUN noun:unanim:n:v_naz:&pron:pers:3 Animacy=Anim,Inan|Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs _ _ SemTags=1:conc:deictic
 5 - - PUNCT punct _ _ _ _
 6 озеро озеро NOUN noun:inanim:n:v_naz Animacy=Inan|Case=Nom|Gender=Neut|Number=Sing _ _ _
-7 Світязь Світязь Upos=PROPN noun:inanim:m:v_naz:prop:geo:xp1 Animacy=Inan|Case=Nom|Gender=Masc|NameType=Geo|Number=Sing _ _ SemTags=1:conc:loc
+7 Світязь Світязь PROPN noun:inanim:m:v_naz:prop:geo:xp1 Animacy=Inan|Case=Nom|Gender=Masc|NameType=Geo|Number=Sing _ _ SemTags=1:conc:loc
 8 яке який ADJ adj:n:v_naz:&pron:int:rel:def Case=Nom|Gender=Neut|Number=Sing|PronType=Int|PronType=Rel _ _ SpaceAfter=No
 9 ... ... PUNCT punct _ _ _ _
 """.toString()
@@ -113,13 +113,15 @@ class TagTextVerticalOutputTest {
 
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.conllu, semanticTags: false))
         
-        text = "Шановні колеги, прошу вставте картки, зараз проведемо реєстрацію натисканням зеленої кнопки приладів."
-
+        def sent1 = "Шановні колеги, прошу вставте картки, зараз проведемо реєстрацію натисканням зеленої кнопки приладів."
+        def sent2 = "Рада України."
+        text = "$sent1 $sent2"
+        
         tagged = tagText.tagText(text)
         
         expected =
 """# sent_id = 1
-# text = $text
+# text = $sent1
 1 Шановні шановний ADJ adj:p:v_naz:compb Case=Nom|Degree=Pos|Number=Plur _ _ _
 2 колеги колега NOUN noun:anim:p:v_naz Animacy=Anim|Case=Nom|Gender=Fem|Number=Plur _ _ SpaceAfter=No
 3 , , PUNCT punct _ _ _ _
@@ -135,6 +137,12 @@ class TagTextVerticalOutputTest {
 13 кнопки кнопка NOUN noun:inanim:f:v_rod Animacy=Inan|Case=Gen|Gender=Fem|Number=Sing _ _ _
 14 приладів прилад NOUN noun:inanim:p:v_rod Animacy=Inan|Case=Gen|Gender=Masc|Number=Plur _ _ SpaceAfter=No
 15 . . PUNCT punct _ _ _ _
+
+# sent_id = 2
+# text = $sent2
+1 Рада рада NOUN noun:inanim:f:v_naz Animacy=Inan|Case=Nom|Gender=Fem|Number=Sing _ _ _
+2 України Україна PROPN noun:inanim:f:v_rod:prop:geo Animacy=Inan|Case=Gen|Gender=Fem|NameType=Geo|Number=Sing _ _ SpaceAfter=No
+3 . . PUNCT punct _ _ _ _
 """.toString()
     
 //        println tagged.tagged.replace(" ", '\ ')
