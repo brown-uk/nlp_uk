@@ -92,7 +92,7 @@ class TagTextVerticalOutputTest {
     public void testTxtFormatWithUD() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.conllu, semanticTags: true))
         
-        def text = "А треба далі воно - озеро Світязь де я затримався..."
+        def text = "А треба далі воно - озеро Світязь де я затримався, тисяча..."
         TagResult tagged = tagText.tagText(text)
 
         def expected =
@@ -108,7 +108,9 @@ class TagTextVerticalOutputTest {
 8 де де ADV adv:&pron:int:rel PronType=Int|PronType=Rel _ _ _
 9 я я PRON noun:anim:s:v_naz:&pron:pers:1 Animacy=Anim|Case=Nom|Number=Sing|Person=1|PronType=Prs _ _ SemTags=1:conc:hum:deictic
 10 затримався затриматися VERB verb:rev:perf:past:m Aspect=Perf|Gender=Masc|Mood=Ind|Number=Sing|Reflex=Yes|Tense=Past|VerbForm=Fin _ _ SpaceAfter=No
-11 ... ... PUNCT punct _ _ _ _
+11 , , PUNCT punct _ _ _ _
+12 тисяча тисяча NOUN noun:inanim:f:v_naz:&numr Animacy=Inan|Case=Nom|Gender=Fem|Number=Sing|NumType=Card _ _ SemTags=1:abst:quantity:absol:2:abst:quantity&max:3:conc:hum:group:part|SpaceAfter=No
+13 ... ... PUNCT punct _ _ _ _
 """.toString()
 
         assertEquals expected, adjustResult(tagged.tagged)

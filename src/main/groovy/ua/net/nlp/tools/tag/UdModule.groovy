@@ -122,6 +122,10 @@ class UdModule {
                 udTagsStr = '_'
             }
             
+            if( pos == "noun" ) {
+                udTagsStr = udTagsStr.replace("NumType=Ord", "NumType=Card")
+            }
+            
                 
             if( tkn.semtags ) {
                 misc << "SemTags=${tkn.semtags}"
