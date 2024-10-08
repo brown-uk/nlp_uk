@@ -772,7 +772,9 @@ public class DisambigStats {
         normalizeRates()
 
         long tm2 = System.currentTimeMillis()
-        System.err.println("Loaded ${statsByWord.size()} disambiguation stats, ${statsByTag.size()} tags, ${statsBySuffix3.size()} suffix-3, ${statsBySuffix2.size()} suffix-2, ${statsForLemmaXp.size()} xps in ${tm2-tm1} ms")
+        if( ! options.quiet ) {
+            System.err.println("Loaded ${statsByWord.size()} disambiguation stats, ${statsByTag.size()} tags, ${statsBySuffix3.size()} suffix-3, ${statsBySuffix2.size()} suffix-2, ${statsForLemmaXp.size()} xps in ${tm2-tm1} ms")
+        }
         
         if( writeDerivedStats ) {
             writeDerivedStats()
