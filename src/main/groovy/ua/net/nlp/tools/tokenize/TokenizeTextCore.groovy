@@ -82,7 +82,7 @@ class TokenizeTextCore {
     }
 
     String splitWords(String text, boolean onlyWords) {
-        def processedSentences = splitWordsInternal(text, onlyWords)
+        def processedSentences = splitWordsInternal(text, onlyWords, options.preserveWhitespace)
 
         switch (options.outputFormat ) {
             case OutputFormat.txt:
@@ -101,7 +101,7 @@ class TokenizeTextCore {
         }
     }
     
-    List<List<String>> splitWordsInternal(String text, boolean onlyWords) {
+    List<List<String>> splitWordsInternal(String text, boolean onlyWords, boolean preserveWhitespace) {
         
         if( onlyWords ) {
             text = FOOTER_PATTERN.matcher(text).replaceAll('')
@@ -119,7 +119,7 @@ class TokenizeTextCore {
                 words = words.findAll { WORD_PATTERN.matcher(it) }
                 words = TextUtils.adjustTokens(words, true)
             }
-            else if( ! options.preserveWhitespace ) {
+            else if( ! preserveWhitespace ) {
                 words = TextUtils.adjustTokens(words, true)
                     .findAll { w -> ! StringUtils.isWhitespace(w) }
             }

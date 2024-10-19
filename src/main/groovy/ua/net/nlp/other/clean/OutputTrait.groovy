@@ -8,7 +8,6 @@ import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 
 @CompileStatic
-@PackageScope
 class OutputTrait {
     Logger logger
     CleanOptions options
