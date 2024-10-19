@@ -63,7 +63,7 @@ dependencies {
         implementation("ua.net.nlp:morfologik-ukrainian-lt:${morfologik_ukrainian_lt_version}")
     }
 
-    implementation group: 'ua.net.nlp', name: 'nlp_uk-stats', version: '3.3.7'
+    implementation group: 'ua.net.nlp', name: 'nlp_uk-stats', version: statsVersion
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.+'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.11.+'
@@ -169,14 +169,10 @@ task copyRuntimeLibs(type: Copy) {
 application {
     mainClass = "ua.net.nlp.tools.tag.TagTextCore"
     
-//    def args = ['-Dgroovy.grape.enable=false', '-i', '../media_main/td.txt', '-o', 'td.xml']
-//    applicationDefaultJvmArgs = ['-Dgroovy.grape.enable=false']
-//    applicationDefaultJvmArgs = ['-Dgroovy.grape.enable=false', '-i', '../../media_main/td.txt', '-o', 'td.xml', "-XX:+FlightRecorder", "-XX:StartFlightRecording=disk=true,dumponexit=true,filename=recording.jfr"]
     applicationDefaultJvmArgs = ['-Dgroovy.grape.enable=false', "-XX:+FlightRecorder", "-XX:StartFlightRecording=disk=true,dumponexit=true,filename=recording.jfr"]
     //applicationDefaultJvmArgs = args
 }
 
-//compileJava.enabled = false
 
 jar {
 
@@ -196,11 +192,12 @@ jar {
     exclude("ua/net/nlp/tools/ExtractText.class")
     exclude("ua/net/nlp/tools/Inflect.class")
     exclude("ua/net/nlp/tools/StressText.class")
+    exclude("ua/net/nlp/tools/stats/*")
 }
 
 task statsJar(type: Jar) {
     setArchiveFileName "${statsJarName}.jar"
-    version=statsVersion
+    archiveVersion=statsVersion
     
     from('src/main/resources') {
         include '/ua/net/nlp/tools/stats/*.txt'
