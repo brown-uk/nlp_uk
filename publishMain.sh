@@ -1,3 +1,3 @@
 #!/bin/bash
 
-./gradlew publishMainJarPublicationToMavenRepository
+./gradlew jar publishMainJarPublicationToMavenRepository
