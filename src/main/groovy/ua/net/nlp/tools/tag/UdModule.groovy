@@ -148,7 +148,7 @@ class UdModule {
             
             def miscStr = misc ? misc.join("|") : "_"
             
-            sb.append("${tkn.value}\t${tkn.lemma}\t${udPos}\t${tkn.tags}\t${udTagsStr}\t_\t_\t${miscStr}")
+            sb.append("${tkn.value}\t${tkn.lemma}\t${udPos}\t${tkn.tags}\t${udTagsStr}\t_\t_\t_\t${miscStr}")
             
             sb.append('\n')
         }
