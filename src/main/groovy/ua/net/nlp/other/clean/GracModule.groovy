@@ -8,7 +8,7 @@ import groovy.transform.PackageScope
 @PackageScope
 @CompileStatic
 class GracModule {
-    private static final Pattern BROKEN_I = Pattern.compile(/\b([А-ЯІЇЄҐ]?[а-яіїєґ'\u2019\u02bc-]+) і ([а-яіїєґ'\u2019\u02bc-]+)\b/)
+    private static final Pattern BROKEN_I = Pattern.compile(/\b([А-ЯІЇЄҐ]?[а-яіїєґ'\u2019\u02bc-]+) і ([а-яіїєґ'\u2019\u02bc-]+)\b/, Pattern.UNICODE_CHARACTER_CLASS)
 
     OutputTrait out
     LtModule ltModule

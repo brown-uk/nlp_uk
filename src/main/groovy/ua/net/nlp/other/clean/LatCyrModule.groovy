@@ -77,8 +77,8 @@ class LatCyrModule {
     String fixLatinDigits(String text, int[] counts) {
         def t0 = text
 
-        t0 = t0.replaceAll(/\b[XХ]VП/, 'XVII') 
-        t0 = t0.replaceAll(/\b[XХ]VШ/, 'XVIII')
+        t0 = t0.replaceAll(/(?U)\b[XХ]VП/, 'XVII') 
+        t0 = t0.replaceAll(/(?U)\b[XХ]VШ/, 'XVIII')
                 
         boolean cont = true
         for(int ii=0; ii<10; ii++) {
@@ -296,7 +296,7 @@ class LatCyrModule {
 
 
     static final Pattern MIX_1 = ~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/
-//    static final Pattern APO_ENDING = ~ /([a-zA-Z]+)(['’ʼ][а-яіїє]{1,5})\b/
+//    static final Pattern APO_ENDING = ~ /(?U)([a-zA-Z]+)(['’ʼ][а-яіїє]{1,5})\b/
     
     @CompileStatic
     String fixCyrLatMix(String text) {
@@ -307,11 +307,11 @@ class LatCyrModule {
         
         t0 = t0.replace("СOVID", "COVID") // Cyillic C
         // CO/CO2 with cyr/lat mix
-        t0 = t0.replaceAll(/\b(СO|CО)(2?)\b/, 'CO$2')
+        t0 = t0.replaceAll(/(?U)\b(СO|CО)(2?)\b/, 'CO$2')
         // CO2 with cyr
-        t0 = t0.replaceAll(/\bСО2\b/, 'CO2')
+        t0 = t0.replaceAll(/(?U)\bСО2\b/, 'CO2')
         // degree Celcius with cyr
-        t0 = t0.replaceAll(/\b[\u00B0\u00BA][СC]\b/, '\u00B0C')
+        t0 = t0.replaceAll(/(?U)\b[\u00B0\u00BA][СC]\b/, '\u00B0C')
         // 70-oї
         t0 = t0.replaceAll(/-oї/, '-ої')
         // -iон

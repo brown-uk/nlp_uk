@@ -35,7 +35,7 @@ class ModLesya {
 
         if( tokenReadings.isPosTagUnknown() ) {
             adjustedToken = adjustedToken.replaceAll(/(?ui)йі/, 'ї')
-            adjustedToken = adjustedToken.replaceAll(/(?ui)([іо])і\b/, '$1ї')
+            adjustedToken = adjustedToken.replaceAll(/(?Ui)([іо])і\b/, '$1ї')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
@@ -43,11 +43,11 @@ class ModLesya {
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
-            adjustedToken = originalToken.replaceAll(/(?ui)\bи/, 'і')
+            adjustedToken = originalToken.replaceAll(/(?Ui)\bи/, 'і')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
-            adjustedToken = originalToken.replaceAll(/(?ui)рь\b/, 'р')
+            adjustedToken = originalToken.replaceAll(/(?Ui)рь\b/, 'р')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
@@ -55,39 +55,39 @@ class ModLesya {
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
-            adjustedToken = originalToken.replaceAll(/(?ui)лько\b/, 'льки')
+            adjustedToken = originalToken.replaceAll(/(?Ui)лько\b/, 'льки')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
-            adjustedToken = originalToken.replaceAll(/(?ui)иї\b/, 'ії')
+            adjustedToken = originalToken.replaceAll(/(?Ui)иї\b/, 'ії')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
-            adjustedToken = originalToken.replaceAll(/(?ui)([яа][нр])е\b/, '$1и')
+            adjustedToken = originalToken.replaceAll(/(?Ui)([яа][нр])е\b/, '$1и')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
-            adjustedToken = originalToken.replaceAll(/(?ui)ів\b/, 'ей')
+            adjustedToken = originalToken.replaceAll(/(?Ui)ів\b/, 'ей')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
-            adjustedToken = originalToken.replaceAll(/(?ui)([ндтч])\1ів\b/, '$1ь')
+            adjustedToken = originalToken.replaceAll(/(?Ui)([ндтч])\1ів\b/, '$1ь')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
-            adjustedToken = originalToken.replaceAll(/(?ui)жу\b/, 'джу')
+            adjustedToken = originalToken.replaceAll(/(?Ui)жу\b/, 'джу')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
-            adjustedToken = originalToken.replaceAll(/(?ui)ови\b/, 'ові')
+            adjustedToken = originalToken.replaceAll(/(?Ui)ови\b/, 'ові')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
-            adjustedToken = originalToken.replaceAll(/(?ui)ов\b/, 'ів')
+            adjustedToken = originalToken.replaceAll(/(?Ui)ов\b/, 'ів')
             tokenReadings = tagWord(adjustedToken)
         }
         if( tokenReadings.isPosTagUnknown() ) {
-            adjustedToken = originalToken.replaceAll(/(?ui)а\b/, 'у')
+            adjustedToken = originalToken.replaceAll(/(?Ui)а\b/, 'у')
             def tokenReadings2 = tagWord(adjustedToken)
             if( PosTagHelper.hasPosTagPart(tokenReadings2, ":m:v_rod")) {
                 tokenReadings = tokenReadings2

@@ -103,11 +103,11 @@ class HyphenModule {
 
     @CompileStatic
     String fixDanglingHyphens(String text) {
-        text = text.replaceAll(/(?ui)([0-9])\s*([\u2013\u2011-])\s+(річчя|ліття|ий|го|ому|им|ої|ій|ою|ї)\b/, '$1$2$3')
-        text = text.replaceAll(/(?ui)([0-9])\s+([\u2013\u2011-])\s*(річчя|ліття|ий|го|ому|им|ої|ій|ою|ї)\b/, '$1$2$3')
-        text = text.replaceAll(/\b([дД])\s+([\u2013\u2011-])\s+(р)\b/, '$1$2$3')
-        text = text.replaceAll(/(?ui)\b(будь)\s+([\u2013\u2011-])\h*(що)\h*([\u2013\u2011-])\h*(будь)\b/, '$1$2$3$4$5')
-        text = text.replaceAll(/(?ui)\b(будь)\s+([\u2013\u2011-])\h*(як(ий|им|ого|ому|ім|а|ої|ій|у|е|і|их|им|ими)?|що|чого|чому|чим|чім)\b/, '$1$2$3')
+        text = text.replaceAll(/(?Ui)([0-9])\s*([\u2013\u2011-])\s+(річчя|ліття|ий|го|ому|им|ої|ій|ою|ї)\b/, '$1$2$3')
+        text = text.replaceAll(/(?Ui)([0-9])\s+([\u2013\u2011-])\s*(річчя|ліття|ий|го|ому|им|ої|ій|ою|ї)\b/, '$1$2$3')
+        text = text.replaceAll(/(?U)\b([дД])\s+([\u2013\u2011-])\s+(р)\b/, '$1$2$3')
+        text = text.replaceAll(/(?Ui)\b(будь)\s+([\u2013\u2011-])\h*(що)\h*([\u2013\u2011-])\h*(будь)\b/, '$1$2$3$4$5')
+        text = text.replaceAll(/(?Ui)\b(будь)\s+([\u2013\u2011-])\h*(як(ий|им|ого|ому|ім|а|ої|ій|у|е|і|их|им|ими)?|що|чого|чому|чим|чім)\b/, '$1$2$3')
 
         def m = text =~ /[а-яіїєґА-ЯІЇЄҐ][-\u2013\u2011][ \t]*\n/
         if( m ) {
@@ -182,7 +182,7 @@ class HyphenModule {
 
     
     private final Pattern LEADING_HYPHEN_PATTERN1 = Pattern.compile(/(\.\h+[-\u2013\u2011\u2014])([А-ЯІЇЄҐ][^.-])/)
-    private final Pattern LEADING_HYPHEN_PATTERN2 = Pattern.compile(/(?m)(^|(?<!\bна)\h|[,:;?!])([-\u2013\u2011\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/)
+    private final Pattern LEADING_HYPHEN_PATTERN2 = Pattern.compile(/(?m)(^|(?<!\bна)\h|[,:;?!])([-\u2013\u2011\u2014])([А-ЯІЇЄҐ][а-яіїєґ'ʼ’-]+|[а-яіїєґ'ʼ’-]{4,})/, Pattern.UNICODE_CHARACTER_CLASS)
     
     @CompileStatic
     String separateLeadingHyphens(String text) {
@@ -207,7 +207,7 @@ class HyphenModule {
         }
 
         // skip: на -овець
-        def regex2 = ~/(?<!\bна) -[а-яіїєґ]{4,}/
+        def regex2 = ~/(?U)(?<!\bна) -[а-яіїєґ]{4,}/
         if( regex2.matcher(t1) ) {
             int cnt = 0
             def first = null

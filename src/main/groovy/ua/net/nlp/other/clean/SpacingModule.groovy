@@ -31,8 +31,8 @@ class SpacingModule {
 
     String cleanupSpacing(String text) {
         text = text.replace("У к р а ї н и", "України")
-        text = text.replaceAll(/([0-9])\h+р о к у\b/, '$1 року')
-        text = text.replaceAll(/([0-9])\h+г о д и н а\b/, '$1 година')
+        text = text.replaceAll(/(?U)([0-9])\h+р о к у\b/, '$1 року')
+        text = text.replaceAll(/(?U)([0-9])\h+г о д и н а\b/, '$1 година')
         text = text.replaceAll(SPACED_MONTHS_REGEX, { String w1 ->
             w1.replace(' ', '')
         })
@@ -49,7 +49,7 @@ class SpacingModule {
         text = text.replaceAll(/Ш у м\h+у\h+з а л і/, "Шум у залі")
 
 
-        text = text.replaceAll(/\b([гГ])\h+([а-яіїєґ'\u2019\u02bc-]{3,})/, { all, g, rest ->
+        text = text.replaceAll(/(?U)\b([гГ])\h+([а-яіїєґ'\u2019\u02bc-]{3,})/, { all, g, rest ->
             if( ! ltModule.knownWord(rest) ) {
                 def newWord = "$g$rest"
                 if( ltModule.knownWord(newWord) ) {

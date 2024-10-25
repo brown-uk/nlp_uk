@@ -76,7 +76,7 @@ class CleanTextCore2 {
         }
 
         // digit 3 instead of letter З
-        t10 = t10.replaceAll(/\b3[аa]([\h\v]*[а-яіїєґА-ЯІЇЄҐ])/, 'За$1')
+        t10 = t10.replaceAll(/(?U)\b3[аa]([\h\v]*[а-яіїєґА-ЯІЇЄҐ])/, 'За$1')
 
         if( ! options.simple ) {
 
@@ -135,7 +135,7 @@ class CleanTextCore2 {
             out.println "\tWARNING: found words longer than 36: ${longWordLines.size()} lines: $sample"
         }
 
-        def wordBroken = Pattern.compile(/[\h-]([вжтч]ання|[вжчт]ення|лись|н?ість|нів|н?ня|ної|ност[іи]|вської|обов(?!['\u2019\u02BC])|ств[оа]|ськ(а|ий|им|ого|ому|ої)|ться|[ює]ть|[єю]ться|ючи)\b/)
+        def wordBroken = Pattern.compile(/[\h-]([вжтч]ання|[вжчт]ення|лись|н?ість|нів|н?ня|ної|ност[іи]|вської|обов(?!['\u2019\u02BC])|ств[оа]|ськ(а|ий|им|ого|ому|ої)|ться|[ює]ть|[єю]ться|ючи)\b/, Pattern.UNICODE_CHARACTER_CLASS)
         def wordBrokenCnt = t10.lines().filter{ s -> wordBroken.matcher(s).find() }.count()
         if( wordBrokenCnt > 5 ) {
             def m = wordBroken.matcher(t10)
@@ -148,7 +148,7 @@ class CleanTextCore2 {
     
     @CompileStatic
     String fixTypos(String text) {
-        text = text.replaceAll(/тсья\b/, 'ться')
+        text = text.replaceAll(/(?U)тсья\b/, 'ться')
 
         text = text.replaceAll(/[а-яїієґА-ЯІЇЄҐ][а-яїієґ’ʼ'-]+(ннн|ттт)[а-яїієґ][а-яїієґ'’ʼ-]*/, { all, w1 ->
             String fix = all.replaceAll(/(?iu)н(нн)/, '$1').replaceAll(/(?iu)т(тт)/, '$1')
@@ -161,13 +161,13 @@ class CleanTextCore2 {
         text = text.replace(/адмінстрац/, /адміністрац/)
         text = text.replace("дистопад", "листопад")
         
-        text = text.replaceAll(/\b(мдрд|мрлд|мрд)\b/, 'млрд')
+        text = text.replaceAll(/(?U)\b(мдрд|мрлд|мрд)\b/, 'млрд')
         
         // too many FP: Тижденьі розмовляв, Владімір Ільіч
 //        text = text.replaceAll(/ьі/, 'ы')
     
         text = text.replace("заборгованност", "заборгованост")
-        text = text.replaceAll(/\bперс-(служб|центр|секрет|конф)/, 'прес-$1')
+        text = text.replaceAll(/(?U)\bперс-(служб|центр|секрет|конф)/, 'прес-$1')
         text = text.replaceAll(/(повдіомле|повідмле|повідмоле)нн/, 'повідомленн')
         text = text.replace(/авіакастроф/, 'авіакатастроф')
         text = text.replace(/зазанач/, 'зазнач')
@@ -201,13 +201,13 @@ class CleanTextCore2 {
 
         if( ! options.disabledRules.contains("oi") ) {
             // промисловоі
-            def t0 = text.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ])(о[іi])\b/, { all, w1, w2 ->
+            def t0 = text.replaceAll(/(?U)([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ])(о[іi])\b/, { all, w1, w2 ->
                 String fix = "${w1}ої"
                 ltModule.knownWord(fix) ? fix : all
             })
              
             // Нацполіціі
-            def t1 = t0.replaceAll(/([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ][стц])([іi][іi])\b/, { all, w1, w2 ->
+            def t1 = t0.replaceAll(/(?U)([а-яїієґА-ЯІЇЄҐ][а-яїієґ'-]+[а-яїієґ][стц])([іi][іi])\b/, { all, w1, w2 ->
                 String fix = "${w1}ії"
                 ltModule.knownWord(fix) ? fix : all
             })
