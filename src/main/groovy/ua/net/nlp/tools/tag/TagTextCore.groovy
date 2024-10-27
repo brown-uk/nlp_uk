@@ -753,7 +753,7 @@ class TagTextCore {
         println("dict_uk version: ${dictUkversion}")
         if( Runtime.version().feature() >= 19 
                 && LtBuildInfo.OS.getVersion() == "6.5" ) {
-            System.err.println("WARNING: With Java >= 19 you need to use LanguageTool 6.5-SNAPSHOT or later (otherwise tokenization may produce wrong results)")
+            System.err.println("WARNING: With Java >= 19 you need to use LanguageTool 6.6-SNAPSHOT or later (otherwise tokenization may produce wrong results)")
         }
     }
 
