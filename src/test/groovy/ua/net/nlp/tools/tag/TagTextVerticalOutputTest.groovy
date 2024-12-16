@@ -36,7 +36,7 @@ class TagTextVerticalOutputTest {
 	@Test
 	public void testTxtFormat() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.vertical))
-		TagResult tagged = tagText.tagText("Десь, там за горою ходила Галя. А далі - озеро...")
+		TagResult tagged = tagText.tagText("Десь, там за горою ходила Галя. А далі - озеро... — Де?")
 
         def expected = 
 """<s>
@@ -59,6 +59,13 @@ class TagTextVerticalOutputTest {
 озеро noun:inanim:n:v_naz озеро
 <g/>
 ... punct ...
+</s>
+
+<s>
+— punct —
+Де adv:&pron:int:rel де
+<g/>
+? punct ?
 </s>
 """
 

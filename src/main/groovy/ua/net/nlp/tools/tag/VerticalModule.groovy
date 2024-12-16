@@ -20,9 +20,9 @@ class VerticalModule {
         }
         sb.append("<s>\n")
         
-        taggedSent.tokens.each { TTR token ->
+        taggedSent.tokens.eachWithIndex { TTR token, int i ->
             def tkn = token.tokens[0]
-            if( tkn.tags == 'punct' && ! tkn.whitespaceBefore ) {
+            if( i > 0 && tkn.tags == 'punct' && ! tkn.whitespaceBefore ) {
                 sb.append('<g/>\n')
             }
             sb.append("${tkn.value}\t${tkn.tags}\t${tkn.lemma}")
