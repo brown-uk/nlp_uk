@@ -133,8 +133,8 @@ class TagTextVerticalOutputTest {
         expected =
 """# sent_id = 1
 # text = $sent1
-1 Шановні шановний ADJ adj:p:v_naz:compb Case=Nom|Degree=Pos|Number=Plur _ _ _ _
-2 колеги колега NOUN noun:anim:p:v_naz Animacy=Anim|Case=Nom|Gender=Fem|Number=Plur _ _ _ SpaceAfter=No
+1 Шановні шановний ADJ adj:p:v_kly:compb Case=Voc|Degree=Pos|Number=Plur _ _ _ _
+2 колеги колега NOUN noun:anim:p:v_kly Animacy=Anim|Case=Voc|Gender=Fem|Number=Plur _ _ _ SpaceAfter=No
 3 , , PUNCT punct _ _ _ _ _
 4 прошу просити VERB verb:imperf:pres:s:1 Aspect=Imp|Mood=Ind|Number=Sing|Person=1|Tense=Pres|VerbForm=Fin _ _ _ _
 5 вставте вставити VERB verb:perf:impr:p:2 Aspect=Perf|Mood=Imp|Number=Plur|Person=2|VerbForm=Fin _ _ _ _
