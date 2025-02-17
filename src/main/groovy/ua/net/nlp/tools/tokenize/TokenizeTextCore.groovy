@@ -50,6 +50,10 @@ class TokenizeTextCore {
     String splitSentences(String text) {
         List<String> tokenized = sentTokenizer.tokenize(text)
 
+        if( options.additionalSentenceSeparatorPattern ) {
+            tokenized = (List<String>)tokenized.collect { sent -> options.additionalSentenceSeparatorPattern.split(sent) as List }.flatten()
+        }
+        
         tokenized = tokenized.collect { it.replace('\n', options.newLine) }
         
 //        if( options.words ) {
@@ -188,7 +192,11 @@ class TokenizeTextCore {
                 options.output = outfile
             }
         }
-        
+
+        if( options.additionalSentenceSeparator ) {
+            options.additionalSentenceSeparatorPattern = Pattern.compile(options.additionalSentenceSeparator)
+        }
+                
         if( options.onlyWords && ! options.words ) {
             options.words = true
         }

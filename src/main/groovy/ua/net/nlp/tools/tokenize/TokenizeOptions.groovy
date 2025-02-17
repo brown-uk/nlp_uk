@@ -2,6 +2,7 @@ package ua.net.nlp.tools.tokenize
 
 import groovy.transform.AutoClone
 import groovy.transform.PackageScope
+import java.util.regex.Pattern
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 import ua.net.nlp.tools.TextUtils.OptionsBase
@@ -24,7 +25,10 @@ class TokenizeOptions extends OptionsBase {
     boolean preserveWhitespace
     @Option(names = ["-s", "--sentences"], description = "Tokenize into sentences (default)")
     boolean sentences
-
+    @Option(names = ["--additionalSentenceSeparator"], description = "Additional pattern to split sentences by (regular expression). Note: this separator will be removed from the output.")
+    String additionalSentenceSeparator
+    Pattern additionalSentenceSeparatorPattern
+    
     // internal for now
     String newLine = ' '
     

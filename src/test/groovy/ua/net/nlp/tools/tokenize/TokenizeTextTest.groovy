@@ -1,6 +1,8 @@
-package ua.net.nlp.tools
+package ua.net.nlp.tools.tokenize
 
 import static org.junit.jupiter.api.Assertions.*
+
+import java.util.regex.Pattern
 
 import org.junit.jupiter.api.Test
 
@@ -60,6 +62,17 @@ class TokenizeTextTest {
         options.newLine = "<br>"
         res = TokenizeTextCore.getAnalyzed("десь такі\nпідходи")
         assertEquals "десь такі<br>підходи\n", res.tagged
+    }
+
+    @Test
+    void testAdditionalSeparator() {
+        def options = new TokenizeOptions(additionalSentenceSeparator: /\|+/)
+        
+        options.additionalSentenceSeparatorPattern = Pattern.compile(options.additionalSentenceSeparator)
+        
+        TokenizeTextCore TokenizeTextCore = new TokenizeTextCore(options)
+        def res = TokenizeTextCore.getAnalyzed("десь такі||підходи")
+        assertEquals "десь такі\nпідходи\n", res.tagged
     }
 
     @Test
