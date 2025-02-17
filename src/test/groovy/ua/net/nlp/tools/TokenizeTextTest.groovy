@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test
 
 import groovy.json.JsonSlurper
 import ua.net.nlp.tools.TextUtils.OutputFormat
+import ua.net.nlp.tools.tokenize.TokenizeOptions
 import ua.net.nlp.tools.tokenize.TokenizeTextCore
-import ua.net.nlp.tools.tokenize.TokenizeTextCore.TokenizeOptions
 
 
 class TokenizeTextTest {

@@ -2,6 +2,9 @@
 
 package ua.net.nlp.tools.tokenize
 
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import groovy.json.JsonGenerator
 import groovy.transform.CompileStatic
@@ -13,8 +16,9 @@ import org.languagetool.tokenizers.uk.*
 import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
-
+import picocli.CommandLine.Parameters
 import ua.net.nlp.tools.TextUtils
+import ua.net.nlp.tools.TextUtils.IOFiles
 import ua.net.nlp.tools.TextUtils.OptionsBase
 import ua.net.nlp.tools.TextUtils.OutputFormat
 import ua.net.nlp.tools.TextUtils.ResultBase
@@ -133,24 +137,6 @@ class TokenizeTextCore {
     }
     
     
-    static class TokenizeOptions extends OptionsBase {
-        @Option(names = ["-w", "--words"], description = ["Tokenize into words"])
-        boolean words
-        @Option(names = ["-u", "--onlyWords"], description = ["Remove non-words (assumes \"-w\")"])
-        boolean onlyWords
-        @Option(names = ["--preserveWhitespace"], description = "Preserve whitepsace tokens")
-        boolean preserveWhitespace
-        @Option(names = ["-s", "--sentences"], description = "Tokenize into sentences (default)")
-        boolean sentences
-
-        // internal for now
-        String newLine = ' '
-        
-        TokenizeOptions() {
-            outputFormat = OutputFormat.txt
-        }
-    }
-    
     @CompileStatic
     static TokenizeOptions parseOptions(String[] argv) {
         TokenizeOptions options = new TokenizeOptions()
@@ -166,26 +152,79 @@ class TokenizeTextCore {
             commandLine.usage(System.out)
             System.exit 1
         }
-
-        if( ! options.output ) {
-            String fileExt = "." + options.outputFormat
-            String outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tokenized" + fileExt
-            options.output = outfile
+        
+        // TODO: quick hack to support recursive processing
+        if( options.recursive ) {
+            def dirs = options.inputFiles ?: ["."]
+            
+            List<File> files = []
+            dirs.collect { d ->
+                new File(d).eachFileRecurse { f ->
+                      if( f.name.toLowerCase().endsWith(".txt") ) {
+                          files << f
+                      }
+                }
+            }
+            
+            println "Files: $files"
+            
+            println "Found ${files.size()} files with .txt extension" // + files
+            options.singleThread = true
+            options.inputFiles = files.collect { it.path }
         }
+        // TODO: quick hack to support multiple files
+        else if( options.inputFiles && options.inputFiles != ["-"] ) {
+            options.singleThread = true
+//            processFilesParallel(nlpUk, options, options.inputFiles)
+        }
+        else if( options.listFile ) {
+            options.singleThread = true
+            options.inputFiles = new File(options.listFile).readLines('UTF-8')
+        }
+        else {
+            if( ! options.output ) {
+                String fileExt = "." + options.outputFormat
+                String outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".tokenized" + fileExt
+                options.output = outfile
+            }
+        }
+        
         if( options.onlyWords && ! options.words ) {
             options.words = true
         }
+
         options
     }
 
+    static processFilesParallel(TokenizeOptions options) {
+        ExecutorService executors = Executors.newWorkStealingPool()
+        options.inputFiles.forEach{ filename ->
+            TokenizeOptions newOptions = (ua.net.nlp.tools.tokenize.TokenizeOptions) options.clone()
+            
+            newOptions.input = filename
+            newOptions.output = filename.replaceFirst(/\.[^.]+$/, '.tokenized$0')
+            IOFiles files = TextUtils.prepareInputOutput(newOptions)
+            
+            executors.submit({
+                def nlpUk = new TokenizeTextCore(newOptions)
+                nlpUk.process()
+            } as Runnable)
+        }
+        
+        executors.shutdown()
+        executors.awaitTermination(1, TimeUnit.DAYS)
+    }
+    
 
     static void main(String[] argv) {
-
         TokenizeOptions options = parseOptions(argv)
 
-        def nlpUk = new TokenizeTextCore(options)
-
-        nlpUk.process()
+        if( options.inputFiles && options.inputFiles.size() > 1 ) {
+            processFilesParallel(options)
+        }
+        else {
+            def nlpUk = new TokenizeTextCore(options)
+                nlpUk.process()
+            }
+        }
     }
-
-}
