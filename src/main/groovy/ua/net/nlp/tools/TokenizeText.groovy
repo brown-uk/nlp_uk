@@ -3,8 +3,9 @@
 package ua.net.nlp.tools
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='languagetool-core', version='6.5')
-@Grab(group='org.languagetool', module='language-uk', version='6.5')
+@GrabResolver(name="ltSnapshots", root="https://repo.languagetool.org/artifactory/languagetool-os-snapshot/")
+@Grab(group='org.languagetool', module='languagetool-core', version='6.6-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='6.6-SNAPSHOT')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
