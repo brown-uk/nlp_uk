@@ -14,6 +14,8 @@ import org.languagetool.AnalyzedSentence
 import org.languagetool.AnalyzedToken
 import org.languagetool.AnalyzedTokenReadings
 import org.languagetool.JLanguageTool
+import org.languagetool.Language
+import org.languagetool.Languages
 import org.languagetool.LtBuildInfo
 import org.languagetool.MultiThreadedJLanguageTool
 import org.languagetool.language.Ukrainian
@@ -41,11 +43,8 @@ class TagTextCore {
     private final Pattern CONTROL_CHAR_PATTERN_R = Pattern.compile(/[\u0000-\u0008\u000B-\u0012\u0014-\u001F\u0A0D]/, Pattern.CASE_INSENSITIVE|Pattern.UNICODE_CASE)
     enum TaggingLevel { tagger, stats }
     
-    Ukrainian language = new Ukrainian() {
-        @Override
-        protected synchronized List<?> getPatternRules() { return [] }
-    }
-
+    Ukrainian language = (Ukrainian) Languages.getLanguageForShortCode("uk");
+    
     JLanguageTool langTool = new MultiThreadedJLanguageTool(language)
 
     TagOptions options

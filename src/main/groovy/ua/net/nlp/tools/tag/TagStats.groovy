@@ -43,7 +43,7 @@ class TagStats {
     @Lazy
     RussianTagger ruTagger = { RussianTagger.INSTANCE }()
 
-    Map<String, Integer> disambigMap = [:].withDefault { 0 }
+    public Map<String, Integer> disambigMap = [:].withDefault { 0 }
     
     synchronized void add(TagStats stats) {
         stats.homonymFreqMap.each { k,v -> homonymFreqMap[k] += v }
@@ -63,7 +63,7 @@ class TagStats {
     @CompileStatic
     def collectUnknown(List<TaggedSentence> analyzedSentences) {
         for (TaggedSentence sent: analyzedSentences) {
-            sent.tokens.each { TTR ttr ->
+            sent.tokens?.each { TTR ttr ->
                 TaggedToken tk = ttr.tokens[0]
                 if( tk.tags == 'unknown' ) {
                     if( goodForStats(tk.value) ) {

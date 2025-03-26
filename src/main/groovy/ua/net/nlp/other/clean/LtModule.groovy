@@ -2,6 +2,7 @@ package ua.net.nlp.other.clean
 
 import org.languagetool.AnalyzedToken
 import org.languagetool.AnalyzedTokenReadings
+import org.languagetool.Languages
 import org.languagetool.language.Ukrainian
 import org.languagetool.tagging.Tagger
 import org.languagetool.tagging.en.EnglishTagger
@@ -17,14 +18,11 @@ import groovy.transform.PackageScope
 //@CompileStatic
 class LtModule {
     @Lazy
-    RussianTagger ruTagger = { new RussianTagger() }()
+    RussianTagger ruTagger = { Languages.getLanguageForShortCode("ru").getTagger() }()
     @Lazy
-    EnglishTagger enTagger = { new EnglishTagger() }()
+    EnglishTagger enTagger = { Languages.getLanguageForShortCode("en").getTagger() }()
 
-    Ukrainian ukLanguage = new Ukrainian() {
-        @Override
-        protected synchronized List<?> getPatternRules() { return [] }
-    }
+    Ukrainian ukLanguage = Languages.getLanguageForShortCode("uk")
     UkrainianTagger ukTagger = ukLanguage.getTagger()
 //    SRXSentenceTokenizer ukSentTokenizer = ukLanguage.getSentenceTokenizer()
     UkrainianWordTokenizer ukWordTokenizer = ukLanguage.getWordTokenizer()

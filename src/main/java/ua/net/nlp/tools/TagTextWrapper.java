@@ -22,6 +22,7 @@ public class TagTextWrapper {
 //    private static final String SCRIPT_DIR = "classpath://src/main/groovy/ua/net/nlp/tools";
 
     /**
+     * Tags the file
      * @param filename The name of the file to tag
      * @param outFilename Output file name
      * @throws Exception if problems happen

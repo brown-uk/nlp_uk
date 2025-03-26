@@ -7,10 +7,10 @@ package ua.net.nlp.tools
 @Grab(group='org.languagetool', module='languagetool-core', version='6.6-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-uk', version='6.6-SNAPSHOT')
 @Grab(group='org.languagetool', module='language-ru', version='6.5')
-@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='6.5.3')
-@Grab(group='ua.net.nlp', module='nlp_uk-stats', version='3.3.7')
+//@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='6.5.3')
+@Grab(group='ua.net.nlp', module='nlp_uk-stats', version='3.3.8')
 
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.3.14')
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.5.15')
 @Grab(group='info.picocli', module='picocli', version='4.7.6')
 @Grab(group='org.apache.commons', module='commons-csv', version='1.12.0')
 

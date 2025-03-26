@@ -74,6 +74,8 @@ public class TagOptions extends OptionsBase {
     boolean singleThread
     @Option(names = ["--timing"], description = "Pring timing information", hidden = true)
     boolean timing
+    @Option(names = ["--no-disambig"], hidden = true)
+    boolean noDisambig
     @Option(names = ["--progress"], description = "Print progress information every <n> files", hidden = true)
     int progress=0
     @Option(names = ["--version"], description = "Print current version")
@@ -106,8 +108,10 @@ public class TagOptions extends OptionsBase {
         }
         else if( outputFormat == OutputFormat.conllu || outputFormat == OutputFormat.vertical ) {
             setLemmaForUnknown = true
-            disambiguate = true
-            showDisambigRate = true
+            if( ! noDisambig ) {
+                disambiguate = true
+                showDisambigRate = true
+            }
             if( outputFormat == OutputFormat.conllu ) {
                 splitHyphenParts = false
             }

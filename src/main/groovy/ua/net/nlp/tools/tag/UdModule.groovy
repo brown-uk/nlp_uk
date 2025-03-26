@@ -100,7 +100,7 @@ class UdModule {
             String udTagsStr
             if( udTags ) {
                 udTags = (List<String>) udTags.collect {
-                    it.split(/; |\|/)
+                    it.split(/; |\|/) as List
                 }
                 .flatten()
                 .unique()

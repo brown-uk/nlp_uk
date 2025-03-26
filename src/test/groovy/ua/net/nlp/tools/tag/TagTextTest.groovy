@@ -213,9 +213,9 @@ class TagTextTest {
 </sentence>
 """
         assertEquals expected2, tagged2.tagged
-
     }
 
+    
     @Test
     public void testNoMultiword() {
         tagText.setOptions(new TagOptions())
@@ -234,6 +234,25 @@ class TagTextTest {
 """
         assertEquals expected, tagged.tagged
     }
+
+    
+    @Test
+    public void testLtDisambig() {
+        tagText.setOptions(new TagOptions(tokenFormat: true))
+
+        TagResult tagged = tagText.tagText("За даними досліджень,")
+        def expected =
+"""<sentence>
+  <token value="За" lemma="за" tags="prep" />
+  <token value="даними" lemma="дані" tags="noun:inanim:p:v_oru:ns" />
+  <token value="досліджень" lemma="дослідження" tags="noun:inanim:p:v_rod" />
+  <token value="," lemma="," tags="punct" />
+</sentence>
+<paragraph/>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
 
     @Test
     public void testUnknown() {

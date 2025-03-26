@@ -35,7 +35,7 @@ class TagTextVerticalOutputTest {
 
 	@Test
 	public void testTxtFormat() {
-        tagText.setOptions(new TagOptions(outputFormat: OutputFormat.vertical))
+        tagText.setOptions(new TagOptions(outputFormat: OutputFormat.vertical, unknownStats: true))
 		TagResult tagged = tagText.tagText("Десь, там за горою ходила Галя. А далі - озеро... — Де?")
 
         def expected = 

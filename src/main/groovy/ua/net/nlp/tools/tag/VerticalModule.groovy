@@ -26,6 +26,11 @@ class VerticalModule {
                 sb.append('<g/>\n')
             }
             sb.append("${tkn.value}\t${tkn.tags}\t${tkn.lemma}")
+            if( token.tokens.size() > 1 ) {
+                token.tokens[1..-1].each { t ->
+                    sb.append(" || ${t.tags} ${t.lemma}")
+                }
+            }
             if( options.semanticTags ) {
                 if( tkn.semtags ) {
                     sb.append("\tsemTags=${tkn.semtags}")

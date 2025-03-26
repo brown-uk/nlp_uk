@@ -213,7 +213,7 @@ public class TextUtils {
         
 		executor.submit(new Callable() {
             def call() {
-                for(Future<ResultBase> f = futures.poll(5, TimeUnit.MINUTES); ; f = futures.poll(5, TimeUnit.MINUTES)) {
+                for(Future<ResultBase> f = futures.poll(15, TimeUnit.MINUTES); ; f = futures.poll(15, TimeUnit.MINUTES)) {
                     if( f == null ) {
                         continue
                     }
