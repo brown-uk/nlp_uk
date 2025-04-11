@@ -11,12 +11,11 @@ This is a project to demonstrate NLP API from LanguageTool for Ukrainian languag
 
 УВАГА: при першому запуску потрібно мережеве з'єднання, щоб скрипти могли звантажити потрібні модулі
 
-ПРИМІТКА: скрипт gradle потрібен лише для розробників
-
-Для невеликих текстів приклад розбиття та тегування також можна переглянути [на сторінці аналізу LanguageTool](https://community.languagetool.org/analysis?lang=uk)
+ПРИМІТКА: файли gradle потрібен лише для розробників
 
 Основні скрити аналізу текстів знаходяться в каталозі [src/main/groovy/ua/net/nlp/tools](src/main/groovy/ua/net/nlp/tools)
 
+Тегувальник підтримує розмітку UD (Universal Dependencies).
 
 ## Використання
 
