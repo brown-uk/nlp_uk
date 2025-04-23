@@ -39,6 +39,7 @@ class TagTextCore {
     static final Pattern UNKNOWN_PATTERN = Pattern.compile(/(.*-)?[а-яіїєґА-ЯІЇЄҐ][а-яіїєґА-ЯІЇЄҐ'\u02BC\u2019]+(-.*)?/)
     static final Pattern NON_UK_PATTERN = Pattern.compile(/^[\#№u2013-]|[\u2013-]$|[ыэъё]|[а-яіїєґ][a-z]|[a-z][а-яіїєґ]/, Pattern.CASE_INSENSITIVE|Pattern.UNICODE_CASE)
     static final Pattern UNCLASS_PATTERN = Pattern.compile(/\p{IsLatin}[\p{IsLatin}\p{IsDigit}-]*|[0-9]+-?[а-яіїєґА-ЯІЇЄҐ]+|[а-яіїєґА-ЯІЇЄҐ]+-?[0-9]+/)
+    static final Pattern NONINFL_PATTERN = Pattern.compile(/[а-зй-яіїєґ]/, Pattern.CASE_INSENSITIVE|Pattern.UNICODE_CASE) // exclude Russian и
     public static final Pattern XML_TAG_PATTERN = Pattern.compile(/<\/?[a-zA-Z_0-9]+>/)
     private final Pattern CONTROL_CHAR_PATTERN_R = Pattern.compile(/[\u0000-\u0008\u000B-\u0012\u0014-\u001F\u0A0D]/, Pattern.CASE_INSENSITIVE|Pattern.UNICODE_CASE)
     enum TaggingLevel { tagger, stats }
@@ -411,15 +412,11 @@ class TagTextCore {
                         continue // return tokenReadingsT
                     }
                 }
-                else { // if( UNCLASS_PATTERN.matcher(theToken).matches() ) {
-//                    if( theToken ==~ /[0-9]+\.[0-9]+/ ) {
-//                        def parts = theToken.split(/\./)
-//                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': parts[0], lemma: parts[0], tags: 'number')])
-//                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': '.', lemma: '.', tags: 'punct')])
-//                        tokenReadingsT << new TTR(tokens: [new TaggedToken('value': parts[0], lemma: parts[0], tags: 'number')])
-//                        return tokenReadingsT
-//                    }
-
+                else if( NONINFL_PATTERN.matcher(theToken).matches() ) {
+                    tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: cleanToken, tags: 'noninfl')])
+                    continue
+                }
+                else {
                     tokenReadingsT << new TTR(tokens: [new TaggedToken('value': theToken, lemma: cleanToken, tags: 'unclass')])
                     continue // return tokenReadingsT
                 }

@@ -183,6 +183,43 @@ class TagTextTest {
         assertEquals expected, tagged.tagged
 	}
     
+    
+    @Test
+    public void testNoninfl() {
+        tagText.setOptions(new TagOptions())
+
+        TagResult tagged = tagText.tagText("а)")
+        def expected =
+"""<sentence>
+  <tokenReading>
+    <token value="а" lemma="а" tags="noninfl" />
+  </tokenReading>
+  <tokenReading>
+    <token value=")" lemma=")" tags="punct" />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
+
+
+        tagged = tagText.tagText("«п»")
+        expected =
+"""<sentence>
+  <tokenReading>
+    <token value="«" lemma="«" tags="punct" />
+  </tokenReading>
+  <tokenReading>
+    <token value="п" lemma="п" tags="noninfl" />
+  </tokenReading>
+  <tokenReading>
+    <token value="»" lemma="»" tags="punct" />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
+    }
+    
+    
     @Test
     public void testSymbols() {
         tagText.setOptions(new TagOptions())
