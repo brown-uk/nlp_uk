@@ -369,7 +369,7 @@ public class DisambigStats {
         rate
     } 
     
-    private static final Pattern POSTAG_NORM_PATTERN = ~ /:(xp[1-9]|ua_[0-9]{4}|comp.|&predic|&insert|vulg|coll|ns)/
+    private static final Pattern POSTAG_NORM_PATTERN = ~ /:(xp[1-9]|up[0-9]{2}|comp.|&predic|&insert|vulg|coll|ns)/
     
     @CompileStatic
     private static String normalizePostagForRate(String postag) {

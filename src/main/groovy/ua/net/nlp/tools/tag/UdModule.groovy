@@ -159,7 +159,7 @@ class UdModule {
         // try to guess gender for plural
         if( PLURAL_PATTERN.matcher(tkn.tags).find() ) {
             
-            if( tkn.lemma.startsWith("пів") && tkn.tags.contains("nv:ua_1992") )
+            if( tkn.lemma.startsWith("пів") && tkn.tags.contains("nv:up92") )
                 return
             
             def newTag = tkn.tags.replace(':subst', '')
