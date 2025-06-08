@@ -86,38 +86,21 @@ public class TagUnknown {
         
         def last3 = token[-lemmaSuffixLen..-1]
         
-        def opToTagMap = lemmaSuffixStatsF[last3]
-
-        List<TaggedToken> retTokens = []
+        List<TaggedToken> retTokens
         
+        Map<WordReading, Integer> opToTagMap = lemmaSuffixStatsF[last3]
         opToTagMap = opToTagMap.findAll { e -> getCoeff(e, token, idx, tokens) > 0 }
+        
         if( opToTagMap ) {
             opToTagMap = opToTagMap.toSorted { e -> - getCoeff(e, token, idx, tokens) }
             
-            retTokens = opToTagMap.collect { e ->
+            retTokens = opToTagMap.collect { Map.Entry<WordReading, Integer> e ->
                 def wr = e.key 
-                //            def wr = opToTagMap.max{ e -> getCoeff(e, token, idx, tokens) }.key
-
-                //        Map.Entry<WordReading, Integer> wre = null
-                //        Map<Map<WordReading, Integer>, Integer> opToTagMapRated = opToTagMap.collectEntries { e ->
-                //            def coeff = getCoeff(e, token, idx, tokens)
-                ////            if( coeff > 0 && (wre == null || coeff > wre.value) ) wre = e
-                ////            coeff > 0
-                //            [(e): coeff]
-                //        }
-                //        .findAll { e -> e.value > 0 }
-                //
-                //        println "${opToTagMap} / ${wre}"
-                //
-                //        if( wre != null ) {
-                //            def wr = wre.key
-                //            println ":: ${opToTagMap}"
-                //            println ":: max: ${wr}"
                 def parts = wr.lemma.split("/")
                 int del = parts[1] as int
                 
                 if( del + 2 > token.length() )
-                    return
+                    return (TaggedToken)null
                 
                 String add = parts[0]
                 def lemma = token[0..-del-1] + add
@@ -130,7 +113,10 @@ public class TagUnknown {
 
                 return new TaggedToken(value: token, lemma: lemma, tags: wr.postag, confidence: q)
             }
-            .findAll { it != null }
+            .findResults() as List
+        }
+        else {
+            retTokens = []
         }
 
         return retTokens
