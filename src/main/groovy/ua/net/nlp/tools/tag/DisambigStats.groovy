@@ -369,7 +369,7 @@ public class DisambigStats {
         rate
     } 
     
-    private static final Pattern POSTAG_NORM_PATTERN = ~ /:(xp[1-9]|up[0-9]{2}|comp.|&predic|&insert|vulg|coll|ns)/
+    private static final Pattern POSTAG_NORM_PATTERN = ~ /:(xp[1-9]|up[0-9]{2}|comp.|predic|insert|vulg|coll|ns)/
     
     @CompileStatic
     private static String normalizePostagForRate(String postag) {
@@ -546,7 +546,7 @@ public class DisambigStats {
                     if( isGoodAdjToLink(ti, ti.idx) ) {
                         if( PosTagHelper.hasPosTagStart(ti.tokens[ti.idx+1], "noun")  ) {
                             def adjInflections = InflectionHelper.getAdjInflections([new AnalyzedToken("", tag, "")])
-                            def nounInflections = InflectionHelper.getNounInflections(ti.tokens[ti.idx+1].getReadings(), Pattern.compile("&pron"))
+                            def nounInflections = InflectionHelper.getNounInflections(ti.tokens[ti.idx+1].getReadings(), Pattern.compile("pron"))
 
                             if( ! Collections.disjoint(adjInflections, nounInflections) ) {
                                 matchRateSum = Math.min(matchRateSum + 0.35d, 1d)
@@ -557,7 +557,7 @@ public class DisambigStats {
                                 && PosTagHelper.hasPosTagStart(ti.tokens[ti.idx+2], "noun")) {
                             def adjInflections = InflectionHelper.getAdjInflections([new AnalyzedToken("", tag, "")])
                             def adjInflections2 = InflectionHelper.getAdjInflections(ti.tokens[ti.idx+1].getReadings())
-                            def nounInflections = InflectionHelper.getNounInflections(ti.tokens[ti.idx+2].getReadings(), Pattern.compile("&pron"))
+                            def nounInflections = InflectionHelper.getNounInflections(ti.tokens[ti.idx+2].getReadings(), Pattern.compile("pron"))
 
                             if( ! Collections.disjoint(adjInflections, adjInflections2)
                                 && ! Collections.disjoint(adjInflections, nounInflections) ) {

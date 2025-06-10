@@ -34,10 +34,10 @@ class TagTextSemTest {
   </tokenReading>
   <tokenReading>
     <token value="усе" lemma="усе" tags="adv" semtags="1:dur:max" />
-    <token value="усе" lemma="усе" tags="noun:inanim:n:v_naz:&amp;pron:gen" semtags="1:quantif" />
-    <token value="усе" lemma="усе" tags="noun:inanim:n:v_zna:&amp;pron:gen" semtags="1:quantif" />
-    <token value="усе" lemma="увесь" tags="adj:n:v_naz:&amp;pron:gen" semtags="1:quantif" />
-    <token value="усе" lemma="увесь" tags="adj:n:v_zna:&amp;pron:gen" semtags="1:quantif" />
+    <token value="усе" lemma="усе" tags="noun:inanim:n:v_naz:pron:gen" semtags="1:quantif" />
+    <token value="усе" lemma="усе" tags="noun:inanim:n:v_zna:pron:gen" semtags="1:quantif" />
+    <token value="усе" lemma="увесь" tags="adj:n:v_naz:pron:gen" semtags="1:quantif" />
+    <token value="усе" lemma="увесь" tags="adj:n:v_zna:pron:gen" semtags="1:quantif" />
   </tokenReading>
   <tokenReading>
     <token value="голова" lemma="голова" tags="noun:anim:f:v_naz" semtags="1:conc:hum&amp;hierar" />
@@ -60,8 +60,8 @@ class TagTextSemTest {
     <token value="акту" lemma="акт" tags="noun:inanim:m:v_rod:xp2" semtags="1:abst:part:2:abst:quantum" />
   </tokenReading>
   <tokenReading>
-    <token value="один-другий" lemma="один-другий" tags="adj:m:v_naz:&amp;numr" semtags="1:abst:quantity" />
-    <token value="один-другий" lemma="один-другий" tags="adj:m:v_zna:rinanim:&amp;numr" semtags="1:abst:quantity" />
+    <token value="один-другий" lemma="один-другий" tags="adj:m:v_naz:numr" semtags="1:abst:quantity" />
+    <token value="один-другий" lemma="один-другий" tags="adj:m:v_zna:rinanim:numr" semtags="1:abst:quantity" />
   </tokenReading>
   <tokenReading>
     <token value="." lemma="." tags="punct" />

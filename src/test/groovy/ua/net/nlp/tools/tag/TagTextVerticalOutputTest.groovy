@@ -40,10 +40,10 @@ class TagTextVerticalOutputTest {
 
         def expected = 
 """<s>
-Десь adv:&pron:ind десь
+Десь adv:pron:ind десь
 <g/>
 , punct ,
-там adv:&pron:dem там
+там adv:pron:dem там
 за prep за
 горою noun:inanim:f:v_oru гора
 ходила verb:imperf:past:f ходити
@@ -54,7 +54,7 @@ class TagTextVerticalOutputTest {
 
 <s>
 А conj:coord а
-далі adv:compc:&predic далі
+далі adv:compc:predic далі
 - punct -
 озеро noun:inanim:n:v_naz озеро
 <g/>
@@ -63,7 +63,7 @@ class TagTextVerticalOutputTest {
 
 <s>
 — punct —
-Де adv:&pron:int:rel де
+Де adv:pron:int:rel де
 <g/>
 ? punct ?
 </s>
@@ -83,7 +83,7 @@ class TagTextVerticalOutputTest {
         def expected =
 """<s>
 А conj:coord а _
-далі adv:compc:&predic далі semTags=1:dist:2:time
+далі adv:compc:predic далі semTags=1:dist:2:time
 - punct - _
 озеро noun:inanim:n:v_naz озеро _
 <g/>
@@ -106,17 +106,17 @@ class TagTextVerticalOutputTest {
 """# sent_id = 1
 # text = $text
 1 А а CCONJ conj:coord _ _ _ _ _
-2 треба треба ADV noninfl:&predic _ _ _ _ Uninflect=Yes
-3 далі далі ADV adv:compc:&predic Degree=Cmp _ _ _ SemTags=1:dist:2:time
-4 воно воно PRON noun:unanim:n:v_naz:&pron:pers:3 Animacy=Anim,Inan|Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs _ _ _ SemTags=1:conc:deictic
+2 треба треба ADV noninfl:predic _ _ _ _ Uninflect=Yes
+3 далі далі ADV adv:compc:predic Degree=Cmp _ _ _ SemTags=1:dist:2:time
+4 воно воно PRON noun:unanim:n:v_naz:pron:pers:3 Animacy=Anim,Inan|Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs _ _ _ SemTags=1:conc:deictic
 5 - - PUNCT punct _ _ _ _ _
 6 озеро озеро NOUN noun:inanim:n:v_naz Animacy=Inan|Case=Nom|Gender=Neut|Number=Sing _ _ _ _
 7 Світязь Світязь PROPN noun:inanim:m:v_naz:prop:geo:xp1 Animacy=Inan|Case=Nom|Gender=Masc|NameType=Geo|Number=Sing _ _ _ SemTags=1:conc:loc
-8 де де ADV adv:&pron:int:rel PronType=Int|PronType=Rel _ _ _ _
-9 я я PRON noun:anim:s:v_naz:&pron:pers:1 Animacy=Anim|Case=Nom|Number=Sing|Person=1|PronType=Prs _ _ _ SemTags=1:conc:hum:deictic
+8 де де ADV adv:pron:int:rel PronType=Int|PronType=Rel _ _ _ _
+9 я я PRON noun:anim:s:v_naz:pron:pers:1 Animacy=Anim|Case=Nom|Number=Sing|Person=1|PronType=Prs _ _ _ SemTags=1:conc:hum:deictic
 10 затримався затриматися VERB verb:rev:perf:past:m Aspect=Perf|Gender=Masc|Mood=Ind|Number=Sing|Reflex=Yes|Tense=Past|VerbForm=Fin _ _ _ SpaceAfter=No
 11 , , PUNCT punct _ _ _ _ _
-12 тисяча тисяча NOUN noun:inanim:f:v_naz:&numr Animacy=Inan|Case=Nom|Gender=Fem|Number=Sing|NumType=Card _ _ _ SemTags=1:abst:quantity:absol:2:abst:quantity&max:3:conc:hum:group:part|SpaceAfter=No
+12 тисяча тисяча NOUN noun:inanim:f:v_naz:numr Animacy=Inan|Case=Nom|Gender=Fem|Number=Sing|NumType=Card _ _ _ SemTags=1:abst:quantity:absol:2:abst:quantity&max:3:conc:hum:group:part|SpaceAfter=No
 13 ... ... PUNCT punct _ _ _ _ _
 """.toString()
 
@@ -140,7 +140,7 @@ class TagTextVerticalOutputTest {
 5 вставте вставити VERB verb:perf:impr:p:2 Aspect=Perf|Mood=Imp|Number=Plur|Person=2|VerbForm=Fin _ _ _ _
 6 картки картка NOUN noun:inanim:p:v_zna Animacy=Inan|Case=Acc|Gender=Fem|Number=Plur _ _ _ SpaceAfter=No
 7 , , PUNCT punct _ _ _ _ _
-8 зараз зараз ADV adv:&pron:dem PronType=Dem _ _ _ _
+8 зараз зараз ADV adv:pron:dem PronType=Dem _ _ _ _
 9 проведемо провести VERB verb:perf:futr:p:1 Aspect=Perf|Mood=Ind|Number=Plur|Person=1|Tense=Fut|VerbForm=Fin _ _ _ _
 10 реєстрацію реєстрація NOUN noun:inanim:f:v_zna Animacy=Inan|Case=Acc|Gender=Fem|Number=Sing _ _ _ _
 11 натисканням натискання NOUN noun:inanim:p:v_dav Animacy=Inan|Case=Dat|Gender=Neut|Number=Plur _ _ _ _

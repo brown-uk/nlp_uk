@@ -17,8 +17,8 @@ import java.util.regex.Pattern
 @PackageScope
 class UdModule {
     private Map<String, String> VESUM_TO_UD = [:]
-    private static final Pattern PLURAL_PATTERN = ~ /noun.*:p:(?!.*:(ns|&pron|nv:abbr))/
-    private static final Pattern PLURAL_GENDER_PATTERN = ~ /noun.*:([mfn])(?!.*:(ns|&pron)).*/
+    private static final Pattern PLURAL_PATTERN = ~ /noun.*:p:(?!.*:(ns|pron|nv:abbr))/
+    private static final Pattern PLURAL_GENDER_PATTERN = ~ /noun.*:([mfn])(?!.*:(ns|pron)).*/
     private static List<String> NEGATIVES
     
     Ukrainian language
@@ -42,10 +42,10 @@ class UdModule {
             
             List<String> tagParts = tkn.tags
                 .replace('conj:', 'conj+')
-                .replace('noninfl:&predic', 'noninfl+&predic')
+                .replace('noninfl:predic', 'noninfl+predic')
                 .split(/:/) as List
             
-            tagParts.removeIf{ it ==~ /xp[0-9]|&pron|&predic|&insert/ }
+            tagParts.removeIf{ it ==~ /xp[0-9]|pron|predic|insert/ }
             
             def pos = tagParts[0]
             tagParts.remove(0)
@@ -163,7 +163,7 @@ class UdModule {
                 return
             
             def newTag = tkn.tags.replace(':subst', '')
-                .replaceFirst(/:p:v_.../, ':[mfn]:v_naz(:&predic|:&insert)?')
+                .replaceFirst(/:p:v_.../, ':[mfn]:v_naz(:predic|:insert)?')
 
             try {
                 String[] singTokens = language.getSynthesizer().synthesize(new AnalyzedToken(tkn.value, tkn.tags, tkn.lemma), newTag, true)
@@ -227,7 +227,7 @@ class UdModule {
             if( ! vesum /*|| ud == '-'*/ )
                 continue
 
-            vesum = vesum.replaceFirst(/v_zna:/, '').replaceFirst(/^adjp/, '&adjp')
+            vesum = vesum.replaceFirst(/v_zna:/, '').replaceFirst(/^adjp/, 'adjp')
                 
             VESUM_TO_UD[vesum]=ud
         }

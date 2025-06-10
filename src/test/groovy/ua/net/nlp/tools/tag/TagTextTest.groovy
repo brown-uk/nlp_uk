@@ -71,7 +71,7 @@ class TagTextTest {
     public void testOmitMultiwordTag() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt))
         TagResult tagged = tagText.tagText("Де можна")
-        def expected = "Де[де/adv:&pron:int:rel,де/part,де/part:pers] можна[можна/noninfl:&predic]"
+        def expected = "Де[де/adv:pron:int:rel,де/part,де/part:pers] можна[можна/noninfl:predic]"
         assertEquals expected, tagged.tagged
     }
 
@@ -144,7 +144,7 @@ class TagTextTest {
     <token value="4" lemma="4" tags="number" />
   </tokenReading>
   <tokenReading>
-    <token value="Ви" lemma="ви" tags="noun:anim:p:v_naz:&amp;pron:pers:2" />
+    <token value="Ви" lemma="ви" tags="noun:anim:p:v_naz:pron:pers:2" />
   </tokenReading>
   <tokenReading>
     <token value="-" lemma="-" tags="punct" />
@@ -386,7 +386,7 @@ class TagTextTest {
 
 <sentence>
   <tokenReading>
-    <token value="Мабуть" lemma="мабуть" tags="adv:&amp;insert" />
+    <token value="Мабуть" lemma="мабуть" tags="adv:insert" />
   </tokenReading>
   <tokenReading>
     <token value="кх" lemma="кх" tags="noninfl:onomat" />
@@ -540,8 +540,8 @@ class TagTextTest {
         def expected2 =
 """<sentence>
   <tokenReading>
-    <token value="сякий" lemma="сякий" tags="adj:m:v_naz:&amp;pron:def" />
-    <token value="сякий" lemma="сякий" tags="adj:m:v_zna:rinanim:&amp;pron:def" />
+    <token value="сякий" lemma="сякий" tags="adj:m:v_naz:pron:def" />
+    <token value="сякий" lemma="сякий" tags="adj:m:v_zna:rinanim:pron:def" />
   </tokenReading>
   <tokenReading>
     <token value="-то" lemma="то" tags="part" />
@@ -555,7 +555,7 @@ class TagTextTest {
         def expected4 =
 """<sentence>
   <tokenReading>
-    <token value="десь" lemma="десь" tags="adv:&amp;pron:ind" />
+    <token value="десь" lemma="десь" tags="adv:pron:ind" />
   </tokenReading>
   <tokenReading>
     <token value="-то" lemma="то" tags="part" />
@@ -579,7 +579,7 @@ class TagTextTest {
         def expected5 =
 """<sentence>
   <tokenReading>
-    <token value="Взагалі" lemma="взагалі" tags="adv:&amp;insert" />
+    <token value="Взагалі" lemma="взагалі" tags="adv:insert" />
   </tokenReading>
   <tokenReading>
     <token value="-то" lemma="то" tags="part" />
@@ -650,7 +650,7 @@ class TagTextTest {
 
 <sentence>
   <tokenReading>
-    <token value="Десь" lemma="десь" tags="adv:&amp;pron:ind" />
+    <token value="Десь" lemma="десь" tags="adv:pron:ind" />
     <token value="Десь" lemma="десь" tags="part" />
   </tokenReading>
 </sentence>

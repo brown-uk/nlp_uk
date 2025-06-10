@@ -140,7 +140,7 @@ class TagTextDisambigTest {
         def expected0 =
 """<sentence>
   <token value="стан" lemma="стан" tags="noun:inanim:m:v_naz:xp2" />
-  <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_rod:&amp;adjp:pasv:imperf" />
+  <token value="досліджуваного" lemma="досліджуваний" tags="adj:m:v_rod:adjp:pasv:imperf" />
 </sentence>
 <paragraph/>
 """
@@ -157,11 +157,11 @@ class TagTextDisambigTest {
         def expected =
 """<sentence>
   <token value="на" lemma="на" tags="prep" />
-  <token value="нього" lemma="він" tags="noun:unanim:m:v_zna:&amp;pron:pers:3">
+  <token value="нього" lemma="він" tags="noun:unanim:m:v_zna:pron:pers:3">
     <alts>
-      <token value="нього" lemma="воно" tags="noun:unanim:n:v_zna:&amp;pron:pers:3" />
-      <token value="нього" lemma="він" tags="noun:unanim:m:v_rod:&amp;pron:pers:3" />
-      <token value="нього" lemma="воно" tags="noun:unanim:n:v_rod:&amp;pron:pers:3" />
+      <token value="нього" lemma="воно" tags="noun:unanim:n:v_zna:pron:pers:3" />
+      <token value="нього" lemma="він" tags="noun:unanim:m:v_rod:pron:pers:3" />
+      <token value="нього" lemma="воно" tags="noun:unanim:n:v_rod:pron:pers:3" />
     </alts>
   </token>
 </sentence>
@@ -253,7 +253,7 @@ class TagTextDisambigTest {
         def expected =
 """<sentence>
   <token value="," lemma="," tags="punct" />
-  <token value="цього" lemma="цей" tags="adj:m:v_rod:&amp;pron:dem" />
+  <token value="цього" lemma="цей" tags="adj:m:v_rod:pron:dem" />
   <token value="тижня" lemma="тиждень" tags="noun:inanim:m:v_rod" />
 </sentence>
 <paragraph/>
@@ -320,7 +320,7 @@ class TagTextDisambigTest {
         def expected =
 """<sentence>
   <token value="ослаблюються" lemma="ослаблюватися" tags="verb:rev:imperf:pres:p:3" />
-  <token value="доти" lemma="доти" tags="adv:&amp;pron:dem" />
+  <token value="доти" lemma="доти" tags="adv:pron:dem" />
 </sentence>
 <paragraph/>
 """
@@ -546,7 +546,7 @@ class TagTextDisambigTest {
         
         expected = """<sentence>
   <token value="на" lemma="на" tags="prep" />
-  <token value="такий" lemma="такий" tags="adj:m:v_zna:rinanim:&amp;pron:dem" />
+  <token value="такий" lemma="такий" tags="adj:m:v_zna:rinanim:pron:dem" />
   <token value="великий" lemma="великий" tags="adj:m:v_zna:rinanim:compb" />
   <token value="кавун" lemma="кавун" tags="noun:inanim:m:v_zna" />
 </sentence>

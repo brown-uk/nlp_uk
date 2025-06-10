@@ -36,7 +36,7 @@ class TagTextModZhelehTest {
   </tokenReading>
   <tokenReading>
     <token value="ся" lemma="ся" tags="part:arch" />
-    <token value="ся" lemma="сей" tags="adj:f:v_naz:&amp;pron:dem:arch" />
+    <token value="ся" lemma="сей" tags="adj:f:v_naz:pron:dem:arch" />
   </tokenReading>
   <tokenReading>
     <token value="житє" lemma="житє" tags="noun:inanim:n:v_naz:alt" />
@@ -66,7 +66,7 @@ class TagTextModZhelehTest {
   </tokenReading>
   <tokenReading>
     <token value="ся" lemma="ся" tags="part:arch" />
-    <token value="ся" lemma="сей" tags="adj:f:v_naz:&amp;pron:dem:arch" />
+    <token value="ся" lemma="сей" tags="adj:f:v_naz:pron:dem:arch" />
   </tokenReading>
 </sentence>
 """
@@ -112,7 +112,7 @@ class TagTextModZhelehTest {
         expected =
 """<sentence>
   <tokenReading>
-    <token value="пізнїйше" lemma="пізнійше" tags="adv:&amp;predic:bad:alt" />
+    <token value="пізнїйше" lemma="пізнійше" tags="adv:predic:bad:alt" />
   </tokenReading>
 </sentence>
 """
@@ -123,7 +123,7 @@ class TagTextModZhelehTest {
 """<sentence>
   <tokenReading>
     <token value="йім" lemma="їсти" tags="verb:imperf:pres:s:1" />
-    <token value="йім" lemma="вони" tags="noun:unanim:p:v_dav:&amp;pron:pers:3" />
+    <token value="йім" lemma="вони" tags="noun:unanim:p:v_dav:pron:pers:3" />
   </tokenReading>
 </sentence>
 """

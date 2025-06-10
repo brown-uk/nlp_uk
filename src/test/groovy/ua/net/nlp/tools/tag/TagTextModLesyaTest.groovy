@@ -39,7 +39,7 @@ class TagTextModLesyaTest {
     <token value="звичайі" lemma="звичай" tags="noun:inanim:p:v_zna:alt" />
   </tokenReading>
   <tokenReading>
-    <token value="нашоі" lemma="наш" tags="adj:f:v_rod:&amp;pron:pos:alt" />
+    <token value="нашоі" lemma="наш" tags="adj:f:v_rod:pron:pos:alt" />
   </tokenReading>
   <tokenReading>
     <token value="націі" lemma="нація" tags="noun:inanim:f:v_dav:alt" />
@@ -63,7 +63,7 @@ class TagTextModLesyaTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value="завжді" lemma="завжди" tags="adv:&amp;pron:gen:alt" />
+    <token value="завжді" lemma="завжди" tags="adv:pron:gen:alt" />
   </tokenReading>
 </sentence>
 """

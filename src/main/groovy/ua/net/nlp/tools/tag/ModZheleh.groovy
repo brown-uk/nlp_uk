@@ -187,7 +187,7 @@ class ModZheleh {
 тамже adv
 жь|уж|иже|нехайже|то-жь|хібаж part
 хочь|хотьби|хочь-би|хочаби|хочьби part|conj:coord|conj:subord                                          # хоч
-ино|инак adv:&pron:def
+ино|инак adv:pron:def
 албо|убо|не-аби part
 абим|аби-сьте|аби-сте|аби-в conj:subord
 нетільки|только part|adv|conj:subord|conj:coord
