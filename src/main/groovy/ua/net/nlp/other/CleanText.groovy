@@ -24,10 +24,10 @@ package ua.net.nlp.other
 // mark/rate or remove Russian paragraphs
 
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='languagetool-core', version='6.5')
-@Grab(group='org.languagetool', module='language-uk', version='6.5')
-@Grab(group='org.languagetool', module='language-ru', version='6.5')
-@Grab(group='org.languagetool', module='language-en', version='6.5')
+@Grab(group='org.languagetool', module='languagetool-core', version='6.6')
+@Grab(group='org.languagetool', module='language-uk', version='6.6')
+@Grab(group='org.languagetool', module='language-ru', version='6.6')
+@Grab(group='org.languagetool', module='language-en', version='6.6')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
 
@@ -79,7 +79,7 @@ class CleanText {
         def basePkg = CleanText.class.getPackageName()
         def tagTextClass = cl.loadClass("${basePkg}.clean.CleanTextCore")
         def m = tagTextClass.getMethod("main", String[].class)
-        def mArgs = [args].toArray() // new Object[]{args} - Eclips chokes on this
+        def mArgs = [args].toArray() // new Object[]{args} - Eclipse chokes on this
 
         long tm2 = System.currentTimeMillis()
 

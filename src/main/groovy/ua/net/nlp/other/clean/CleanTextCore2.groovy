@@ -76,7 +76,7 @@ class CleanTextCore2 {
         }
 
         // digit 3 instead of letter З
-        t10 = t10.replaceAll(/(?U)\b3[аa]([\h\v]*[а-яіїєґА-ЯІЇЄҐ])/, 'За$1')
+        t10 = t10.replaceAll(/(?U)(^|[!?.][\h\v]+)3[аa]([\h\v]*[а-яіїєґА-ЯІЇЄҐ])/, '$1За$2')
 
         if( ! options.simple ) {
 

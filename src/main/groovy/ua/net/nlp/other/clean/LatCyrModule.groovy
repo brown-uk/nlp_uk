@@ -17,7 +17,6 @@ class LatCyrModule {
         "ТаблоID": "Табло\uE117ID",
         "Фirtka": "Ф\uE117irtka",
         "СхідSide": "Схід\uE117Side",
-        "ГолосUA": "Голос\uE117UA",
         "ОsтаNNя": "Оsта\uE117NNя",
         "DepоДніпро": "Depo\uE117Дніпро",
         "DepoДніпро": "Depo\uE117Дніпро"
@@ -141,7 +140,6 @@ class LatCyrModule {
 
     @CompileStatic
     String fixReliableLat(String text, int[] counts) {
-        
 //        def t1 = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
         def m1 = text =~ /([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/
         def t1 = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
@@ -184,13 +182,14 @@ class LatCyrModule {
     }
     
     private static Pattern SMALL_UK_BIG_EN = ~ /([а-яіїєґ])([A-Z])/
+    private static Pattern ALL_EN_ALL_UK = ~ /([A-Za-z]+)([а-яіїєґ'\u2019\u02bc]+)/
     
-    // в нашійTwitter-трансляції
     @CompileStatic
     String fixToSplit(String text, int[] counts) {
 
-        text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-Z-]+/, { String it ->
+        text = text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ'ʼ’a-zA-Z-]+/, { String it ->
 
+            // в нашійTwitter-трансляції
             def m = SMALL_UK_BIG_EN.matcher(it)
             if( m ) {
                 def split = m.replaceFirst('$1 $2')
@@ -204,8 +203,26 @@ class LatCyrModule {
                     return split
                 }
             }
+            else {
+                def m2 = ALL_EN_ALL_UK.matcher(it)
+                if( m2 ) {
+                    def en = m2.group(1)
+                    def uk = m2.group(2)
+                    if( en.length() >= 2 && uk.length() >= 3
+                        && ltModule.knownWord(uk)
+                        && ltModule.knownWordEn(en) ) {
+                        out.debug "mix: 2.2"
+                        counts[0] += 1
+                        return "$en $uk"
+                    }
+                }
+            }
+
+            // Insiderрозповів
+            
             return it
         })
+        
     }
 
     // ignoring best man'ом
@@ -269,15 +286,15 @@ class LatCyrModule {
         def t1 = fixLatinDigits(text, counts)
         // 1st tier
 
-        def t2 = fixReliableCyr(t1, counts)
+//        def t2 = fixReliableCyr(t1, counts)
         
 // t1 = null // ml
-        def t3 = fixReliableLat(t2, counts)
+//        def t3 = fixReliableLat(t2, counts)
 // t2 = null // ml
         
         // 2nd tier
 
-        def t40 = fixToSplit(t3, counts)
+        def t40 = fixToSplit(t1, counts)
         
         def t41 = fixToAllCyrillic(t40, counts)
 // t3 = null // ml
@@ -321,7 +338,8 @@ class LatCyrModule {
 
 
         if( MIX_1.matcher(t0).find() ) {
-            t0 = t0.replaceAll(/(?iu)([а-яіїєґ])(Fest|Train|Inform|SOS|Art|City|News)/, '$1\uE117$2')
+            t0 = t0.replaceAll(/(?iu)([а-яіїєґ])(Fest|Train|Inform|SOS|Art|City|News|UA)/, '$1\uE117$2')
+            
             // this does not allow to split "нашійTwitter"
 //            t0 = t0.replaceAll(/(?iu)([а-яіїєґ])([A-Z])/, '$1\uE117$2')
             
