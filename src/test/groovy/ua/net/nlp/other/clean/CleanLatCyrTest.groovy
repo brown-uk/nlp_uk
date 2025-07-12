@@ -62,6 +62,19 @@ class CleanLatCyrTest {
         
         assertEquals "нашій Twitter", clean("нашійTwitter")
 
+        assertEquals "ДонорUA", clean("ДонорUA")
+        
+        // do not touch
+        assertEquals "Renault Kangoo", clean("Renault Kangoo")
+        
+        // do not touch
+        assertEquals "FREЕДОМ", clean("FREЕДОМ")
+
+        // do not touch
+        assertEquals "квадрокоптери Aquila16-fpv-kit.", clean("квадрокоптери Aquila16-fpv-kit.")
+        
+        assertEquals "Insider розповів", clean("Insiderрозповів")
+        
         // latin i
         def orig = "чоловіка i жінки"
         def result = clean(orig)

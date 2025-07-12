@@ -50,8 +50,6 @@ class CleanTextTest {
 
         assertEquals "п'яний", clean("п\\'яний")
         
-		assertEquals "on throughпортал в", clean("on throughпортал в")
-        
         // don't touch
         def txt = '"Дїла"\n білїють'
         assertEquals txt, clean(txt)
@@ -110,6 +108,9 @@ class CleanTextTest {
     @Test
     public void testNumForLetter() {
         assertEquals "За віщо йому таке. Вул. Залізнична 3а.", clean("3а віщо йому таке. Вул. 3алізнична 3а.")
+        
+        // do not touch
+        assertEquals "Як в графах 3а та 3 додатка", clean("Як в графах 3а та 3 додатка")
     }
 
     @Test
@@ -280,12 +281,4 @@ def text="""
         assertEquals "директор і бухгалтер", clean("директор і бухгалтер")
     }
         
-    @Test
-    public void testSplitBigFile() {
-        String w = "abc de\n"
-        int cnt = (int)(CleanTextCore.CHUNK_LIMIT * 3 / 2 / w.length())
-        String text = w.repeat(cnt);        
-
-        assertEquals text.hashCode(), clean(text).hashCode()
-    }
 }

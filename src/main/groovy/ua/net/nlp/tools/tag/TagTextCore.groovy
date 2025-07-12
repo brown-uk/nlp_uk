@@ -23,6 +23,7 @@ import org.languagetool.language.Ukrainian
 import groovy.transform.Canonical
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
+import groovy.transform.PackageScope
 import picocli.CommandLine
 import picocli.CommandLine.ParameterException
 import ua.net.nlp.tools.TextUtils
