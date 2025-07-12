@@ -13,7 +13,7 @@ import groovy.transform.ToString
 import ua.net.nlp.bruk.ContextToken
 import ua.net.nlp.bruk.WordContext
 import ua.net.nlp.bruk.WordReading
-import ua.net.nlp.tools.tag.TagTextCore.TokenInfo
+import ua.net.nlp.tools.tag.TokenInfo
 
 
 @CompileStatic

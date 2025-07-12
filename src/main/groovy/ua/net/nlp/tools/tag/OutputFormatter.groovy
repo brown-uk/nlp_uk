@@ -6,9 +6,8 @@ import groovy.json.DefaultJsonGenerator
 import groovy.json.JsonGenerator
 import groovy.transform.CompileStatic
 import groovy.xml.MarkupBuilder
-import ua.net.nlp.tools.TextUtils.OutputFormat
 import ua.net.nlp.tools.tag.TagOptions
-import ua.net.nlp.tools.tag.TagTextCore.TTR
+import ua.net.nlp.tools.tag.TTR
 import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 
 class OutputFormatter {

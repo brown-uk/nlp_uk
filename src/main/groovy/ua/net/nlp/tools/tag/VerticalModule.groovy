@@ -2,7 +2,6 @@ package ua.net.nlp.tools.tag
 
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
-import ua.net.nlp.tools.tag.TagTextCore.TTR
 import ua.net.nlp.tools.tag.TagTextCore.TaggedSentence
 
 @CompileStatic

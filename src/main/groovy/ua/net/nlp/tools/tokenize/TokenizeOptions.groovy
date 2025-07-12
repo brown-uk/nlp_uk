@@ -1,38 +1,40 @@
 package ua.net.nlp.tools.tokenize
 
+import java.util.regex.Pattern
+
 import groovy.transform.AutoClone
 import groovy.transform.PackageScope
-import java.util.regex.Pattern
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-import ua.net.nlp.tools.TextUtils.OptionsBase
+import ua.net.nlp.tools.OptionsBase
+import ua.net.nlp.tools.OutputFormat
 
 @PackageScope
 @AutoClone
 class TokenizeOptions extends OptionsBase {
     @Parameters(index = "0", description = "Input files. Default: stdin", arity="0..")
-    List<String> inputFiles
+    public List<String> inputFiles
     @Option(names = ["-r", "--recursive"], description = "Tag all files recursively in the given directories")
-    boolean recursive
+    public boolean recursive
     @Option(names = ["--list-file"], description = "Read files to tag from the file")
-    String listFile
+    public String listFile
 
     @Option(names = ["-w", "--words"], description = ["Tokenize into words"])
-    boolean words
+    public boolean words
     @Option(names = ["-u", "--onlyWords"], description = ["Remove non-words (assumes \"-w\")"])
-    boolean onlyWords
+    public boolean onlyWords
     @Option(names = ["--preserveWhitespace"], description = "Preserve whitepsace tokens")
-    boolean preserveWhitespace
+    public boolean preserveWhitespace
     @Option(names = ["-s", "--sentences"], description = "Tokenize into sentences (default)")
-    boolean sentences
+    public boolean sentences
     @Option(names = ["--additionalSentenceSeparator"], description = "Additional pattern to split sentences by (regular expression). Note: this separator will be removed from the output.")
-    String additionalSentenceSeparator
-    Pattern additionalSentenceSeparatorPattern
+    public String additionalSentenceSeparator
+    public Pattern additionalSentenceSeparatorPattern
     
     // internal for now
-    String newLine = ' '
+    public String newLine = ' '
     
-    TokenizeOptions() {
+    public TokenizeOptions() {
         outputFormat = OutputFormat.txt
     }
 }

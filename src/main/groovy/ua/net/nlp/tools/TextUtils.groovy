@@ -353,45 +353,12 @@ public class TextUtils {
 
     @Canonical
     public static class ResultBase {
-        String tagged
+        public String tagged
         
         ResultBase(String str) {
             tagged = str
         }
     }
     
-    enum OutputFormat { txt, xml, json, vertical, conllu
-        
-        String getExtension() {
-            return this == vertical ? "vertical.txt"
-                 : this == conllu ? "conllu.txt"
-                     : this.name()
-        }
-        
-    }
-    
-    public static class OptionsBase {
-        @Option(names = ["-i", "--input"], arity="1", description = ["Input file. Default: stdin"], defaultValue = "-")
-        String input
-        @Option(names = ["-o", "--output"], arity="1", description = ["Output file"])
-        String output
-        @Option(names = ["-q", "--quiet"], description = ["Less output"])
-        public boolean quiet
-        @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
-        boolean helpRequested
-        @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt, vertical}", defaultValue = "xml")
-        public OutputFormat outputFormat = OutputFormat.xml
-        boolean singleThread = true
-
-        @Option(names = ["--splitHypenParts"], description = "If true parts in words like \"якби-то\" etc will be separate tokens.", defaultValue = "true")
-        boolean splitHyphenParts = true
-        
-        // internal
-        String xmlSchema
-    
-        boolean isNoTag() {
-            return false
-        }
-    }
 
 }
