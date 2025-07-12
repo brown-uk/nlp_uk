@@ -17,10 +17,9 @@ import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
 import picocli.CommandLine.Parameters
+import ua.net.nlp.tools.OutputFormat
 import ua.net.nlp.tools.TextUtils
 import ua.net.nlp.tools.TextUtils.IOFiles
-import ua.net.nlp.tools.TextUtils.OptionsBase
-import ua.net.nlp.tools.TextUtils.OutputFormat
 import ua.net.nlp.tools.TextUtils.ResultBase
 
 

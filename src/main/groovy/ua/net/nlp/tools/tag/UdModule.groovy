@@ -6,7 +6,6 @@ import org.languagetool.AnalyzedToken
 import org.languagetool.AnalyzedTokenReadings
 import org.languagetool.JLanguageTool
 import org.languagetool.language.Ukrainian
-import ua.net.nlp.tools.tag.TagTextCore.TTR
 import ua.net.nlp.tools.tag.TagTextCore.TaggedSentence
 import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 import groovy.transform.CompileStatic

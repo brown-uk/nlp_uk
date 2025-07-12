@@ -12,11 +12,9 @@ import org.junit.jupiter.api.Test
 
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
-import ua.net.nlp.tools.TextUtils.OutputFormat
-import ua.net.nlp.tools.tag.TagOptions
+import ua.net.nlp.tools.OutputFormat
 import ua.net.nlp.tools.tag.TagStats
 import ua.net.nlp.tools.tag.TagTextCore
-import ua.net.nlp.tools.tag.TagTextCore.TTR
 import ua.net.nlp.tools.tag.TagTextCore.TagResult
 import ua.net.nlp.tools.tag.TagTextCore.TaggedSentence
 

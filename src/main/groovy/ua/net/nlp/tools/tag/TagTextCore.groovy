@@ -26,9 +26,9 @@ import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import picocli.CommandLine
 import picocli.CommandLine.ParameterException
+import ua.net.nlp.tools.OutputFormat
 import ua.net.nlp.tools.TextUtils
 import ua.net.nlp.tools.TextUtils.IOFiles
-import ua.net.nlp.tools.TextUtils.OutputFormat
 import ua.net.nlp.tools.TextUtils.ResultBase
 
 
@@ -55,9 +55,9 @@ class TagTextCore {
     
 	@Canonical
 	public static class TagResult extends ResultBase {
-		TagStats stats
+		public TagStats stats
         
-        TagResult(String str, TagStats stats) {
+        public TagResult(String str, TagStats stats) {
             super(str);
             this.stats = stats
         }
@@ -134,8 +134,8 @@ class TagTextCore {
     }
 
     static class TaggedSentence {
-        List<TTR> tokens
-        String text
+        public List<TTR> tokens
+        public String text
     }
     
     
@@ -269,17 +269,17 @@ class TagTextCore {
 
     @Canonical
     static class TaggedToken {
-        String value
-        String lemma
-        String tags
-        String semtags
-        Boolean whitespaceBefore
-        List<TaggedToken> alts
+        public String value
+        public String lemma
+        public String tags
+        public String semtags
+        public Boolean whitespaceBefore
+        public List<TaggedToken> alts
         // technical attributes
-        TaggingLevel level
-        BigDecimal confidence
+        public TaggingLevel level
+        public BigDecimal confidence
         
-        Boolean isWhitepaceBefore() {
+        public Boolean isWhitepaceBefore() {
             tags != 'punct' ? null : whitespaceBefore
         }
         
@@ -289,20 +289,6 @@ class TagTextCore {
         }
     }
     
-    @CompileStatic
-    @Canonical
-    static class TTR {
-        List<TaggedToken> tokens
-    }
-    
-    @CompileStatic
-    static class TokenInfo {
-        String cleanToken
-        String cleanToken2
-        AnalyzedTokenReadings[] tokens
-        int idx
-        List<TTR> taggedTokens
-    }
 
     @CompileStatic
     private List<TTR> tagAsObject(AnalyzedTokenReadings[] tokens, TagStats stats) {

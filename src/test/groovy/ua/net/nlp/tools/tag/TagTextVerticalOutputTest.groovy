@@ -3,19 +3,11 @@
 package ua.net.nlp.tools.tag
 
 import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertFalse
 
-import org.apache.commons.text.StringEscapeUtils
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-import groovy.json.JsonSlurper
-import ua.net.nlp.tools.TextUtils.OutputFormat
-import ua.net.nlp.tools.tag.TagOptions
-import ua.net.nlp.tools.tag.TagStats
-import ua.net.nlp.tools.tag.TagTextCore
-import ua.net.nlp.tools.tag.TagTextCore.TTR
+import ua.net.nlp.tools.OutputFormat
 import ua.net.nlp.tools.tag.TagTextCore.TagResult
 import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 

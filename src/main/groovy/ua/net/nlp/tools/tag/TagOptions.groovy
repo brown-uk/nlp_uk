@@ -1,13 +1,13 @@
 package ua.net.nlp.tools.tag;
 
-import groovy.transform.AutoClone
 import groovy.transform.CompileStatic
-
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-import ua.net.nlp.tools.TextUtils.OptionsBase
-import ua.net.nlp.tools.TextUtils.OutputFormat
+import ua.net.nlp.tools.OptionsBase
+import ua.net.nlp.tools.OutputFormat
 
+
+@CompileStatic
 public class TagOptions extends OptionsBase {
 
     @Parameters(index = "0", description = "Input files. Default: stdin", arity="0..")

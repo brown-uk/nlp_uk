@@ -28,8 +28,10 @@ package ua.net.nlp.other
 @Grab(group='org.languagetool', module='language-uk', version='6.6')
 @Grab(group='org.languagetool', module='language-ru', version='6.6')
 @Grab(group='org.languagetool', module='language-en', version='6.6')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
-@Grab(group='info.picocli', module='picocli', version='4.6.+')
+
+@Grab(group='ch.qos.logback', module='logback-classic', version='1.5.18')
+@Grab(group='info.picocli', module='picocli', version='4.7.7')
+@Grab(group='org.apache.commons', module='commons-csv', version='1.14.0')
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files

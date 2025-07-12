@@ -9,7 +9,6 @@ import org.languagetool.JLanguageTool
 import org.languagetool.tagging.ru.RussianTagger
 
 import ua.net.nlp.tools.tag.TagTextCore
-import ua.net.nlp.tools.tag.TagTextCore.TTR
 import ua.net.nlp.tools.tag.TagTextCore.TaggedSentence
 import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 import ua.net.nlp.tools.tag.TagOptions
