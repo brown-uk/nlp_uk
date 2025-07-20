@@ -66,10 +66,17 @@ class CleanLatCyrTest {
         
         // do not touch
         assertEquals "Renault Kangoo", clean("Renault Kangoo")
-        
-        // do not touch
         assertEquals "FREЕДОМ", clean("FREЕДОМ")
-
+        // Mo - Latin
+        assertEquals "Moстиск", clean("Moстиск")
+        // pe - Latin
+        assertEquals "пеpeсвідчив", clean("пеpeсвідчив")
+        // cap - Latin
+        assertEquals "цїcapска", clean("цїcapска")
+        assertEquals "Pianoбой", clean("Pianoбой")
+        
+        assertEquals " IІвана", clean(" IІвана")
+        
         // do not touch
         assertEquals "квадрокоптери Aquila16-fpv-kit.", clean("квадрокоптери Aquila16-fpv-kit.")
         

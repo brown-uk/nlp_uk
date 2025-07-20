@@ -83,7 +83,8 @@ class LatCyrModule {
         for(int ii=0; ii<10; ii++) {
             cont = false
 
-            def m1 = t0 =~ /([XVI])([ХІ])/
+            // exclude IІвана
+            def m1 = t0 =~ /([XVI])([ХІ])(?![а-яіїєґa-z])/
 
             if( m1 ) {
                 cont = true
@@ -96,7 +97,7 @@ class LatCyrModule {
                 } } )
             }
             
-            def m2 = t0 =~ /([ХІ])([XVI])/
+            def m2 = t0 =~ /([ХІ])([XVI])(?![а-яіїєґa-z])/
             if( m2 ) {
                 cont = true
 // t0 = null // ml
@@ -110,59 +111,59 @@ class LatCyrModule {
         t0
     }
 
-    @CompileStatic
-    String fixReliableCyr(String text, int[] counts) {
-        // exclusively cyrillic letter followed by latin looking like cyrillic
-//        def t1 = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
-        def m1 = text =~ /([бвгґдєжзийклмнптфцчшщьюяѣБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/
-        def t1 = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // all, cyr, lat
-            def cyr = mr.group(1)
-            def lat = mr.group(2)
-            out.debug "mix: 1.1"
-            counts[0] += 1
-            cyr.concat(latToCyrMap[lat])
-        } } )
-
-        // exclusively cyrillic letter preceeded by latin looking like cyrillic
-
-//        text.replaceAll(/([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
-        def m2 = t1 =~ /([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяѣБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/
-// t1 = null // ml
-        def t2 = m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // lat, cyr
-            def lat = mr.group(1)
-            def cyr = mr.group(2)
-            out.debug "mix: 1.2"
-            counts[0] += 1
-            assert cyr
-            latToCyrMap[lat].concat(cyr)
-        } } )
-    }
-
-    @CompileStatic
-    String fixReliableLat(String text, int[] counts) {
-//        def t1 = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
-        def m1 = text =~ /([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/
-        def t1 = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
-            def lat = mr.group(1)
-            def cyr = mr.group(2)
-            out.debug "mix: 1.3"
-            counts[1] += 2
-            assert cyrToLatMap[cyr]
-            lat.concat(cyrToLatMap[cyr])
-        } } )
-
-//        def t2 = t1.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
-        def m2 = t1 =~ /([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfgjklmnrstuvwzDFGJLNQRSUVWZ])/ // h is often == ѣ
-// t1 = null // ml
-        m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
-            def cyr = mr.group(1)
-            def lat = mr.group(2)
-            out.debug "mix: 1.4"
-            counts[1] += 2
-            assert lat
-            cyrToLatMap[cyr].concat(lat)
-        } } )
-    }
+//    @CompileStatic
+//    String fixReliableCyr(String text, int[] counts) {
+//        // exclusively cyrillic letter followed by latin looking like cyrillic
+////        def t1 = text.replaceAll(/([бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/, { all, cyr, lat ->
+//        def m1 = text =~ /([бвгґдєжзийклмнптфцчшщьюяѣБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ]['’ʼ]?)([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])/
+//        def t1 = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // all, cyr, lat
+//            def cyr = mr.group(1)
+//            def lat = mr.group(2)
+//            out.debug "mix: 1.1"
+//            counts[0] += 1
+//            cyr.concat(latToCyrMap[lat])
+//        } } )
+//
+//        // exclusively cyrillic letter preceeded by latin looking like cyrillic
+//
+////        text.replaceAll(/([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/, { all, lat, cyr ->
+//        def m2 = t1 =~ /([aceiopxyABCEHIKMOPTXYáÁéÉíÍḯḮóÓúýÝ])(['’ʼ]?[бвгґдєжзийклмнптфцчшщьюяѣБГҐДЄЖЗИЙЛПФХЦЧШЩЬЮЯ])/
+//// t1 = null // ml
+//        def t2 = m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) { // { mr -> // lat, cyr
+//            def lat = mr.group(1)
+//            def cyr = mr.group(2)
+//            out.debug "mix: 1.2"
+//            counts[0] += 1
+//            assert cyr
+//            latToCyrMap[lat].concat(cyr)
+//        } } )
+//    }
+//
+//    @CompileStatic
+//    String fixReliableLat(String text, int[] counts) {
+////        def t1 = text.replaceAll(/([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/, { all, lat, cyr ->
+//        def m1 = text =~ /([bdfghjklmnrstuvwzDFGJLNQRSUVWZ]['’ʼ]?)([асеіорхуАВСЕНІКМНОРТХУ])/
+//        def t1 = m1.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
+//            def lat = mr.group(1)
+//            def cyr = mr.group(2)
+//            out.debug "mix: 1.3"
+//            counts[1] += 2
+//            assert cyrToLatMap[cyr]
+//            lat.concat(cyrToLatMap[cyr])
+//        } } )
+//
+////        def t2 = t1.replaceAll(/([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfghjklmnrstuvwzDFGJLNQRSUVWZ])/, { all, cyr, lat ->
+//        def m2 = t1 =~ /([асеіорхуАВСЕНІКМНОРТХУ])(['’ʼ]?[bdfgjklmnrstuvwzDFGJLNQRSUVWZ])/ // h is often == ѣ
+//// t1 = null // ml
+//        m2.replaceAll( new Function<MatchResult, String>() { String apply(MatchResult mr) {
+//            def cyr = mr.group(1)
+//            def lat = mr.group(2)
+//            out.debug "mix: 1.4"
+//            counts[1] += 2
+//            assert lat
+//            cyrToLatMap[cyr].concat(lat)
+//        } } )
+//    }
     
     @CompileStatic
     String fixCharBetweenOthers(String text, int[] counts) {
@@ -182,7 +183,7 @@ class LatCyrModule {
     }
     
     private static Pattern SMALL_UK_BIG_EN = ~ /([а-яіїєґ])([A-Z])/
-    private static Pattern ALL_EN_ALL_UK = ~ /([A-Za-z]+)([а-яіїєґ'\u2019\u02bc]+)/
+    private static Pattern ALL_EN_ALL_UK = ~ /(?U)\b([A-Za-z]+)([а-яіїєґ'\u2019\u02bc]+)\b/
     
     @CompileStatic
     String fixToSplit(String text, int[] counts) {
@@ -208,7 +209,7 @@ class LatCyrModule {
                 if( m2 ) {
                     def en = m2.group(1)
                     def uk = m2.group(2)
-                    if( en.length() >= 2 && uk.length() >= 3
+                    if( en.length() >= 3 && uk.length() >= 4
                         && ltModule.knownWord(uk)
                         && ltModule.knownWordEn(en) ) {
                         out.debug "mix: 2.2"
