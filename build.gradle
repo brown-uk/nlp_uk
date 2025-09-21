@@ -26,6 +26,13 @@ repositories {
     maven {
         url = uri("https://repo.languagetool.org/artifactory/languagetool-os-snapshot/")
     }
+
+    if( project.hasProperty('localLib') ) {
+      println "Using local repo: ${buildDir}/lib"
+      flatDir {
+          dirs "${buildDir}/lib"
+      }
+    }
 }
 
 
@@ -122,6 +129,9 @@ test {
 }
 
 
+// USAGE: ./gradlew tagText -Pargs="-g <file.txt>" or 
+//      (for offline after running ./gradlew copyRuntimeLibs)
+//        ./gradlew tagText -PlocalLib -Pargs="-g <file.txt>"
 task tagText(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = "ua.net.nlp.tools.tag.TagTextCore"
