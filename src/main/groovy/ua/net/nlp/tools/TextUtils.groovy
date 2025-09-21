@@ -76,7 +76,7 @@ public class TextUtils {
         processByParagraphInternal(options, files.inputFile, files.outputFile, closure, resultClosure)
     }
     
-    static def processByParagraphInternal(OptionsBase options, InputStream inputFile, PrintStream outputFile, Closure closure, Closure resultClosure) {
+    static def processByParagraphInternal(OptionsBase options, InputStream inputFile, PrintStream outputFile, Closure processClosure, Closure resultClosure) {
         boolean parallel = false
         int cores = Runtime.getRuntime().availableProcessors()
         if( cores > 2 && ! options.singleThread ) {
@@ -105,10 +105,10 @@ public class TextUtils {
 
 		long tm1 = System.currentTimeMillis()
 		if( parallel ) {
-			processFileParallel(inputFile, outputFile, options, closure, (int)(cores), resultClosure)
+			processFileParallel(inputFile, outputFile, options, processClosure, (int)(cores), resultClosure)
 		}
 		else {
-			processFile(inputFile, outputFile, options, closure, resultClosure)
+			processFile(inputFile, outputFile, options, processClosure, resultClosure)
 		}
 		if( ! options.quiet ) {
 			long tm2 = System.currentTimeMillis()
@@ -162,7 +162,7 @@ public class TextUtils {
     
 
     @CompileStatic
-	static void processFile(InputStream inputFile, PrintStream outputFile, OptionsBase options, Function<String, ? extends ResultBase> closure, Consumer<? extends ResultBase> postProcessClosure) {
+	static <T extends ResultBase> void processFile(InputStream inputFile, PrintStream outputFile, OptionsBase options, Function<String, T> closure, Consumer<T> postProcessClosure) {
         StringBuilder buffer = new StringBuilder(BUFFER_SIZE)
         boolean notEmpty = false
         OutputHandler outputHandler = new OutputHandler(outputFile: outputFile, options: options)
@@ -191,7 +191,7 @@ public class TextUtils {
         })
 
         if( buffer ) {
-            def analyzed = closure(buffer.toString())
+            ResultBase analyzed = closure(buffer.toString())
             outputHandler.print(analyzed)
             if( outputHandler.outputFile ) {
                 outputHandler.outputFile.println()

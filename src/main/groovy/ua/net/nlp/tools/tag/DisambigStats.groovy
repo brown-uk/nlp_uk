@@ -281,7 +281,7 @@ public class DisambigStats {
         if( ! wordEnding )
             return 0
         
-        Map<String, Stat> statsForWordEnding = len == 3 ? statsBySuffix3[wordEnding] :  statsBySuffix2[wordEnding]
+        Map<String, Stat> statsForWordEnding = len == 3 ? statsBySuffix3[wordEnding] : statsBySuffix2[wordEnding]
         if( statsForWordEnding != null ) {
             String normPostag = normalizePostagForRate(postag)
             Stat stat = statsForWordEnding[normPostag]
@@ -297,7 +297,7 @@ public class DisambigStats {
                 ctxQ *= 2d
                 rate /= total
             }
-            assert rate <= 1.0, "total: $total"
+            assert rate <= 1.0, "rate: $rate, total: $total"
 
             double oldRate = rate
 
