@@ -56,7 +56,7 @@ Windows:<br/>
 `./gradlew copyRuntimeLibs`
 це стягне потрібні залежності у build/lib
 потім скопіювати все на потрібну систему і запускати:
-`./gradlew tagText -PlocalLib -Pargs="-g <file.txt>"`
+`./gradlew --offline tagText -PlocalLib -Pargs="-g <file.txt>"`
 
 ## Використовувані програмні засоби
 

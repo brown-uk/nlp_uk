@@ -196,7 +196,7 @@ jar {
 
     setArchiveFileName "${artifactId}-${project.version}.jar"
 
-    includeEmptyDirs false
+    includeEmptyDirs=false
     exclude("ua/net/nlp/tools/TagText.class")
     exclude("ua/net/nlp/tools/TokenizeText.class")
     exclude("ua/net/nlp/tools/CleanText.class")
