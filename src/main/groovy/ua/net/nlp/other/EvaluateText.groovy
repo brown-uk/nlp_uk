@@ -7,11 +7,14 @@
 
 package ua.net.nlp.other
 
+import org.languagetool.JLanguageTool
+import org.languagetool.MultiThreadedJLanguageTool
+import org.languagetool.language.Ukrainian
+import org.languagetool.rules.Rule
+import org.languagetool.rules.RuleMatch
+import org.languagetool.tokenizers.SRXSentenceTokenizer
+
 import groovy.transform.CompileStatic
-import org.languagetool.*
-import org.languagetool.rules.*
-import org.languagetool.tokenizers.*
-import org.languagetool.language.*
 
 
 class EvaluateText {

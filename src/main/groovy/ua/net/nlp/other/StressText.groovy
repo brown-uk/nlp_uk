@@ -2,14 +2,18 @@
 
 package ua.net.nlp.other
 
+import org.languagetool.AnalyzedSentence
+import org.languagetool.AnalyzedToken
+import org.languagetool.AnalyzedTokenReadings
+import org.languagetool.JLanguageTool
+import org.languagetool.MultiThreadedJLanguageTool
+import org.languagetool.language.Ukrainian
+
 @GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='languagetool-core', version='6.5')
-@Grab(group='org.languagetool', module='language-uk', version='6.5')
+@Grab(group='org.languagetool', module='languagetool-core', version='6.6')
+@Grab(group='org.languagetool', module='language-uk', version='6.6')
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
 @Grab(group='info.picocli', module='picocli', version='4.6.+')
-
-import org.languagetool.*
-import org.languagetool.language.*
 
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic

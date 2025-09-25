@@ -9,10 +9,9 @@ import java.util.regex.Pattern
 import groovy.json.JsonGenerator
 import groovy.transform.CompileStatic
 import org.apache.commons.lang3.StringUtils
-import org.languagetool.language.*
-import org.languagetool.tokenizers.*
-import org.languagetool.tokenizers.uk.*
-
+import org.languagetool.language.Ukrainian
+import org.languagetool.tokenizers.SRXSentenceTokenizer
+import org.languagetool.tokenizers.uk.UkrainianWordTokenizer
 import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException

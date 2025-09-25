@@ -5,8 +5,6 @@ import groovy.transform.Field
 import groovy.transform.PackageScope
 import groovy.transform.TupleConstructor
 import groovy.transform.CompileStatic
-import org.languagetool.tagging.uk.*
-import org.languagetool.*
 import java.util.regex.Pattern
 
 @PackageScope

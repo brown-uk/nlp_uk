@@ -47,7 +47,6 @@ import picocli.CommandLine.ParameterException
 import groovy.io.FileVisitResult
 import groovy.transform.CompileStatic
 
-import org.languagetool.tagging.uk.*
 import org.languagetool.tokenizers.SRXSentenceTokenizer
 import org.languagetool.tokenizers.uk.UkrainianWordTokenizer
 import org.languagetool.tagging.Tagger
