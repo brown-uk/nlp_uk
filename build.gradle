@@ -28,15 +28,29 @@ repositories {
     }
 
     if( project.hasProperty('localLib') ) {
-      println "Using local repo: ${buildDir}/lib"
+      def jarCount = new File("${projectDir}/lib").listFiles().findAll{ it.name.endsWith('jar') }.size()
+      println "Using local repo: ${projectDir}/lib with ${jarCount} jars"
       flatDir {
-          dirs "${buildDir}/lib"
+          dirs "${projectDir}/lib"
       }
     }
 }
 
+configurations {
+    offlineGroovyRuntime
+}
 
 dependencies {
+    offlineGroovyRuntime "org.apache.groovy:groovy-all:$groovyVersion"
+    offlineGroovyRuntime "org.apache.groovy:groovy-astbuilder:$groovyVersion"
+    offlineGroovyRuntime "org.apache.groovy:groovy-dateutil:$groovyVersion"
+}
+
+dependencies {
+    if( project.hasProperty('localLib') ) {
+        implementation fileTree(dir: "${projectDir}/lib", include: ['*.jar'])
+    }
+
     implementation group: 'org.apache.groovy', name: 'groovy', version: groovyVersion
     implementation group: 'org.apache.groovy', name: 'groovy-json', version: groovyVersion
     implementation group: 'org.apache.groovy', name: 'groovy-xml', version: groovyVersion
@@ -79,34 +93,17 @@ dependencies {
 //    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.12.+'
 }
 
-sourceSets {
-    main {
-        resources {
-            srcDir "src/main/groovy"
-//            include "**/*.groovy"
-//            includes = ["**/tools/*.md", "*.groovy", "**/*.txt"]
-        }
-    }
-}
-
-processResources {
-//    doLast() {
-//        copy {
-//            from("src/main/groovy/") {
-//              include "org/nlp_uk/tools/TagText.groovy"
-//            }
-////            into "${project.buildDir}/resources/main"
-//            into "${project.buildDir}/classes/java/main"
-//            includeEmptyDirs = false
-//        }
-//    }
-}
-
 compileGroovy {
-    exclude '**/demo/**/*.groovy'
 //    exclude '**/other/**/*.groovy'
 
     groovyOptions.forkOptions.jvmArgs = [ '-Dgroovy.grape.enable=false' ]
+    
+//    doFirst {
+//        println "compileGroovy classpath:"
+//        configurations.compileClasspath.each { file ->
+//            println "  $file"
+//        }
+//    }
 }
 
 
@@ -131,7 +128,7 @@ test {
 
 // USAGE: ./gradlew tagText -Pargs="-g <file.txt>" or 
 //      (for offline after running ./gradlew copyRuntimeLibs)
-//        ./gradlew tagText -PlocalLib -Pargs="-g <file.txt>"
+//        ./gradlew tagText --offline -PlocalLib -Pargs="-g <file.txt>"
 task tagText(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = "ua.net.nlp.tools.tag.TagTextCore"
@@ -171,11 +168,13 @@ task fatJar(type: Jar) {
 }
 
 task copyRuntimeLibs(type: Copy) {
-    into "${buildDir}/lib"
+    into "${projectDir}/lib"
     from configurations.runtimeClasspath
+    from configurations.offlineGroovyRuntime
+    outputs.upToDateWhen {false}
 
     doFirst {
-        delete files("${buildDir}/lib")
+        delete files("${projectDir}/lib")
     }
 }
 
@@ -219,7 +218,7 @@ task statsJar(type: Jar) {
 
 task sourceJar(type: Jar) {
     archiveClassifier = "sources"
-    from sourceSets.main.allGroovy
+    from sourceSets.main.groovy.srcDirs
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
