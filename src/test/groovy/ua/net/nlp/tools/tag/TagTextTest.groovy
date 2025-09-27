@@ -179,6 +179,18 @@ class TagTextTest {
 </sentence>
 """
         assertEquals expected, tagged.tagged
+
+        // але unknown for dash at the end
+        
+        tagged = tagText.tagText("десяти-")
+        expected =
+"""<sentence>
+  <tokenReading>
+    <token value="десяти-" lemma="" tags="unknown" />
+  </tokenReading>
+</sentence>
+"""
+        assertEquals expected, tagged.tagged
 	}
     
     
