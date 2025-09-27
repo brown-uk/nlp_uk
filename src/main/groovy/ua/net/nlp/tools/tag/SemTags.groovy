@@ -21,6 +21,7 @@ import groovy.transform.CompileStatic;
 @CompileStatic
 public class SemTags {
     static final String baseDir = "/ua/net/nlp/dict_uk/semtags"
+    static Map<String, String> ADVP_DERIVATS 
 
     def categories = ["noun", "adj", "adv", "verb", "numr"]
         
@@ -62,8 +63,11 @@ public class SemTags {
                 if( parts.length >= 3 && parts[2].trim().startsWith(':') ) {
                    add = parts[2].trim()
                 }
+                
+                def word = parts[0]
                 def semtags = parts[1]
-                def key = parts[0] + " " + cat
+                def pos = cat
+                def key = word + " " + pos
                 
                 if( ! (key in semanticTags) ) {
                     semanticTags[key] = [:]
@@ -79,6 +83,11 @@ public class SemTags {
                 }
             }
         }
+        
+        ADVP_DERIVATS = getClass().getResource("/org/languagetool/resource/uk/derivats.txt").readLines().collectEntries {
+            def parts = it.split()
+            [(parts[0]) : parts[1]]
+        }
 
         if( ! options.quiet ) {
             long tm2 = System.currentTimeMillis()
@@ -91,6 +100,14 @@ public class SemTags {
         if( options.semanticTags && tkn.getLemma() != null && posTag != null ) {
             def lemma = tkn.getLemma()
             String posTagKey = posTag.replaceFirst(/:.*/, '')
+
+            if( posTagKey.startsWith("advp") ) {
+                lemma = ADVP_DERIVATS[lemma]
+                posTagKey = "verb"
+                if( ! lemma )
+                    return null
+            }
+            
             String key = "$lemma $posTagKey"
 
             Map<String, List<String>> potentialSemTags = semanticTags.get(key)

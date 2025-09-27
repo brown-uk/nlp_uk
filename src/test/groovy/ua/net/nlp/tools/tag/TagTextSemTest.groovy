@@ -95,7 +95,6 @@ class TagTextSemTest {
     }
 
     
-
     @Test
     public void testSemanticAlt() {
         def expected=
@@ -114,4 +113,20 @@ class TagTextSemTest {
         TagResult tagged = tagText.tagText("колеґа по\u2013турецьки")
         assertEquals expected, tagged.tagged
     }
+
+    
+    @Test
+    public void testSemanticDerivat() {
+        def expected= 
+"""<sentence>
+  <token value="стверджуючи" lemma="стверджуючи" tags="advp:imperf" semtags="1:speech:2:effect" />
+</sentence>
+<paragraph/>
+"""
+
+        tagText.setOptions(new TagOptions(semanticTags: true, tokenFormat: true))
+        TagResult tagged = tagText.tagText("стверджуючи")
+        assertEquals expected, tagged.tagged
+    }
+
 }
