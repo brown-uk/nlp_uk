@@ -86,9 +86,9 @@ dependencies {
 
     implementation group: 'ua.net.nlp', name: 'nlp_uk-stats', version: statsVersion
 
-    testImplementation platform('org.junit:junit-bom:5.13.+') // Or the latest version
+    testImplementation platform('org.junit:junit-bom:5.14.+') // Or the latest version
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.13.+'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.+'
 //    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.12.+'
 //    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.12.+'
 }
