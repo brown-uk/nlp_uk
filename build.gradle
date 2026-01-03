@@ -51,13 +51,13 @@ dependencies {
         implementation fileTree(dir: "${projectDir}/lib", include: ['*.jar'])
     }
 
-    implementation group: 'org.apache.groovy', name: 'groovy', version: groovyVersion
-    implementation group: 'org.apache.groovy', name: 'groovy-json', version: groovyVersion
-    implementation group: 'org.apache.groovy', name: 'groovy-xml', version: groovyVersion
+    implementation "org.apache.groovy:groovy:$groovyVersion"
+    implementation "org.apache.groovy:groovy-json:$groovyVersion"
+    implementation "org.apache.groovy:groovy-xml:$groovyVersion"
 
-    implementation group: 'info.picocli', name: 'picocli', version: '4.7.7'
-    implementation group: 'ch.qos.logback', name:'logback-classic', version:'1.5.18'
-    implementation group: 'org.apache.commons', name: 'commons-csv', version: '1.14.0'
+    implementation "info.picocli:picocli:4.7.7"
+    implementation "ch.qos.logback:logback-classic:1.5.18"
+    implementation "org.apache.commons:commons-csv:1.14.0"
     
     implementation("org.languagetool:language-uk:$ltDevVersion") {
         exclude module: 'hunspell'
@@ -84,7 +84,7 @@ dependencies {
         implementation("ua.net.nlp:morfologik-ukrainian-lt:${morfologik_ukrainian_lt_version}")
     }
 
-    implementation group: 'ua.net.nlp', name: 'nlp_uk-stats', version: statsVersion
+    implementation "ua.net.nlp:nlp_uk-stats:$statsVersion"
 
     testImplementation platform('org.junit:junit-bom:5.14.+') // Or the latest version
     testImplementation 'org.junit.jupiter:junit-jupiter'
