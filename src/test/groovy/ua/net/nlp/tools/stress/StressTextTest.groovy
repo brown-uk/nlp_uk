@@ -1,38 +1,31 @@
 #!/bin/env groovy
 
-package ua.net.nlp.tools
+package ua.net.nlp.tools.stress
 
 import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-import ua.net.nlp.other.StressText
-import ua.net.nlp.other.StressText.StressResult
+import ua.net.nlp.tools.stress.StressTextCore
+import ua.net.nlp.tools.stress.StressTextCore.StressResult
 
 
 class StressTextTest {
-    final boolean enabled = false
-    
 	def options = [ : ]
 
-	static StressText stressText
+	static StressTextCore stressText = new StressTextCore()
 	StressResult result
 	
 	@BeforeEach
 	void before() {
-        assumeTrue(enabled)
-        if( stressText == null ) {
-            stressText = new StressText()
-        }
+        options.disambiguate = false
 		stressText.setOptions(options)
 	}
 
 	@AfterEach
 	void after() {
-        assumeTrue(enabled)
 		println "Unknown: " + result.stats.unknownCnt
 		println "Homonym: " + result.stats.homonymCnt
 	}
@@ -90,7 +83,29 @@ class StressTextTest {
 		result = stressText.stressText(text)
 		assertEquals expected.trim(), result.tagged
 	}
+    
+    @Test
+    public void testStressHomonymDismabig() {
+        options.disambiguate = true
+        stressText.setOptions(options)
+        
+        def text = "Я пасу поки овець, нічим не гірше за будь-кого."
+        def expected = "Я пасу́ по́ки ове́ць, нічи́м не гі́рше за будь-кого́."
+
+        result = stressText.stressText(text)
+        assertEquals expected.trim(), result.tagged
+        
+        text = "Олено, Олександрович, Естоніє"
+        expected = "Оле́но, Олекса́ндрович, Есто́ніє"
+
+        result = stressText.stressText(text)
+        assertEquals expected.trim(), result.tagged
+
+        // logic with tags
+        text = "редактор цієї книжки Шекспіра"
+        expected = "реда́ктор ціє́ї кни́жки Шекспі́ра"
+
+        result = stressText.stressText(text)
+        assertEquals expected.trim(), result.tagged
+    }
 }
-
-
-

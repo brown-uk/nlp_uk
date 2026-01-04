@@ -1,46 +1,33 @@
-#!/usr/bin/env groovy
-
-package ua.net.nlp.other
-
-import org.languagetool.AnalyzedSentence
-import org.languagetool.AnalyzedToken
-import org.languagetool.AnalyzedTokenReadings
-import org.languagetool.JLanguageTool
-import org.languagetool.MultiThreadedJLanguageTool
-import org.languagetool.language.Ukrainian
-
-@GrabConfig(systemClassLoader=true)
-@Grab(group='org.languagetool', module='languagetool-core', version='6.6')
-@Grab(group='org.languagetool', module='language-uk', version='6.6')
-@Grab(group='ch.qos.logback', module='logback-classic', version='1.4.+')
-@Grab(group='info.picocli', module='picocli', version='4.6.+')
+package ua.net.nlp.tools.stress
 
 import groovy.transform.Canonical
 import groovy.transform.CompileStatic
 import picocli.CommandLine
 import picocli.CommandLine.Option
 import picocli.CommandLine.ParameterException
+import ua.net.nlp.tools.OptionsBase
+import ua.net.nlp.tools.OutputFormat
 import ua.net.nlp.tools.TextUtils
+import ua.net.nlp.tools.TextUtils.ResultBase
+import ua.net.nlp.tools.stress.StressTextCore
+import ua.net.nlp.tools.tag.TTR
+import ua.net.nlp.tools.tag.TagOptions
+import ua.net.nlp.tools.tag.TagTextCore
+import ua.net.nlp.tools.tag.TagTextCore.TaggedSentence
+import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 
 
-class StressText {
-    @groovy.transform.SourceURI
-    static SOURCE_URI
-    // if this script is called from GroovyScriptEngine SourceURI is data: and does not work for File()
-    static SCRIPT_DIR = SOURCE_URI.scheme == "data" 
-		? new File("src/main/groovy/ua/net/nlp/tools")
-		: new File(SOURCE_URI).parent
-
+class StressTextCore {
     def textUtils = new TextUtils() 
-//    def textUtils = System.hasProperty("groovy.grape.enable") 
-//		? new TextUtils() 
-//		: Eval.me(new File("$SCRIPT_DIR/TextUtils.groovy").text + "\n new TextUtils()")
-
-    JLanguageTool langTool = new MultiThreadedJLanguageTool(new Ukrainian())
-
-    def options
+    TagTextCore tagText = new TagTextCore()
+    StressOptions options
+    
 	@Canonical
-	class StressInfo { String word; String tags; int base; int offset 
+	static class StressInfo {
+        String word
+        String tags
+        int base
+        int offset 
 		
 		String toString() { word ? String.format("%s %s", word, tags) : String.format("%d %d", base, offset) }
 	} 
@@ -59,8 +46,12 @@ class StressText {
 	}
 	
 	@Canonical
-	static class StressResult {
-		String tagged
+	static class StressResult extends ResultBase {
+        StressResult(String text, Stats stats) {
+            super(text)
+            this.stats = stats
+        }
+        
 		Stats stats
 	}
 	
@@ -68,13 +59,17 @@ class StressText {
 	
     StringWriter writer
 
-	StressText() {
+	StressTextCore() {
 		loadStressInfo()
 	}
 	
 
     void setOptions(options) {
         this.options = options
+
+        def tagOptions = new TagOptions()
+        tagOptions.disambiguate = options.disambiguate
+        tagText.setOptions(tagOptions)
     }
 
 
@@ -83,12 +78,12 @@ class StressText {
 		assert stresses
 
 		Stats stats = new Stats()
-		
-		List<AnalyzedSentence> analyzedSentences = langTool.analyzeText(text);
+        
+		List<TaggedSentence> result = tagText.tagTextCore(text, null)
 
 		def sb = new StringBuilder()
-		for (AnalyzedSentence analyzedSentence : analyzedSentences) {
-			AnalyzedTokenReadings[] tokens = analyzedSentence.getTokens()
+		for (TaggedSentence analyzedSentence : result) {
+			List<TTR> tokens = analyzedSentence.tokens
 
 			String sentenceLine = outputStressed(tokens, stats)
 			
@@ -99,19 +94,18 @@ class StressText {
 	}
 
 	@CompileStatic
-	boolean isMatch(StressInfo it, String theToken, AnalyzedToken anToken) {
-		stripAccent(it.word) == theToken.toLowerCase() //&& it.tags in anToken.getPOSTag()
+	boolean isMatch(StressInfo it, String theToken, TaggedToken anToken) {
+        String normalizedWord = anToken.tags.contains(':prop') ? theToken : theToken.toLowerCase() 
+		stripAccent(it.word) == normalizedWord //&& it.tags in anToken.tags
 	}
 	
 
 	@CompileStatic
-	private String getStressed(String theToken, List<AnalyzedToken> analyzedTokens, Stats stats) {
+	private String getStressed(String theToken, List<TaggedToken> analyzedTokens, Stats stats) {
 			
-		def words = analyzedTokens.collect { AnalyzedToken anToken -> 
-				if( anToken.getPOSTag() == null )
-					return	
+		def words = analyzedTokens.collect { TaggedToken anToken -> 
 			
-				String keyTag = getTagKey(anToken.getPOSTag())
+				String keyTag = getTagKey(anToken.tags)
 				def tokenLemma = anToken.lemma
 				println "key: $tokenLemma $keyTag"
 				int stressOffset = 0
@@ -156,9 +150,9 @@ class StressText {
 						}
 					}
 				}
-				else if( anToken.getPOSTag().startsWith("adv:comp") ) {
+				else if( anToken.tags.startsWith("adv:comp") ) {
 					// if we have докладніше adj:n:comp skip unknown adv:comp
-					if( analyzedTokens.any { it.getPOSTag() && it.getPOSTag().startsWith("adj:n:v_naz:comp") } )
+					if( analyzedTokens.any { it.tags && it.tags.startsWith("adj:n:v_naz:comp") } )
 						return
 				}
 
@@ -221,25 +215,29 @@ class StressText {
 	}
 	
 	
-	private String outputStressed(AnalyzedTokenReadings[] tokens, Stats stats) {
+	private String outputStressed(List<TTR> tokens, Stats stats) {
 //		println ":: " + tokens
 		
 		StringBuilder sb = new StringBuilder()
 		
-		tokens[1..-1].eachWithIndex { AnalyzedTokenReadings tokenReadings, int idx ->
-			String theToken = tokenReadings.token
-			
-			if( tokenReadings.token.length() < 2 
-					|| theToken.indexOf('\u0301') >= 1
+		tokens.eachWithIndex { TTR wordToken, int idx ->
+			String theToken = wordToken.tokens[0].value
+
+            if( ! sb.isEmpty()
+                    && (wordToken.tokens[0].whitespaceBefore == null || wordToken.tokens[0].whitespaceBefore == true) ) {
+                sb.append(' ')
+            }
+                
+			if( theToken.indexOf('\u0301') >= 1
 					|| getSyllCount(theToken) < 2 ) {
 				sb.append(theToken);
 			}
 			else {
-				List<AnalyzedToken> analyzedTokens = tokenReadings.getReadings()
-					.findAll { AnalyzedToken tr -> 
-						tr.getPOSTag() != null && ! tr.getPOSTag().endsWith("_END") && tr.getLemma() 
-					}
-					
+				List<TaggedToken> analyzedTokens = wordToken.tokens
+					.findAll { TaggedToken tr -> 
+						tr.lemma 
+                    }
+
 				if( analyzedTokens ) {
 					println "lemmas: $analyzedTokens"
 					def stressed = getStressed(theToken, analyzedTokens, stats)
@@ -269,8 +267,8 @@ class StressText {
 	@CompileStatic
 	static String getTagKey(String tag) {
 		tag.replace(':inanim', '') \
-			.replaceFirst(/(noun(:(un)?anim)?:[mnfps]|(noun(:(un)?anim)?).*&pron|verb(:perf|:imperf)+|adj(.*?:&adjp)?|[a-z]+).*/, '$1') \
-			.replaceFirst(/adj.*?:&adjp/, 'adj:&adjp')
+			.replaceFirst(/(noun(:(un)?anim)?:[mnfps]|(noun(:(un)?anim)?).*pron|verb(:perf|:imperf)+|adj(.*?:adjp)?|[a-z]+).*/, '$1') \
+			.replaceFirst(/adj.*?:adjp/, 'adj:adjp')
 	}
 	
 	@CompileStatic
@@ -301,7 +299,7 @@ class StressText {
 			if( it == '\u0301' ) {
 				idxs << syllIdx
 			}
-			else if( "аеєиіїоуюя".indexOf((int)it) >= 0 ) {
+			else if( "аеєиіїоуюяАЕЄИІЇОУЮЯ".indexOf((int)it) >= 0 ) {
 				syllIdx += 1
 			}
 		}
@@ -310,7 +308,7 @@ class StressText {
 	
 	@CompileStatic
 	static String restoreAccent(String lemma, String word, int offset) {
-		List<Integer> accents = getAccentSyllIdxs(lemma)
+        List<Integer> accents = getAccentSyllIdxs(lemma)
 		if( offset ) {
 			accents.eachWithIndex{ int a, int i -> accents[i]+=offset }
 		}
@@ -398,23 +396,21 @@ class StressText {
 		long tm2 = System.currentTimeMillis()
 		System.err.println("Loaded ${stresses.size()} stress forms, ${tm2-tm1}ms")
 	}
-	
 
-    static class StressOptions {
-        @Option(names = ["-i", "--input"], arity="1", description = ["Input file"])
-        String input
-        @Option(names = ["-o", "--output"], arity="1", description = ["Output file (default: <input file> - .txt + .stressed.txt)"])
-        String output
-        @Option(names = ["--singleThread"], description = ["Always use single thread (default is to use multithreading if > 2 cpus are found)"])
-        boolean singleThread
-        @Option(names= ["-q", "--quiet"], usageHelp= true, description= "Less messages.")
-        boolean quiet
-        @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
-        boolean helpRequested
-    }
-    
     @CompileStatic
-    static StressOptions parseOptions(String[] argv) {
+    static class StressOptions extends OptionsBase {
+//        @Parameters(index = "0", description = "Input files. Default: stdin", arity="0..")
+//        List<String> inputFiles
+        @Option(names = ["--singleThread"], description = "Always use single thread (default is to use multithreading if > 2 cpus are found)")
+        boolean singleThread
+        @Option(names = ["-g", "--disambiguate"], description = "Disambiguate first.", defaultValue = "true")
+        boolean disambiguate = true
+    
+    }
+    	
+
+    static parseOptions(String[] argv) {
+
         StressOptions options = new StressOptions()
         CommandLine commandLine = new CommandLine(options)
         try {
@@ -422,7 +418,7 @@ class StressText {
             if (options.helpRequested) {
                 commandLine.usage(System.out)
                 System.exit 0
-            }
+            } 
         } catch (ParameterException ex) {
             println ex.message
             commandLine.usage(System.out)
@@ -434,15 +430,18 @@ class StressText {
             def outfile = options.input == '-' ? '-' : options.input.replaceFirst(/\.txt$/, '') + ".stressed" + fileExt
             options.output = outfile
         }
+        options.outputFormat = OutputFormat.txt
 
-        options
+        return options
     }
 
+	
+	
+    static void main(String[] args) {
 
-    static void main(String[] argv) {
-        StressOptions options = parseOptions(argv)
+        def nlpUk = new StressTextCore()
 
-        def nlpUk = new StressText()
+        def options = parseOptions(args)
 
         nlpUk.setOptions(options)
 

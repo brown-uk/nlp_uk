@@ -7,8 +7,8 @@ import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 
 @CompileStatic
 @Canonical
-@PackageScope
-class TTR {
+//@PackageScope
+public class TTR {
     List<TaggedToken> tokens
 }
 
