@@ -287,8 +287,25 @@ class StressTextCore {
 		{ StressResult result ->
 			stats.add(result.stats) 
 		});
+    
+        if( options.unknownStats ) {
+            collectStats()
+        }
     }
 
+    @CompileStatic
+    void collectStats() {
+        File out = new File("stress.unknown.txt")
+        out.text = ''
+        
+        println "Unkowns: ${stats.unknown.size()}"
+        
+//        stats.unknown.findAll { k,v -> ! v }.each { k,v -> println ":: $k $v" }
+        
+        stats.unknown.toSorted { it -> -it.value }.each{ k, v -> 
+            out << "$k $v\n"
+        }
+    }
 	
 	@CompileStatic
 	static String getTagKey(String tag) {
@@ -387,9 +404,12 @@ class StressTextCore {
                         comment = parts[1].trim()
                     }
 				}
-
+                
+                String trimmed = line.trim()
+                if( ! trimmed )
+                    return
+                
 				// /1/
-				String trimmed = line.trim()
 				if( trimmed.indexOf(' ') <= 0 && trimmed.startsWith("/") ) {
 //					println "x: " + trimmed + " "  + trimmed.charAt(1) + " " + lastLemmaFull
 					int offset = trimmed[1] as int
@@ -431,7 +451,8 @@ class StressTextCore {
         boolean singleThread
         @Option(names = ["-g", "--disambiguate"], description = "Disambiguate first.", defaultValue = "true")
         boolean disambiguate = true
-    
+        @Option(names = ["-su", "--unknownStats"], description = "Collect statistics for words with no stressing info")
+        boolean unknownStats
     }
     	
 
