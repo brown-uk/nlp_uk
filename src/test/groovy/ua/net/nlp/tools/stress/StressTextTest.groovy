@@ -26,7 +26,7 @@ class StressTextTest {
 
 	@AfterEach
 	void after() {
-		println "Unknown: " + result.stats.unknownCnt
+		println "Unknown: " + result.stats.unknown.size()
 		println "Homonym: " + result.stats.homonymCnt
 	}
 
@@ -39,7 +39,7 @@ class StressTextTest {
 
 		result = stressText.stressText(text)
 		assertEquals expected.trim(), result.tagged
-		assertEquals 1, result.stats.unknownCnt
+		assertEquals 1, result.stats.unknown.size()
 		assertEquals 0, result.stats.homonymCnt
 	}
 
@@ -50,18 +50,18 @@ class StressTextTest {
 
 		result = stressText.stressText(text)
 		assertEquals expected.trim(), result.tagged
-		assertEquals 2, result.stats.unknownCnt
+		assertEquals [:], result.stats.unknown
 		assertEquals 0, result.stats.homonymCnt
 	}
 	
 	@Test
 	public void testStressProp() {
-		def expected = "Байден з Берлі́на до Ки́єва"
 		def text = "Байден з Берліна до Києва"
-
+        def expected = "Ба́йден з Берлі́на до Ки́єва"
+        
 		result = stressText.stressText(text)
 		assertEquals expected.trim(), result.tagged
-		assertEquals 1, result.stats.unknownCnt
+		assertEquals [:], result.stats.unknown
 		assertEquals 0, result.stats.homonymCnt
 	}
 
@@ -95,6 +95,12 @@ class StressTextTest {
         result = stressText.stressText(text)
         assertEquals expected.trim(), result.tagged
         
+        text = "досягне чогось подібного"
+        expected = "досягне́ чого́сь поді́бного"
+
+        result = stressText.stressText(text)
+        assertEquals expected.trim(), result.tagged
+
         text = "Олено, Олександрович, Естоніє"
         expected = "Оле́но, Олекса́ндрович, Есто́ніє"
 

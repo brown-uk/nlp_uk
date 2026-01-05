@@ -36,11 +36,11 @@ class StressTextCore {
 	Map<String, Map<String, List<StressInfo>>> stresses = new HashMap<>() //.withDefault { new HashMap<>().withDefault{ new ArrayList<>() } }
 
 	static class Stats { 
-		int unknownCnt 
+		Map<String, Integer> unknown = [:].withDefault{ 0 } 
 		int homonymCnt
 		
 		void add(Stats stats) { 
-			this.unknownCnt += stats.unknownCnt 
+			this.unknown += stats.unknown 
 			this.homonymCnt += stats.homonymCnt
 		}
 	}
@@ -79,10 +79,16 @@ class StressTextCore {
 
 		Stats stats = new Stats()
         
-		List<TaggedSentence> result = tagText.tagTextCore(text, null)
+		List<TaggedSentence> taggedSentences = tagText.tagTextCore(text, null)
 
-		def sb = new StringBuilder()
-		for (TaggedSentence analyzedSentence : result) {
+		def sb = new StringBuilder((int)(text.size() * 1.10))
+        int ii = 0;
+		for (TaggedSentence analyzedSentence : taggedSentences) {
+            if( ! sb.isEmpty() && ii < taggedSentences.size() - 1) {
+                sb.append(' ')
+            }
+            ++ii;
+            
 			List<TTR> tokens = analyzedSentence.tokens
 
 			String sentenceLine = outputStressed(tokens, stats)
@@ -94,112 +100,122 @@ class StressTextCore {
 	}
 
 	@CompileStatic
-	boolean isMatch(StressInfo it, String theToken, TaggedToken anToken) {
+	static boolean isMatch(StressInfo it, String theToken, TaggedToken anToken) {
         String normalizedWord = anToken.tags.contains(':prop') ? theToken : theToken.toLowerCase() 
-		stripAccent(it.word) == normalizedWord //&& it.tags in anToken.tags
+		if( stripAccent(it.word) != normalizedWord )
+            return false
+
+        // derivative forms
+        if( it.tags.startsWith(':') ) {
+            String normTag = anToken.tags
+            if( ! normTag.contains(it.tags) )
+                return false
+        }
+                        
+        return true
 	}
 	
 
 	@CompileStatic
 	private String getStressed(String theToken, List<TaggedToken> analyzedTokens, Stats stats) {
 			
-		def words = analyzedTokens.collect { TaggedToken anToken -> 
+        int idx = -1
+		def words = analyzedTokens.collect { TaggedToken anToken ->
+            ++idx
 			
-				String keyTag = getTagKey(anToken.tags)
-				def tokenLemma = anToken.lemma
-				println "key: $tokenLemma $keyTag"
-				int stressOffset = 0
+			String keyTag = getTagKey(anToken.tags)
+			def tokenLemma = anToken.lemma
+			println "key: $tokenLemma $keyTag"
+			int stressOffset = 0
 
-				if( tokenLemma =~ /^((що)?якнай|щонай).*(ий|е)$/ ) {
-					tokenLemma = tokenLemma.replaceFirst(/^((що)?якнай|щонай)/, '')
-					stressOffset += 2
-					if( tokenLemma.startsWith("щоякнай") ) {
-						stressOffset += 1
-					}
+			if( tokenLemma =~ /^((що)?якнай|щонай).*(ий|е)$/ ) {
+				tokenLemma = tokenLemma.replaceFirst(/^((що)?якнай|щонай)/, '')
+				stressOffset += 2
+				if( tokenLemma.startsWith("щоякнай") ) {
+					stressOffset += 1
 				}
-					
-				List<StressInfo> infos = []
+			}
 				
-				if( tokenLemma in stresses ) {
-					 infos = stresses[tokenLemma][keyTag] ?: infos
+			List<StressInfo> infos = []
+			
+            def inf = stresses[tokenLemma]
+			if( inf ) {
+				 infos = inf[keyTag] ?: infos
 
-					if( ! infos ) {
-						if( keyTag.startsWith("verb") ) {
-							String genericTag = keyTag.replaceFirst(/:(im)?perf/, ':imperf:perf')
-							if( genericTag in stresses[tokenLemma] ) {
-								infos = stresses[tokenLemma][genericTag]
-							}
+				if( ! infos ) {
+					if( keyTag.startsWith("verb") ) {
+						String genericTag = keyTag.replaceFirst(/:(im)?perf/, ':imperf:perf')
+						if( genericTag in stresses[tokenLemma] ) {
+							infos = stresses[tokenLemma][genericTag]
 						}
-						else if( keyTag.startsWith("noun") && keyTag.contains(":+") ) {
-							// TODO: other genders
-							String genericTag = keyTag.replaceFirst(/:[mfn]/, ':m:+n')
-							if( genericTag in stresses[tokenLemma] ) {
-								infos = stresses[tokenLemma][genericTag]
-							}
-						}
-
 					}
-
-					// get noun lemma from singular
-					if( keyTag.startsWith("noun") && keyTag.endsWith(":p") ) {
-						for(String s: [":m", ":f", ":n"]) {
-							String genderTag = keyTag.replaceFirst(/:p$/, s)
-							if( genderTag in stresses[tokenLemma] ) {
-								infos += stresses[tokenLemma][genderTag]
-							}
+					else if( keyTag.startsWith("noun") && keyTag.contains(":+") ) {
+						// TODO: other genders
+						String genericTag = keyTag.replaceFirst(/:[mfn]/, ':m:+n')
+						if( genericTag in stresses[tokenLemma] ) {
+							infos = stresses[tokenLemma][genericTag]
 						}
 					}
 				}
-				else if( anToken.tags.startsWith("adv:comp") ) {
-					// if we have докладніше adj:n:comp skip unknown adv:comp
-					if( analyzedTokens.any { it.tags && it.tags.startsWith("adj:n:v_naz:comp") } )
-						return
-				}
 
-				println "info: $infos"
-				if( infos ) {
-					// handle /1/ - simple offset
-					if( infos.size() == 2 && infos[1].offset ) {
-						return applyAccents(theToken, [infos[1].base + infos[1].offset])
-					}
-					
-					def foundForms = infos.findAll { StressInfo it -> 
-												isMatch(it, theToken, anToken) 
-											}
-											.collect{ 
-												def x = stripAccent(it.word) == theToken
-													? it.word
-													: restoreAccent(it.word, theToken, 0)  // casing is off - need to apply accent
-												x
-											}
-
-					if( foundForms.size() > 1 ) {
-//						System.err.println "Multiple forms found for $theToken"
-					}
-											
-					foundForms = foundForms.unique()
-
-					if( foundForms ) {
-						foundForms
-					}
-					else {
-						restoreAccent(infos[0].word, theToken, stressOffset)
-					}
-				}
-				else {
-					if( getSyllCount(tokenLemma) == 1 ) {
-						println "single syll lemma: $tokenLemma"
-						applyAccents(theToken, [1])
-					}
-					else {
-//						stats.unknownCnt++
-						theToken
+				// get noun lemma from singular
+				if( keyTag.startsWith("noun") && keyTag.endsWith(":p") ) {
+					for(String s: [":m", ":f", ":n"]) {
+						String genderTag = keyTag.replaceFirst(/:p$/, s)
+						if( genderTag in stresses[tokenLemma] ) {
+							infos += stresses[tokenLemma][genderTag]
+						}
 					}
 				}
 			}
-			.flatten()
-			.findAll{ it }
-			.unique()
+			else if( anToken.tags.startsWith("adv:comp") ) {
+				// if we have докладніше adj:n:comp skip unknown adv:comp
+				if( analyzedTokens.any { it.tags && it.tags.startsWith("adj:n:v_naz:comp") } )
+					return
+			}
+
+			println "info: $infos"
+			if( infos ) {
+				// handle /1/ - simple offset
+				if( infos.size() == 2 && infos[1].offset ) {
+					return applyAccents(theToken, [infos[1].base + infos[1].offset])
+				}
+				
+				def foundForms = infos
+                    .findAll { StressInfo it -> 
+						isMatch(it, theToken, anToken) 
+                            && contextMatch(it, theToken, anToken, idx, analyzedTokens)
+					}
+					.collect{ 
+						def x = stripAccent(it.word) == theToken
+							? it.word
+							: restoreAccent(it.word, theToken, 0)  // casing is off - need to apply accent
+						x
+					}
+
+				foundForms = foundForms.unique()
+
+				if( foundForms ) {
+					foundForms
+				}
+				else {
+					restoreAccent(infos[0].word, theToken, stressOffset)
+				}
+			}
+			else {
+				if( getSyllCount(tokenLemma) == 1 ) {
+					println "single syll lemma: $tokenLemma"
+					applyAccents(theToken, [1])
+				}
+				else {
+//						stats.unknownCnt++
+					theToken
+				}
+			}
+		}
+		.flatten()
+		.findAll{ it }
+		.unique()
 
 		println "words: $words"
 
@@ -208,13 +224,20 @@ class StressTextCore {
 		if( stressCount > 1 ) {
 			stats.homonymCnt++
 		}
-		if( stressCount < words.size() ) {
-			stats.unknownCnt++
+		if( words.join("/").indexOf('\u0301') == -1 ) {
+			stats.unknown[theToken] += 1
 		}
 		words.join("/")
 	}
 	
-	
+    static boolean contextMatch(StressInfo it, String theToken, TaggedToken anToken, int idx, List<TaggedToken> analyzedTokens) {
+        if( it.word == "чо́гось" && it.tags == ":v_rod" ) {
+            return idx >= 1 && analyzedTokens[idx-1].value.equalsIgnoreCase("до")
+        }
+        return true
+    }
+    
+    
 	private String outputStressed(List<TTR> tokens, Stats stats) {
 //		println ":: " + tokens
 		
@@ -244,7 +267,7 @@ class StressTextCore {
 					sb.append(stressed)
 				}
 				else {
-					stats.unknownCnt++
+					stats.unknown[theToken] += 1
 					sb.append(theToken)
 				}
 			}
@@ -266,6 +289,9 @@ class StressTextCore {
 	
 	@CompileStatic
 	static String getTagKey(String tag) {
+        if( tag.contains('lname') )
+            return 'lname'
+        
 		tag.replace(':inanim', '') \
 			.replaceFirst(/(noun(:(un)?anim)?:[mnfps]|(noun(:(un)?anim)?).*pron|verb(:perf|:imperf)+|adj(.*?:adjp)?|[a-z]+).*/, '$1') \
 			.replaceFirst(/adj.*?:adjp/, 'adj:adjp')
