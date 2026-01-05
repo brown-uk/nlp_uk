@@ -89,29 +89,33 @@ class StressTextTest {
         options.disambiguate = true
         stressText.setOptions(options)
         
-        def text = "Я пасу поки овець, нічим не гірше за будь-кого."
         def expected = "Я пасу́ по́ки ове́ць, нічи́м не гі́рше за будь-кого́."
 
-        result = stressText.stressText(text)
+        result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
         
-        text = "досягне чогось подібного"
-        expected = "досягне́ чого́сь поді́бного"
+        expected = "Її́ перекла́ли, досягне́ чого́сь поді́бного, 750 чоловікі́в"
 
-        result = stressText.stressText(text)
+        result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
 
-        text = "Олено, Олександрович, Естоніє"
         expected = "Оле́но, Олекса́ндрович, Есто́ніє"
 
-        result = stressText.stressText(text)
+        result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
 
         // logic with tags
-        text = "редактор цієї книжки Шекспіра"
-        expected = "реда́ктор ціє́ї кни́жки Шекспі́ра"
+        expected = "реда́ктор ціє́ї кни́жки Шекспі́ра, зму́шені"
 
-        result = stressText.stressText(text)
+        result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
+        
+       // TODO: ніко́ли/ні́коли
+       // згі́дно з його зако́ном
+       // прикла́д/при́клад
+    }
+    
+    private static String strip(String text) {
+        return text.replace("\u0301", "")
     }
 }

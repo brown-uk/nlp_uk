@@ -26,6 +26,7 @@ class StressTextCore {
 	static class StressInfo {
         String word
         String tags
+        String comment
         int base
         int offset 
 		
@@ -231,8 +232,9 @@ class StressTextCore {
 	}
 	
     static boolean contextMatch(StressInfo it, String theToken, TaggedToken anToken, int idx, List<TaggedToken> analyzedTokens) {
-        if( it.word == "чо́гось" && it.tags == ":v_rod" ) {
-            return idx >= 1 && analyzedTokens[idx-1].value.equalsIgnoreCase("до")
+        if( it.comment && it.comment.startsWith('<') ) {
+            def precond = it.comment.split('< ')[0]
+            return idx >= 1 && analyzedTokens[idx-1].value.equalsIgnoreCase(precond)
         }
         return true
     }
@@ -247,7 +249,8 @@ class StressTextCore {
 			String theToken = wordToken.tokens[0].value
 
             if( ! sb.isEmpty()
-                    && (wordToken.tokens[0].whitespaceBefore == null || wordToken.tokens[0].whitespaceBefore == true) ) {
+                    && (wordToken.tokens[0].whitespaceBefore == null || wordToken.tokens[0].whitespaceBefore == true)
+                    && (idx == 0 || ! (tokens[idx-1].tokens[0].value.matches(/[«(„]/))) ) {
                 sb.append(' ')
             }
                 
@@ -293,8 +296,7 @@ class StressTextCore {
             return 'lname'
         
 		tag.replace(':inanim', '') \
-			.replaceFirst(/(noun(:(un)?anim)?:[mnfps]|(noun(:(un)?anim)?).*pron|verb(:perf|:imperf)+|adj(.*?:adjp)?|[a-z]+).*/, '$1') \
-			.replaceFirst(/adj.*?:adjp/, 'adj:adjp')
+			.replaceFirst(/(noun(:(un)?anim)?:[mnfps]|(noun(:(un)?anim)?).*pron|verb(:perf|:imperf)+|adj|[a-z]+).*/, '$1')
 	}
 	
 	@CompileStatic
@@ -359,34 +361,32 @@ class StressTextCore {
 	def loadStressInfo() {
 		long tm1 = System.currentTimeMillis()
 		
-		// def base = System.getProperty("user.home") + "/work/ukr/spelling/dict_uk/data/sem"
-//		def base = "https://raw.githubusercontent.com/brown-uk/dict_uk/master/data/stress"
 		File base
 		def stressDir = new File("stress")
 		if( stressDir.isDirectory() ) {
 			base = stressDir
+            System.err.println("Loading stress info from $base")
 		}
 		else {
 			System.err.println("Loading stress info from resource")
-//			base = getClass().getResource("/stress")
 		}
 
-		System.err.println("Loading stress info from $base")
 		["all_stress", "all_stress_prop", "add"].each { file ->
-//			def lines = base.startsWith("http")
-//				? "$base/${cat}.csv".toURL().getText("UTF-8")
-			
 			def src = base ? new File(base, file+".txt") : getClass().getResourceAsStream("/stress/${file}.txt")
 			def lines = src.getText("UTF-8")
 
-//			println "File: ${file}.txt, lines: ${lines.size()}"
-			
 			def lastLemmaFull
 			def lastLemma
 			def lastLemmaTags
 			lines.eachLine { line ->
-				if( line.indexOf('#') >= 0 )
-					line = line.replaceFirst(/\s*#.*/, '')
+                String comment = null
+				if( line.indexOf('#') >= 0 ) {
+					def parts = line.split(/\s*#/, 2)
+                    line = parts[0]
+                    if( parts.length > 1 ) {
+                        comment = parts[1].trim()
+                    }
+				}
 
 				// /1/
 				String trimmed = line.trim()
@@ -394,7 +394,7 @@ class StressTextCore {
 //					println "x: " + trimmed + " "  + trimmed.charAt(1) + " " + lastLemmaFull
 					int offset = trimmed[1] as int
 					int[] lemmaAccents = getAccentSyllIdxs(lastLemmaFull) ?: [1]
-					stresses[lastLemma][lastLemmaTags] << new StressInfo(base: lemmaAccents[0], offset: offset)
+					stresses[lastLemma][lastLemmaTags] << new StressInfo(base: lemmaAccents[0], offset: offset, comment: comment)
 					return
 				}
 					
@@ -415,7 +415,7 @@ class StressTextCore {
 				}
 
 //				if( lastLemma == "аналізувати" ) println "$lastLemmaTags / $word + $tags" 
-				stresses[lastLemma][lastLemmaTags] << new StressInfo(word, tags)
+				stresses[lastLemma][lastLemmaTags] << new StressInfo(word: word, tags: tags, comment: comment)
 			}
 		}
 
