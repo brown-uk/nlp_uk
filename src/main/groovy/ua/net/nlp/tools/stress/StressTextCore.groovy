@@ -36,12 +36,18 @@ class StressTextCore {
 	// plain lemma -> lemma key tag -> list of forms
 	Map<String, Map<String, List<StressInfo>>> stresses = new HashMap<>() //.withDefault { new HashMap<>().withDefault{ new ArrayList<>() } }
 
+	static class StatsCnt { 
+	  int cnt = 0
+	  Set<String> tags = [] as Set
+	}
+
+
 	static class Stats { 
-		Map<String, Integer> unknown = [:].withDefault{ 0 } 
+		Map<String, StatsCnt> unknown = [:].withDefault{ new StatsCnt() } 
 		int homonymCnt
 		
 		void add(Stats stats) { 
-			this.unknown += stats.unknown 
+			stats.unknown.each { k,v -> this.unknown[k].cnt += v.cnt; this.unknown[k].tags += v.tags }
 			this.homonymCnt += stats.homonymCnt
 		}
 	}
@@ -159,9 +165,7 @@ class StressTextCore {
 					else if( keyTag.startsWith("noun") && keyTag.contains(":+") ) {
 						// TODO: other genders
 						String genericTag = keyTag.replaceFirst(/:[mfn]/, ':m:+n')
-						if( genericTag in stresses[tokenLemma] ) {
-							infos = stresses[tokenLemma][genericTag]
-						}
+                        infos = stresses[tokenLemma][genericTag]
 					}
 				}
 
@@ -169,8 +173,9 @@ class StressTextCore {
 				if( keyTag.startsWith("noun") && keyTag.endsWith(":p") ) {
 					for(String s: [":m", ":f", ":n"]) {
 						String genderTag = keyTag.replaceFirst(/:p$/, s)
-						if( genderTag in stresses[tokenLemma] ) {
-							infos += stresses[tokenLemma][genderTag]
+                        def info_ = stresses[tokenLemma][genderTag]
+						if( info_ ) {
+							infos += info_
 						}
 					}
 				}
@@ -232,7 +237,8 @@ class StressTextCore {
 			stats.homonymCnt++
 		}
 		if( words.join("/").indexOf('\u0301') == -1 ) {
-			stats.unknown[theToken] += 1
+			stats.unknown[theToken].cnt += 1
+			stats.unknown[theToken].tags += analyzedTokens.collect { it.tags }
 		}
 		words.join("/")
 	}
@@ -299,7 +305,7 @@ class StressTextCore {
 					sb.append(stressed)
 				}
 				else {
-					stats.unknown[theToken] += 1
+					stats.unknown[theToken].cnt += 1
 					sb.append(theToken)
 				}
 			}
@@ -331,8 +337,8 @@ class StressTextCore {
         
 //        stats.unknown.findAll { k,v -> ! v }.each { k,v -> println ":: $k $v" }
         
-        stats.unknown.toSorted { it -> -it.value * 1000 + it.key.charAt(0) as int }.each{ k, v -> 
-            out << "$k $v\n"
+        stats.unknown.toSorted { it -> -it.value.cnt * 1000 + it.key.charAt(0) as int }.each{ k, v -> 
+            out << "$k ${v.cnt}\t\t\t${v.tags}\n"
         }
     }
 	
