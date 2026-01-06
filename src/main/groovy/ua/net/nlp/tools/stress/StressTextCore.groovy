@@ -129,10 +129,10 @@ class StressTextCore {
 			println "key: $tokenLemma $keyTag"
 			int stressOffset = 0
 
-			if( tokenLemma =~ /^((що)?якнай|щонай).*(ий|е)$/ ) {
-				tokenLemma = tokenLemma.replaceFirst(/^((що)?якнай|щонай)/, '')
+			if( tokenLemma =~ /(?iu)^((що)?якнай|щонай).*(ий|е)$/ ) {
+				tokenLemma = tokenLemma.replaceFirst(/(?iu)^((що)?якнай|щонай)/, '')
 				stressOffset += 2
-				if( tokenLemma.startsWith("щоякнай") ) {
+				if( tokenLemma.toLowerCase().startsWith("щоякнай") ) {
 					stressOffset += 1
 				}
 			}
@@ -140,8 +140,14 @@ class StressTextCore {
 			List<StressInfo> infos = []
 			
             def inf = stresses[tokenLemma]
+            
+            // try alt
+            if( ! inf ) {
+                inf = tryAlts(anToken)
+            }
+            
 			if( inf ) {
-				 infos = inf[keyTag] ?: infos
+				infos = inf[keyTag] ?: infos
 
 				if( ! infos ) {
 					if( keyTag.startsWith("verb") ) {
@@ -230,6 +236,31 @@ class StressTextCore {
 		}
 		words.join("/")
 	}
+    
+    
+    @CompileStatic
+    Map<String, List<StressInfo>> tryAlts(TaggedToken anToken) {
+        def tokenLemma = anToken.lemma
+        
+        if( anToken.tags =~ /:alt|:up19/ ) {
+            if( tokenLemma.toLowerCase().contains('ґ') ) {
+                def normalized = tokenLemma.replace('Ґ', 'Г').replace('ґ', 'г')
+                return stresses[normalized]
+            }
+            else if( tokenLemma.toLowerCase().contains('проєкт') ) {
+                def normalized = tokenLemma.replace('роєкт', 'роект')
+                return stresses[normalized]
+            }
+        }
+        
+        if( anToken.tags.startsWith('verb:rev') && tokenLemma.endsWith('ся') ) {
+            def normalized = tokenLemma[0..-3]
+            return stresses[normalized]
+        }
+        
+        return null
+    }
+    
 	
     static boolean contextMatch(StressInfo it, String theToken, TaggedToken anToken, int idx, List<TaggedToken> analyzedTokens) {
         if( it.comment && it.comment.startsWith('<') ) {
@@ -241,8 +272,6 @@ class StressTextCore {
     
     
 	private String outputStressed(List<TTR> tokens, Stats stats) {
-//		println ":: " + tokens
-		
 		StringBuilder sb = new StringBuilder()
 		
 		tokens.eachWithIndex { TTR wordToken, int idx ->
@@ -302,7 +331,7 @@ class StressTextCore {
         
 //        stats.unknown.findAll { k,v -> ! v }.each { k,v -> println ":: $k $v" }
         
-        stats.unknown.toSorted { it -> -it.value }.each{ k, v -> 
+        stats.unknown.toSorted { it -> -it.value * 1000 + it.key.charAt(0) as int }.each{ k, v -> 
             out << "$k $v\n"
         }
     }
@@ -313,6 +342,7 @@ class StressTextCore {
             return 'lname'
         
 		tag.replace(':inanim', '') \
+            .replace(':rev', "")
 			.replaceFirst(/(noun(:(un)?anim)?:[mnfps]|(noun(:(un)?anim)?).*pron|verb(:perf|:imperf)+|adj|[a-z]+).*/, '$1')
 	}
 	

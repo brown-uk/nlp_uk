@@ -94,18 +94,18 @@ class StressTextTest {
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
         
-        expected = "Її́ перекла́ли, досягне́ чого́сь поді́бного, 750 чоловікі́в"
+        expected = "Її́ перекла́ли, досягне́ чого́сь поді́бного, 750 чоловікі́в; необе́ртні собі́ чо́рні ді́ри анігілюва́лися"
 
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
 
-        expected = "Оле́но, Олекса́ндрович, Есто́ніє"
+        expected = "Оле́но, Олекса́ндрович, Есто́ніє, Ґаліле́я"
 
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
 
         // logic with tags
-        expected = "реда́ктор ціє́ї кни́жки Шекспі́ра, зму́шені"
+        expected = "реда́ктор ціє́ї кни́жки Шекспі́ра, зму́шені у ви́ді моде́лей дозво́лений проє́кт"
 
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
