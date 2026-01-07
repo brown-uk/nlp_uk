@@ -15,5 +15,5 @@ tmp/
 **/semtags/*.csv
 **/*freqs*.txt
 stats_dbg*
-stress
+data/*
 settings.gradle

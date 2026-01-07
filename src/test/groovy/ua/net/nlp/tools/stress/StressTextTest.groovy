@@ -70,7 +70,7 @@ class StressTextTest {
 
 	@Test
 	public void testStress2() {
-		def expected = "Готу́є ре́чення мене́/ме́не біржовика́ архівника"
+		def expected = "Готу́є ре́чення мене́ біржовика́ архівника"
 		def text = "Готує речення мене біржовика архівника"
 
 		result = stressText.stressText(text)
@@ -121,6 +121,10 @@ class StressTextTest {
        // TODO: ніко́ли/ні́коли
        // згі́дно з його зако́ном
        // прикла́д/при́клад
+        // виміря́вши/ви́мірявши - perf/imperf
+        // спасти́/спа́сти - спасти на думку - xp2
+        // собаку
+        // самим
     }
     
     private static String strip(String text) {

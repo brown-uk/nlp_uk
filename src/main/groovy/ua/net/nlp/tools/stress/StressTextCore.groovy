@@ -23,36 +23,11 @@ class StressTextCore {
     def textUtils = new TextUtils() 
     TagTextCore tagText = new TagTextCore()
     StressOptions options
-    
-	@Canonical
-	static class StressInfo {
-        String word
-        String tags
-        String comment
-        int base
-        int offset 
-		
-		String toString() { word ? String.format("%s %s", word, tags) : String.format("%d %d", base, offset) }
-	} 
-	
 	// plain lemma -> lemma key tag -> list of forms
-	Map<String, Map<String, List<StressInfo>>> stresses = new HashMap<>() //.withDefault { new HashMap<>().withDefault{ new ArrayList<>() } }
+	Map<String, Map<String, List<StressInfo>>> stresses
+    Stats stats = new Stats()
+    StringWriter writer
 
-	static class StatsCnt { 
-	  int cnt = 0
-	  Set<String> tags = [] as Set
-	}
-
-
-	static class Stats { 
-		Map<String, StatsCnt> unknown = [:].withDefault{ new StatsCnt() } 
-		Map<String, Integer> homonyms = [:].withDefault { 0 }
-		
-		void add(Stats stats) { 
-			stats.unknown.each { k,v -> this.unknown[k].cnt += v.cnt; this.unknown[k].tags += v.tags }
-			stats.homonyms.each { k,v -> this.homonyms[k] += v }
-		}
-	}
 	
 	@Canonical
 	static class StressResult extends ResultBase {
@@ -61,15 +36,11 @@ class StressTextCore {
             this.stats = stats
         }
         
-		Stats stats
+		public Stats stats
 	}
 	
-	Stats stats = new Stats()
-	
-    StringWriter writer
-
 	StressTextCore() {
-		loadStressInfo()
+		stresses = StressInfo.loadStressInfo()
 	}
 	
 
@@ -115,7 +86,7 @@ class StressTextCore {
 	@CompileStatic
 	static boolean isMatch(StressInfo it, String theToken, TaggedToken anToken) {
         String normalizedWord = anToken.tags.contains(':prop') ? theToken : theToken.toLowerCase() 
-		if( stripAccent(it.word) != normalizedWord )
+		if( Util.stripAccent(it.word) != normalizedWord )
             return false
 
         // derivative forms
@@ -136,7 +107,7 @@ class StressTextCore {
 		def words = analyzedTokens.collect { TaggedToken anToken ->
             ++idx
 			
-			String keyTag = getTagKey(anToken.tags)
+			String keyTag = Util.getTagKey(anToken.tags)
 			def tokenLemma = anToken.lemma
 			println "key: $tokenLemma $keyTag"
 			int stressOffset = 0
@@ -228,18 +199,18 @@ class StressTextCore {
 			if( infos ) {
 				// handle /1/ - simple offset
 				if( infos.size() == 2 && infos[1].offset ) {
-					return applyAccents(theToken, [infos[1].base + infos[1].offset])
+					return Util.applyAccents(theToken, [infos[1].base + infos[1].offset])
 				}
 				
 				def foundForms = infos
                     .findAll { StressInfo it -> 
 						isMatch(it, theToken, anToken) 
-                            && contextMatch(it, theToken, anToken, idx, analyzedTokens)
+                            && isContextMatch(it, theToken, anToken, idx, analyzedTokens)
 					}
 					.collect{ 
-						def x = stripAccent(it.word) == theToken
+						def x = Util.stripAccent(it.word) == theToken
 							? it.word
-							: restoreAccent(it.word, theToken, 0)  // casing is off - need to apply accent
+							: Util.restoreAccent(it.word, theToken, 0)  // casing is off - need to apply accent
 						x
 					}
 
@@ -249,13 +220,13 @@ class StressTextCore {
 					foundForms
 				}
 				else {
-					restoreAccent(infos[0].word, theToken, stressOffset)
+					Util.restoreAccent(infos[0].word, theToken, stressOffset)
 				}
 			}
 			else {
-				if( getSyllCount(tokenLemma) == 1 ) {
+				if( Util.getSyllCount(tokenLemma) == 1 ) {
 					println "single syll lemma: $tokenLemma"
-					applyAccents(theToken, [1])
+					Util.applyAccents(theToken, [1])
 				}
 				else {
 //						stats.unknownCnt++
@@ -274,24 +245,22 @@ class StressTextCore {
         String joined = words.join("/")
         
 		if( stressCount > 1 ) {
-			stats.homonyms[joined] += 1
+			stats.addHomonyms(joined, analyzedTokens.collect { it.tags })
 		}
         
         return joined
 	}
     
 	
-    @CompileStatic
-    static boolean contextMatch(StressInfo it, String theToken, TaggedToken anToken, int idx, List<TaggedToken> analyzedTokens) {
+    static boolean isContextMatch(StressInfo it, String theToken, TaggedToken anToken, int idx, List<TaggedToken> analyzedTokens) {
         if( it.comment && it.comment.startsWith('<') ) {
             def precond = it.comment.split('< ')[0]
-            return idx >= 1 && analyzedTokens[idx-1].value.equalsIgnoreCase(precond)
+            return idx >= 1 && analyzedTokens[idx-1].tags.startsWith(precond)
         }
         return true
     }
     
     
-    @CompileStatic
 	private String outputStressed(List<TTR> sentenceTokens, Stats stats) {
 		StringBuilder sb = new StringBuilder()
 		
@@ -305,7 +274,7 @@ class StressTextCore {
             }
                 
 			if( theToken.indexOf('\u0301') >= 1
-					|| getSyllCount(theToken) < 2 ) {
+					|| Util.getSyllCount(theToken) < 2 ) {
 				sb.append(theToken);
 			}
 			else {
@@ -344,14 +313,13 @@ class StressTextCore {
                     }
                     
                     if( stressed.indexOf('\u0301') == -1 ) {
-                        stats.unknown[theToken].cnt += 1
-                        stats.unknown[theToken].tags += analyzedTokens.collect { it.tags }
+                        stats.addUnknown(theToken, analyzedTokens.collect { it.tags })
                     }
             
 					sb.append(stressed)
 				}
 				else {
-					stats.unknown[theToken].cnt += 1
+                    stats.addUnknown(theToken, null)
 					sb.append(theToken)
 				}
 			}
@@ -371,168 +339,11 @@ class StressTextCore {
 		});
     
         if( options.unknownStats ) {
-            collectStats()
+            def filename = options.input ? options.input.replaceFirst(/\.txt$/, '')  : "stdout"
+            stats.collectStats(filename)
         }
     }
 
-    void collectStats() {
-        File out = new File("stress.unknown.txt")
-        out.text = ''
-        
-        println "Unkowns: ${stats.unknown.size()}"
-        
-//        stats.unknown.findAll { k,v -> ! v }.each { k,v -> println ":: $k $v" }
-        
-        stats.unknown.toSorted { it -> -it.value.cnt * 1000 + it.key.charAt(0) as int }.each{ k, v -> 
-            out << "$k ${v.cnt}\t\t\t${v.tags}\n"
-        }
-
-        println "Omographs: ${stats.homonyms.size()}"
-        
-        out << "\n"
-        stats.homonyms.toSorted { it -> -it.value * 1000 + it.key.charAt(0) as int }.each{ k, v ->
-            out << "$k $v\n"
-        }
-    }
-	
-	@CompileStatic
-	static String getTagKey(String tag) {
-        if( tag.contains('lname') )
-            return 'lname'
-        
-		tag.replace(':inanim', '') \
-            .replace(':rev', "")
-			.replaceFirst(/(noun(:(un)?anim)?:[mnfps]|(noun(:(un)?anim)?).*pron|verb(:perf|:imperf)+|adj|[a-z]+).*/, '$1')
-	}
-	
-	@CompileStatic
-	static int getSyllCount(String word) {
-		int cnt = 0
-		word.getChars().each { char ch ->
-			if( isWovel(ch) )
-				cnt += 1
-		}
-		cnt
-	}
-	
-	@CompileStatic
-	static boolean isWovel(char ch) {
-		"аеєиіїоуюяАЕЄИІЇОУЮЯ".indexOf((int)ch) >= 0
-	}
-	
-	@CompileStatic
-	static String stripAccent(String word) {
-		word.replace("\u0301", "")
-	}
-	
-	@CompileStatic
-	static List<Integer> getAccentSyllIdxs(String word) {
-		int syllIdx = 0
-		List<Integer> idxs = []
-		word.getChars().each { char it ->
-			if( it == '\u0301' ) {
-				idxs << syllIdx
-			}
-			else if( "аеєиіїоуюяАЕЄИІЇОУЮЯ".indexOf((int)it) >= 0 ) {
-				syllIdx += 1
-			}
-		}
-		idxs
-	}
-	
-	@CompileStatic
-	static String restoreAccent(String lemma, String word, int offset) {
-        List<Integer> accents = getAccentSyllIdxs(lemma)
-		if( offset ) {
-			accents.eachWithIndex{ int a, int i -> accents[i]+=offset }
-		}
-		println "restore for: $lemma: $accents"
-		applyAccents(word, accents)
-	}
-
-	@CompileStatic
-	static String applyAccents(String word, List<Integer> accents) {
-		def sb = new StringBuilder()
-		int syll = 0
-		word.getChars().eachWithIndex { char ch, int idx ->
-			sb.append(ch)
-			if( isWovel(ch) ) {
-				syll += 1
-				if( syll in accents ) sb.append('\u0301')
-			}
-		}
-		sb.toString()
-	}
-
-    @CompileDynamic
-	def loadStressInfo() {
-		long tm1 = System.currentTimeMillis()
-		
-		File base
-		def stressDir = new File("stress")
-		if( stressDir.isDirectory() ) {
-			base = stressDir
-            System.err.println("Loading stress info from $base")
-		}
-		else {
-			System.err.println("Loading stress info from resource")
-		}
-
-		["all_stress", "all_stress_prop", "add"].each { file ->
-			def src = base ? new File(base, file+".txt") : getClass().getResourceAsStream("/stress/${file}.txt")
-			String lines = src.getText("UTF-8")
-
-			String lastLemmaFull
-			String lastLemma
-			String lastLemmaTags
-            
-			lines.eachLine { line ->
-                String comment = null
-				if( line.indexOf('#') >= 0 ) {
-					def parts = line.split(/\s*#/, 2)
-                    line = parts[0]
-                    if( parts.length > 1 ) {
-                        comment = parts[1].trim()
-                    }
-				}
-                
-                String trimmed = line.trim()
-                if( ! trimmed )
-                    return
-                
-				// /1/
-				if( trimmed.indexOf(' ') <= 0 && trimmed.startsWith("/") ) {
-//					println "x: " + trimmed + " "  + trimmed.charAt(1) + " " + lastLemmaFull
-					int offset = trimmed[1] as int
-					List<Integer> lemmaAccents = getAccentSyllIdxs(lastLemmaFull) ?: [1]
-					stresses[lastLemma][lastLemmaTags] << new StressInfo(base: lemmaAccents[0], offset: offset, comment: comment)
-					return
-				}
-					
-				assert trimmed.indexOf(' ') > 0, "Failed at $line" 
-					
-				def (word, tags) = trimmed.split(' ')
-				if( ! line.startsWith(' ') ) {
-					lastLemmaFull = word
-					lastLemma = stripAccent(word)
-					lastLemmaTags = getTagKey(tags)
-				}
-				
-				if( ! (lastLemma in stresses) ) {
-					stresses.put(lastLemma, new HashMap<>())
-				}
-				if( ! (lastLemmaTags in stresses[lastLemma]) ) {
-					stresses[lastLemma].put(lastLemmaTags, [])
-				}
-
-//				if( lastLemma == "аналізувати" ) println "$lastLemmaTags / $word + $tags" 
-				stresses[lastLemma][lastLemmaTags] << new StressInfo(word: word, tags: tags, comment: comment)
-			}
-		}
-
-		long tm2 = System.currentTimeMillis()
-		System.err.println("Loaded ${stresses.size()} stress forms, ${tm2-tm1}ms")
-	}
 
     @CompileStatic
     static class StressOptions extends OptionsBase {
