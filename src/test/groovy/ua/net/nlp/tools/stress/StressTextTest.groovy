@@ -8,12 +8,15 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+import groovy.transform.CompileStatic
 import ua.net.nlp.tools.stress.StressTextCore
+import ua.net.nlp.tools.stress.StressTextCore.StressOptions
 import ua.net.nlp.tools.stress.StressTextCore.StressResult
 
 
+@CompileStatic
 class StressTextTest {
-	def options = [ : ]
+	StressOptions options = new StressOptions()
 
 	static StressTextCore stressText = new StressTextCore()
 	StressResult result
@@ -27,7 +30,7 @@ class StressTextTest {
 	@AfterEach
 	void after() {
 		println "Unknown: " + result.stats.unknown.size()
-		println "Homonym: " + result.stats.homonymCnt
+		println "Homonym: " + result.stats.homonyms.size()
 	}
 
 
@@ -40,18 +43,18 @@ class StressTextTest {
 		result = stressText.stressText(text)
 		assertEquals expected.trim(), result.tagged
 		assertEquals 1, result.stats.unknown.size()
-		assertEquals 0, result.stats.homonymCnt
+		assertEquals 0, result.stats.homonyms.size()
 	}
 
 	@Test
 	public void testStressDualTags() {
-		def expected = "аналізу́є/аналізує абонува́ти ага́кало/агакало докла́дніше"
+		def expected = "аналізу́є/аналізує абонува́ти ага́кало/агакало докладніше/докла́дніше"
 		def text = "аналізує абонувати агакало докладніше"
 
 		result = stressText.stressText(text)
 		assertEquals expected.trim(), result.tagged
 		assertEquals [:], result.stats.unknown
-		assertEquals 0, result.stats.homonymCnt
+		assertEquals 0, result.stats.homonyms.size()
 	}
 	
 	@Test
@@ -62,7 +65,7 @@ class StressTextTest {
 		result = stressText.stressText(text)
 		assertEquals expected.trim(), result.tagged
 		assertEquals [:], result.stats.unknown
-		assertEquals 0, result.stats.homonymCnt
+		assertEquals 0, result.stats.homonyms.size()
 	}
 
 	@Test
@@ -94,7 +97,7 @@ class StressTextTest {
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
         
-        expected = "Її́ перекла́ли, досягне́ чого́сь поді́бного, 750 чоловікі́в; необе́ртні собі́ чо́рні ді́ри анігілюва́лися"
+        expected = "Її́ перекла́ли, досягне́ чого́сь поді́бного, 750 чоловікі́в необе́ртні собі́ чо́рні ді́ри анігілюва́лися"
 
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
@@ -105,11 +108,16 @@ class StressTextTest {
         assertEquals expected.trim(), result.tagged
 
         // logic with tags
-        expected = "реда́ктор ціє́ї кни́жки Шекспі́ра, зму́шені у ви́ді моде́лей дозво́лений проє́кт"
+        expected = "найекстрема́льніший елемента́рніший реда́ктор ціє́ї кни́жки Шекспі́ра, зму́шені у ви́ді моде́лей дозво́лений проє́кт авторі́в"
 
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
+
+        expected = "Про́стору-ча́су вче́них-я́дерників"
         
+        result = stressText.stressText(strip(expected))
+        assertEquals expected.trim(), result.tagged
+
        // TODO: ніко́ли/ні́коли
        // згі́дно з його зако́ном
        // прикла́д/при́клад

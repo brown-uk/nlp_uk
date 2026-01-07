@@ -1,6 +1,7 @@
 package ua.net.nlp.tools.stress
 
 import groovy.transform.Canonical
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import picocli.CommandLine
 import picocli.CommandLine.Option
@@ -17,6 +18,7 @@ import ua.net.nlp.tools.tag.TagTextCore.TaggedSentence
 import ua.net.nlp.tools.tag.TagTextCore.TaggedToken
 
 
+@CompileStatic
 class StressTextCore {
     def textUtils = new TextUtils() 
     TagTextCore tagText = new TagTextCore()
@@ -44,11 +46,11 @@ class StressTextCore {
 
 	static class Stats { 
 		Map<String, StatsCnt> unknown = [:].withDefault{ new StatsCnt() } 
-		int homonymCnt
+		Map<String, Integer> homonyms = [:].withDefault { 0 }
 		
 		void add(Stats stats) { 
 			stats.unknown.each { k,v -> this.unknown[k].cnt += v.cnt; this.unknown[k].tags += v.tags }
-			this.homonymCnt += stats.homonymCnt
+			stats.homonyms.each { k,v -> this.homonyms[k] += v }
 		}
 	}
 	
@@ -71,11 +73,12 @@ class StressTextCore {
 	}
 	
 
-    void setOptions(options) {
+    void setOptions(StressOptions options) {
         this.options = options
 
         def tagOptions = new TagOptions()
         tagOptions.disambiguate = options.disambiguate
+        tagOptions.tagUnknown = false
         tagText.setOptions(tagOptions)
     }
 
@@ -97,6 +100,9 @@ class StressTextCore {
             ++ii;
             
 			List<TTR> tokens = analyzedSentence.tokens
+            if( ! tokens ) {
+                continue
+            }
 
 			String sentenceLine = outputStressed(tokens, stats)
 			
@@ -142,30 +148,62 @@ class StressTextCore {
 					stressOffset += 1
 				}
 			}
-				
-			List<StressInfo> infos = []
 			
-            def inf = stresses[tokenLemma]
+            def infByLemma = stresses[tokenLemma]
+            def normalizedLemma = tokenLemma
             
             // try alt
-            if( ! inf ) {
-                inf = tryAlts(anToken)
+            if( ! infByLemma ) {
+
+                if( keyTag.startsWith("ad") && anToken.tags.contains(':comp') ) {
+                    def normalizedLemma_ = normalizedLemma.replaceFirst(/^най/, '')
+                    if( stresses[normalizedLemma_] ) {
+                        normalizedLemma = normalizedLemma_
+                        infByLemma = stresses[normalizedLemma]
+                        stressOffset += 1
+                    }
+                    else {
+                        normalizedLemma_ = normalizedLemma.replaceFirst(/іш(ий)/, '$1')
+                        if( stresses[normalizedLemma_] ) {
+                            normalizedLemma = normalizedLemma_
+                            infByLemma = stresses[normalizedLemma]
+                            if( normalizedLemma.startsWith('най') ) {
+                                stressOffset += 1
+                            }
+                        }
+                    }
+                }
+
+                if( anToken.tags =~ /:alt|:up19/ ) {
+                    if( tokenLemma.toLowerCase().contains('ґ') ) {
+                        normalizedLemma = tokenLemma.replace('Ґ', 'Г').replace('ґ', 'г')
+                        infByLemma = stresses[normalizedLemma]
+                    }
+                    else if( tokenLemma.toLowerCase().contains('проєкт') ) {
+                        normalizedLemma = tokenLemma.replace('роєкт', 'роект')
+                        infByLemma = stresses[normalizedLemma]
+                    }
+                }
+
+                if( anToken.tags.startsWith('verb:rev') && tokenLemma.endsWith('ся') ) {
+                    normalizedLemma = tokenLemma[0..-3]
+                    infByLemma = stresses[normalizedLemma]
+                }
             }
             
-			if( inf ) {
-				infos = inf[keyTag] ?: infos
+            List<StressInfo> infos = []
+			if( infByLemma ) {
+				infos = infByLemma[keyTag] ?: infos
 
 				if( ! infos ) {
 					if( keyTag.startsWith("verb") ) {
 						String genericTag = keyTag.replaceFirst(/:(im)?perf/, ':imperf:perf')
-						if( genericTag in stresses[tokenLemma] ) {
-							infos = stresses[tokenLemma][genericTag]
-						}
+                        infos = stresses[normalizedLemma][genericTag]
 					}
 					else if( keyTag.startsWith("noun") && keyTag.contains(":+") ) {
 						// TODO: other genders
 						String genericTag = keyTag.replaceFirst(/:[mfn]/, ':m:+n')
-                        infos = stresses[tokenLemma][genericTag]
+                        infos = stresses[normalizedLemma][genericTag]
 					}
 				}
 
@@ -173,18 +211,18 @@ class StressTextCore {
 				if( keyTag.startsWith("noun") && keyTag.endsWith(":p") ) {
 					for(String s: [":m", ":f", ":n"]) {
 						String genderTag = keyTag.replaceFirst(/:p$/, s)
-                        def info_ = stresses[tokenLemma][genderTag]
+                        def info_ = stresses[normalizedLemma][genderTag]
 						if( info_ ) {
 							infos += info_
 						}
 					}
 				}
 			}
-			else if( anToken.tags.startsWith("adv:comp") ) {
-				// if we have докладніше adj:n:comp skip unknown adv:comp
-				if( analyzedTokens.any { it.tags && it.tags.startsWith("adj:n:v_naz:comp") } )
-					return
-			}
+//			else if( anToken.tags.startsWith("adv:comp") ) {
+//				// if we have докладніше adj:n:comp skip unknown adv:comp
+//				if( analyzedTokens.any { it.tags && it.tags.startsWith("adj:n:v_naz:comp") } )
+//					return
+//			}
 
 			println "info: $infos"
 			if( infos ) {
@@ -229,45 +267,21 @@ class StressTextCore {
 		.findAll{ it }
 		.unique()
 
-		println "words: $words"
+		println "stressed: $words"
 
 		int stressCount = words.count { ((String)it).indexOf('\u0301') >= 0 } as int
-		
+
+        String joined = words.join("/")
+        
 		if( stressCount > 1 ) {
-			stats.homonymCnt++
+			stats.homonyms[joined] += 1
 		}
-		if( words.join("/").indexOf('\u0301') == -1 ) {
-			stats.unknown[theToken].cnt += 1
-			stats.unknown[theToken].tags += analyzedTokens.collect { it.tags }
-		}
-		words.join("/")
+        
+        return joined
 	}
     
-    
-    @CompileStatic
-    Map<String, List<StressInfo>> tryAlts(TaggedToken anToken) {
-        def tokenLemma = anToken.lemma
-        
-        if( anToken.tags =~ /:alt|:up19/ ) {
-            if( tokenLemma.toLowerCase().contains('ґ') ) {
-                def normalized = tokenLemma.replace('Ґ', 'Г').replace('ґ', 'г')
-                return stresses[normalized]
-            }
-            else if( tokenLemma.toLowerCase().contains('проєкт') ) {
-                def normalized = tokenLemma.replace('роєкт', 'роект')
-                return stresses[normalized]
-            }
-        }
-        
-        if( anToken.tags.startsWith('verb:rev') && tokenLemma.endsWith('ся') ) {
-            def normalized = tokenLemma[0..-3]
-            return stresses[normalized]
-        }
-        
-        return null
-    }
-    
 	
+    @CompileStatic
     static boolean contextMatch(StressInfo it, String theToken, TaggedToken anToken, int idx, List<TaggedToken> analyzedTokens) {
         if( it.comment && it.comment.startsWith('<') ) {
             def precond = it.comment.split('< ')[0]
@@ -277,15 +291,16 @@ class StressTextCore {
     }
     
     
-	private String outputStressed(List<TTR> tokens, Stats stats) {
+    @CompileStatic
+	private String outputStressed(List<TTR> sentenceTokens, Stats stats) {
 		StringBuilder sb = new StringBuilder()
 		
-		tokens.eachWithIndex { TTR wordToken, int idx ->
+		sentenceTokens.eachWithIndex { TTR wordToken, int idx ->
 			String theToken = wordToken.tokens[0].value
 
             if( ! sb.isEmpty()
                     && (wordToken.tokens[0].whitespaceBefore == null || wordToken.tokens[0].whitespaceBefore == true)
-                    && (idx == 0 || ! (tokens[idx-1].tokens[0].value.matches(/[«(„]/))) ) {
+                    && (idx == 0 || ! (sentenceTokens[idx-1].tokens[0].value.matches(/[«(„]/))) ) {
                 sb.append(' ')
             }
                 
@@ -302,6 +317,37 @@ class StressTextCore {
 				if( analyzedTokens ) {
 					println "lemmas: $analyzedTokens"
 					def stressed = getStressed(theToken, analyzedTokens, stats)
+                    
+                    // фізик-ядерник
+                    if( ! stressed.contains("\u0301") && stressed =~ /[-\u2013]/ ) {
+                        def m = ~/(?iu)([а-яіїєґ']{3,})([-\u2013])([а-яіїєґ']{3,})/
+                        def match = m.matcher(theToken)
+                        if( match.matches() ) {
+                            List<TaggedToken> nouns = analyzedTokens.findAll { TaggedToken tr -> tr.tags.startsWith('noun') }
+                            if( nouns ) {
+                                def w1 = match.group(1)
+                                def w2 = match.group(3)
+                                
+                                List<TaggedSentence> taggedSentences1 = tagText.tagTextCore(w1, null)
+                                TTR token1 = taggedSentences1[0].tokens[0] //.tokens.findAll{ it.tags =~ /noun/ }
+                                
+                                List<TaggedSentence> taggedSentences2 = tagText.tagTextCore(w2, null)
+                                TTR token2 = taggedSentences2[0].tokens[0] //.tokens.findAll{ it.tags =~ /noun/ }
+
+                                String sentenceLine = outputStressed([token1, token2], stats)
+                                if( sentenceLine.contains("\u0301") ) {
+                                    stressed = sentenceLine.replace(' ', match.group(2))
+                                    println "compound: $stressed"
+                                }
+                            }
+                        }
+                    }
+                    
+                    if( stressed.indexOf('\u0301') == -1 ) {
+                        stats.unknown[theToken].cnt += 1
+                        stats.unknown[theToken].tags += analyzedTokens.collect { it.tags }
+                    }
+            
 					sb.append(stressed)
 				}
 				else {
@@ -315,8 +361,9 @@ class StressTextCore {
 	}
 	    
 
+    @CompileDynamic
     def process() {
-        def outputFile = textUtils.processByParagraph(options, { buffer ->
+        def outputFile = textUtils.processByParagraph(options, { String buffer ->
             return stressText(buffer)
         },
 		{ StressResult result ->
@@ -328,7 +375,6 @@ class StressTextCore {
         }
     }
 
-    @CompileStatic
     void collectStats() {
         File out = new File("stress.unknown.txt")
         out.text = ''
@@ -339,6 +385,13 @@ class StressTextCore {
         
         stats.unknown.toSorted { it -> -it.value.cnt * 1000 + it.key.charAt(0) as int }.each{ k, v -> 
             out << "$k ${v.cnt}\t\t\t${v.tags}\n"
+        }
+
+        println "Omographs: ${stats.homonyms.size()}"
+        
+        out << "\n"
+        stats.homonyms.toSorted { it -> -it.value * 1000 + it.key.charAt(0) as int }.each{ k, v ->
+            out << "$k $v\n"
         }
     }
 	
@@ -411,6 +464,7 @@ class StressTextCore {
 		sb.toString()
 	}
 
+    @CompileDynamic
 	def loadStressInfo() {
 		long tm1 = System.currentTimeMillis()
 		
@@ -426,11 +480,12 @@ class StressTextCore {
 
 		["all_stress", "all_stress_prop", "add"].each { file ->
 			def src = base ? new File(base, file+".txt") : getClass().getResourceAsStream("/stress/${file}.txt")
-			def lines = src.getText("UTF-8")
+			String lines = src.getText("UTF-8")
 
-			def lastLemmaFull
-			def lastLemma
-			def lastLemmaTags
+			String lastLemmaFull
+			String lastLemma
+			String lastLemmaTags
+            
 			lines.eachLine { line ->
                 String comment = null
 				if( line.indexOf('#') >= 0 ) {
@@ -449,7 +504,7 @@ class StressTextCore {
 				if( trimmed.indexOf(' ') <= 0 && trimmed.startsWith("/") ) {
 //					println "x: " + trimmed + " "  + trimmed.charAt(1) + " " + lastLemmaFull
 					int offset = trimmed[1] as int
-					int[] lemmaAccents = getAccentSyllIdxs(lastLemmaFull) ?: [1]
+					List<Integer> lemmaAccents = getAccentSyllIdxs(lastLemmaFull) ?: [1]
 					stresses[lastLemma][lastLemmaTags] << new StressInfo(base: lemmaAccents[0], offset: offset, comment: comment)
 					return
 				}
@@ -492,7 +547,7 @@ class StressTextCore {
     }
     	
 
-    static parseOptions(String[] argv) {
+    static StressOptions parseOptions(String[] argv) {
 
         StressOptions options = new StressOptions()
         CommandLine commandLine = new CommandLine(options)
@@ -518,7 +573,6 @@ class StressTextCore {
         return options
     }
 
-	
 	
     static void main(String[] args) {
 

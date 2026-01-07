@@ -71,7 +71,7 @@ public class TextUtils {
         return ioFiles
     }
     
-    static def processByParagraph(OptionsBase options, Closure closure, Closure resultClosure) {
+    static void processByParagraph(OptionsBase options, Closure closure, Closure resultClosure) {
         IOFiles files = prepareInputOutput(options)
         processByParagraphInternal(options, files.inputFile, files.outputFile, closure, resultClosure)
     }
