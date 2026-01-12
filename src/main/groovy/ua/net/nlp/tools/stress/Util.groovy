@@ -11,9 +11,18 @@ class Util {
         if( tag.contains('lname') )
             return 'lname'
         
-        tag.replace(':inanim', '') \
+        def res = tag.replace(':inanim', '') \
             .replace(':rev', "")
-            .replaceFirst(/(noun(:(un)?anim)?:[mnfps]|(noun(:(un)?anim)?).*pron|verb(:perf|:imperf)+|adj|[a-z]+).*/, '$1')
+            .replaceFirst(/(noun(:(un)?anim)?:[mnfps]|verb(:perf|:imperf)+|adj|[a-z]+).*/, '$1')
+            
+        if( tag =~ /^(noun|adj)/ && tag.contains('pron') ) {
+            res += ':pron'
+        }
+        if( tag.contains(':emph') ) {
+            res += ':emph'
+        }
+
+        return res
     }
     
     static int getSyllCount(String word) {

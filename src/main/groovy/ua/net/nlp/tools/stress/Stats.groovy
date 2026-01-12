@@ -21,7 +21,7 @@ class Stats {
     
     void addUnknown(String token, List<String> tags) {
         if( tags ) {
-            if( ! tags.find{ it.contains(':prop') } ) {
+            if( ! tags.find{ it =~ /:prop|:abbr/ } ) {
                 token = token.toLowerCase()
             }
             unknown[token].tags += tags
@@ -31,7 +31,7 @@ class Stats {
     
     void addHomonyms(String joined, List<String> tags) {
         if( tags ) {
-            if( ! tags.find{ it.contains(':prop') } ) {
+            if( ! tags.find{ it =~ /:prop|:abbr/ } ) {
                 joined = joined.toLowerCase()
             }
         }

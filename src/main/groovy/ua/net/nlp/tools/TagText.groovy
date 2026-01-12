@@ -3,12 +3,12 @@
 package ua.net.nlp.tools
 
 @GrabConfig(systemClassLoader=true)
-@GrabResolver(name="ltSnapshots", root="https://repo.languagetool.org/artifactory/languagetool-os-snapshot/")
-@Grab(group='org.languagetool', module='languagetool-core', version='6.7-SNAPSHOT')
-@Grab(group='org.languagetool', module='language-uk', version='6.7-SNAPSHOT')
-@Grab(group='org.languagetool', module='language-ru', version='6.6')
-@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='6.6.10-SNAPSHOT')
-@Grab(group='ua.net.nlp', module='nlp_uk-stats', version='3.3.9')
+//@GrabResolver(name="ltSnapshots", root="https://repo.languagetool.org/artifactory/languagetool-os-snapshot/")
+@Grab(group='org.languagetool', module='languagetool-core', version='6.8-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-uk', version='6.8-SNAPSHOT')
+@Grab(group='org.languagetool', module='language-ru', version='6.7')
+//@Grab(group='ua.net.nlp', module='morfologik-ukrainian-lt', version='6.6.10-SNAPSHOT')
+//@Grab(group='ua.net.nlp', module='nlp_uk-stats', version='3.3.9')
 
 @Grab(group='ch.qos.logback', module='logback-classic', version='1.5.18')
 @Grab(group='info.picocli', module='picocli', version='4.7.7')

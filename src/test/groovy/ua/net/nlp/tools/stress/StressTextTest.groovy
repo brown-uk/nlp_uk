@@ -48,7 +48,7 @@ class StressTextTest {
 
 	@Test
 	public void testStressDualTags() {
-		def expected = "аналізу́є/аналізує абонува́ти ага́кало/агакало докладніше/докла́дніше"
+		def expected = "аналізу́є/аналізує абонува́ти ага́кало докладніше/докла́дніше"
 		def text = "аналізує абонувати агакало докладніше"
 
 		result = stressText.stressText(text)
@@ -92,12 +92,12 @@ class StressTextTest {
         options.disambiguate = true
         stressText.setOptions(options)
         
-        def expected = "Я пасу́ по́ки ове́ць, нічи́м не гі́рше за будь-кого́."
+        def expected = "Я ніко́му не пасу́ по́ки ове́ць, нічи́м не гі́рше за будь-кого́."
 
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
         
-        expected = "Її́ перекла́ли, досягне́ чого́сь поді́бного, 750 чоловікі́в необе́ртні собі́ чо́рні ді́ри анігілюва́лися"
+        expected = "Її́ перекла́ли, досягне́ чого́сь поді́бного, 750 чоловікі́в необе́ртні собі́ чо́рні ді́ри анігілюва́лися; христо́вого"
 
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
@@ -108,23 +108,39 @@ class StressTextTest {
         assertEquals expected.trim(), result.tagged
 
         // logic with tags
-        expected = "найекстрема́льніший елемента́рніший реда́ктор ціє́ї кни́жки Шекспі́ра, зму́шені у ви́ді моде́лей дозво́лений проє́кт авторі́в"
+        expected = "найекстрема́льніший елемента́рніший ува́жніше; реда́ктор ціє́ї кни́жки Шекспі́ра, зму́шені у ви́ді моде́лей дозво́лений проє́кт авторі́в"
 
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
 
-        expected = "Про́стору-ча́су вче́них-я́дерників"
+        // context prep // noun:anim:p:v_zna:rare // noun:inanim:m:v_zna:var
+        expected = "по Кри́му, в Криму́; пої́хав у го́сті; написа́в листа́"
+        
+        result = stressText.stressText(strip(expected))
+        assertEquals expected.trim(), result.tagged
+    
+        // dual gender + verb:imperf/perf
+        expected = "еспера́нто дружи́на аблакту́ю"
         
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
 
-       // TODO: ніко́ли/ні́коли
-       // згі́дно з його зако́ном
-       // прикла́д/при́клад
+        expected = "Про́стору-ча́су вче́них-я́дерників 30-кілометро́вої 30-рі́ччя"
+        
+        result = stressText.stressText(strip(expected))
+        assertEquals expected.trim(), result.tagged
+
+        expected = "лиши́ти само́го себе́ на ме́не"
+        
+        result = stressText.stressText(strip(expected))
+        assertEquals expected.trim(), result.tagged
+
+        // TODO:
+        // найцікавіше довго-довго
+        // згі́дно з його зако́ном
+        // прикла́д/при́клад
         // виміря́вши/ви́мірявши - perf/imperf
         // спасти́/спа́сти - спасти на думку - xp2
-        // собаку
-        // самим
     }
     
     private static String strip(String text) {

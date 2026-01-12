@@ -85,14 +85,23 @@ class StressTextCore {
 
 	@CompileStatic
 	static boolean isMatch(StressInfo it, String theToken, TaggedToken anToken) {
-        String normalizedWord = anToken.tags.contains(':prop') ? theToken : theToken.toLowerCase() 
+        def tokenTags = anToken.tags
+        String normalizedWord = tokenTags.contains(':prop') ? theToken : theToken.toLowerCase() 
 		if( Util.stripAccent(it.word) != normalizedWord )
             return false
 
+        def stressTags = it.tags
+            
         // derivative forms
-        if( it.tags.startsWith(':') ) {
-            String normTag = anToken.tags
-            if( ! normTag.contains(it.tags) )
+        if( stressTags.startsWith(':') ) {
+            if( anToken.tags.startsWith('noun:anim:p:v_zna:rare') ) {
+                tokenTags = tokenTags.replace('noun:anim:p:v_zna:rare', 'noun:anim:p:v_naz')
+            }
+            else if( anToken.tags.startsWith('noun:inanim:m:v_zna:var') ) {
+                tokenTags = tokenTags.replace('noun:inanim:m:v_zna:var', 'noun:inanim:m:v_rod')
+            }
+            
+            if( ! tokenTags.contains(stressTags) )
                 return false
         }
                         
@@ -101,11 +110,9 @@ class StressTextCore {
 	
 
 	@CompileStatic
-	private String getStressed(String theToken, List<TaggedToken> analyzedTokens, Stats stats) {
+	private String getStressed(String theToken, List<TaggedToken> analyzedTokens, Stats stats, List<TTR> sentenceTokens, int idx) {
 			
-        int idx = -1
 		def words = analyzedTokens.collect { TaggedToken anToken ->
-            ++idx
 			
 			String keyTag = Util.getTagKey(anToken.tags)
 			def tokenLemma = anToken.lemma
@@ -119,6 +126,10 @@ class StressTextCore {
 					stressOffset += 1
 				}
 			}
+            
+            if( tokenLemma == 'сам' ) {
+                tokenLemma = 'сами́й'
+            }
 			
             def infByLemma = stresses[tokenLemma]
             def normalizedLemma = tokenLemma
@@ -132,6 +143,16 @@ class StressTextCore {
                         normalizedLemma = normalizedLemma_
                         infByLemma = stresses[normalizedLemma]
                         stressOffset += 1
+                    }
+                    else if( keyTag.startsWith("adv") && anToken.tags.contains(':compc') ) {
+                        normalizedLemma_ = normalizedLemma.replaceFirst(/е$/, 'ий')
+                        def normalizedTag = 'adj'
+                        def _info = stresses[normalizedLemma_]
+                        if( _info && _info[normalizedTag] ) {
+                            normalizedLemma = normalizedLemma_
+                            keyTag = normalizedTag
+                            infByLemma = _info
+                        }
                     }
                     else {
                         normalizedLemma_ = normalizedLemma.replaceFirst(/іш(ий)/, '$1')
@@ -171,22 +192,24 @@ class StressTextCore {
 						String genericTag = keyTag.replaceFirst(/:(im)?perf/, ':imperf:perf')
                         infos = stresses[normalizedLemma][genericTag]
 					}
-					else if( keyTag.startsWith("noun") && keyTag.contains(":+") ) {
-						// TODO: other genders
-						String genericTag = keyTag.replaceFirst(/:[mfn]/, ':m:+n')
-                        infos = stresses[normalizedLemma][genericTag]
-					}
+//					else if( keyTag.startsWith("noun") && keyTag.contains(":+") ) {
+//						// TODO: other genders
+//						String genericTag = keyTag.replaceFirst(/:[mfn]/, ':m:+n')
+//                        infos = stresses[normalizedLemma][genericTag]
+//					}
 				}
 
 				// get noun lemma from singular
-				if( keyTag.startsWith("noun") && keyTag.endsWith(":p") ) {
-					for(String s: [":m", ":f", ":n"]) {
-						String genderTag = keyTag.replaceFirst(/:p$/, s)
-                        def info_ = stresses[normalizedLemma][genderTag]
-						if( info_ ) {
-							infos += info_
-						}
-					}
+				if( keyTag.startsWith("noun") ) {
+                    if( keyTag.endsWith(":p") ){
+        				for(String s: [":m", ":f", ":n"]) {
+        					String genderTag = keyTag.replaceFirst(/:p$/, s)
+                            def info_ = stresses[normalizedLemma][genderTag]
+        					if( info_ ) {
+        						infos += info_
+        					}
+        				}
+                    }
 				}
 			}
 //			else if( anToken.tags.startsWith("adv:comp") ) {
@@ -205,7 +228,7 @@ class StressTextCore {
 				def foundForms = infos
                     .findAll { StressInfo it -> 
 						isMatch(it, theToken, anToken) 
-                            && isContextMatch(it, theToken, anToken, idx, analyzedTokens)
+                            && isContextMatch(it, theToken, anToken, sentenceTokens, idx)
 					}
 					.collect{ 
 						def x = Util.stripAccent(it.word) == theToken
@@ -252,10 +275,16 @@ class StressTextCore {
 	}
     
 	
-    static boolean isContextMatch(StressInfo it, String theToken, TaggedToken anToken, int idx, List<TaggedToken> analyzedTokens) {
+    static boolean isContextMatch(StressInfo it, String theToken, TaggedToken anToken, List<TTR> sentenceTokens, int idx) {
         if( it.comment && it.comment.startsWith('<') ) {
-            def precond = it.comment.split('< ')[0]
-            return idx >= 1 && analyzedTokens[idx-1].tags.startsWith(precond)
+            def precond = it.comment.split('< ')[1]
+            if( idx < 1 ) return false
+            
+            println "precond: $precond -- $idx" //  -- ${it.comment}"
+            if( precond =~ /[a-z]/ )
+                return sentenceTokens[idx-1].tokens[0].tags ==~ precond
+            else
+                return sentenceTokens[idx-1].tokens[0].lemma ==~ precond
         }
         return true
     }
@@ -285,10 +314,11 @@ class StressTextCore {
 
 				if( analyzedTokens ) {
 					println "lemmas: $analyzedTokens"
-					def stressed = getStressed(theToken, analyzedTokens, stats)
+					String stressed = getStressed(theToken, analyzedTokens, stats, sentenceTokens, idx)
                     
                     // фізик-ядерник
                     if( ! stressed.contains("\u0301") && stressed =~ /[-\u2013]/ ) {
+                        
                         def m = ~/(?iu)([а-яіїєґ']{3,})([-\u2013])([а-яіїєґ']{3,})/
                         def match = m.matcher(theToken)
                         if( match.matches() ) {
@@ -307,6 +337,33 @@ class StressTextCore {
                                 if( sentenceLine.contains("\u0301") ) {
                                     stressed = sentenceLine.replace(' ', match.group(2))
                                     println "compound: $stressed"
+                                }
+                            }
+                        }
+                        else {
+                            def m2 = ~/(?iu)([0-9]+)([-\u2013])([а-яіїєґ']{3,})/
+                            def match2 = m2.matcher(theToken)
+                            if( match2.matches() ) {
+                                List<TaggedToken> adjs = analyzedTokens.findAll { TaggedToken tr -> tr.tags =~ /adj|noun/ }
+                                if( adjs ) {
+                                    def w1 = match2.group(1)
+                                    def w2 = match2.group(3)
+                                    def hyphen = match2.group(2)
+                                    
+                                    if( w2 ==~ /річчя|ліття/ ) {
+                                        w2 = w2.replace('річч', 'рі\u0301чч')
+                                        w2 = w2.replace('літт', 'лі\u0301тт')
+                                        stressed = "$w1$hyphen$w2"
+                                    }
+                                    else {
+                                        List<TaggedSentence> taggedSentences2 = tagText.tagTextCore(w2, null)
+                                        TTR token2 = taggedSentences2[0].tokens[0] //.tokens.findAll{ it.tags =~ /noun/ }
+                                        def sentenceLine = outputStressed([token2], stats)
+                                        if( sentenceLine.contains("\u0301") ) {
+                                            stressed = "$w1$hyphen$sentenceLine"
+                                            println "compound: $stressed"
+                                        }
+                                    }
                                 }
                             }
                         }
