@@ -134,6 +134,12 @@ class StressTextTest {
         
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
+        
+        // xp1/xp2
+        expected = "о́рган правлі́ння"
+        
+        result = stressText.stressText(strip(expected))
+        assertEquals expected.trim(), result.tagged
 
         // TODO:
         // найцікавіше довго-довго

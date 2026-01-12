@@ -15,7 +15,9 @@ class StressInfo {
     
     String toString() { word ? String.format("%s %s", word, tags) : String.format("%d %d", base, offset) }
     
+    static HashSet<String> lemmasWithXp = new HashSet<>(1000)
     
+    // lemma -> lemma tags -> derivative tags 
     static Map<String, Map<String, List<StressInfo>>> loadStressInfo() {
         Map<String, Map<String, List<StressInfo>>> stresses = new HashMap<>()
         
@@ -93,6 +95,12 @@ class StressInfo {
                     if( word == 'сами́й' ) { // easier to hack special case
                         lastLemma = word
                     }
+                    
+                    boolean withXp = false
+                    if( tags.contains(':xp') ) {
+                        lemmasWithXp << lastLemma
+                        lastLemma = adjustLemma(lastLemma, tags)
+                    }
                 }
                 
                 if( ! (lastLemma in stresses) ) {
@@ -128,4 +136,8 @@ class StressInfo {
         return stresses
     }
 
+    static String adjustLemma(String lemma, String tags) {
+        return lemma + tags.replaceFirst(/.*(:xp[0-9]).*/, '$1')
+    }
+    
 } 

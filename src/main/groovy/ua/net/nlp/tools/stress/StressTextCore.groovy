@@ -131,6 +131,10 @@ class StressTextCore {
                 tokenLemma = 'сами́й'
             }
 			
+            if( tokenLemma in StressInfo.lemmasWithXp ) {
+                tokenLemma = StressInfo.adjustLemma(tokenLemma, anToken.tags)
+            }
+            
             def infByLemma = stresses[tokenLemma]
             def normalizedLemma = tokenLemma
             
