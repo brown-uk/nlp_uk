@@ -2,6 +2,7 @@ package ua.net.nlp.tools.stress
 
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
+import ua.net.nlp.tools.tag.TTR
 
 @CompileStatic
 @PackageScope
@@ -19,14 +20,19 @@ class Stats {
         stats.homonyms.each { k,v -> this.homonyms[k] += v }
     }
     
-    void addUnknown(String token, List<String> tags) {
+    void addUnknown(TTR analyzedTokens) {
+        def tags = analyzedTokens.tokens.collect { it.tags }
+        def token = analyzedTokens.tokens[0].value
+        def lemma = analyzedTokens.tokens[0].lemma
         if( tags ) {
             if( ! tags.find{ it =~ /:prop|:abbr/ } ) {
                 token = token.toLowerCase()
             }
-            unknown[token].tags += tags
+            def key = "$token $lemma".toString()
+            unknown[key].tags += tags
         }
-        unknown[token].cnt += 1
+        def key = "$token $lemma".toString()
+        unknown[key].cnt += 1
     }
     
     void addHomonyms(String joined, List<String> tags) {

@@ -424,13 +424,13 @@ class StressTextCore {
                     }
                     
                     if( stressed.indexOf('\u0301') == -1 ) {
-                        stats.addUnknown(theToken, analyzedTokens.collect { it.tags })
+                        stats.addUnknown(wordToken)
                     }
             
 					sb.append(stressed)
 				}
 				else {
-                    stats.addUnknown(theToken, null)
+                    stats.addUnknown(wordToken)
 					sb.append(theToken)
 				}
 			}
