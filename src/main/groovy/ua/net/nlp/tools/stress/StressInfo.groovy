@@ -82,7 +82,7 @@ class StressInfo {
                 if( tags.contains(':/') ) {
                     def m = ~/([a-z0-9_]+):\/([a-z0-9_]+)/
                     def match = m.matcher(tags)
-                    match.find()
+                    assert match.find(), "No match for $line"
                     orig = match.group(1)
                     repl = match.group(2)
                 }

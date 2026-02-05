@@ -108,93 +108,121 @@ class StressTextCore {
         return true
 	}
 	
+    private class NormalizedWord {
+        final TaggedToken anToken
+        String tokenLemma
+        String normalizedLemma
+        String normalizedWord
+        String keyTag
+        int stressOffset = 0
+        
+        NormalizedWord(TaggedToken anToken) {
+            this.anToken = anToken
+            tokenLemma = anToken.lemma
+            keyTag = Util.getTagKey(anToken.tags)
+            println "key: $anToken.lemma $keyTag"
+            
+            normalizedWord = anToken.value
+            
+            if( tokenLemma =~ /(?iu)^((що)?якнай|щонай).*(ий|е)$/ ) {
+                tokenLemma = tokenLemma.replaceFirst(/(?iu)^((що)?якнай|щонай)/, '')
+                stressOffset += 2
+                if( tokenLemma.toLowerCase().startsWith("щоякнай") ) {
+                    stressOffset += 1
+                }
+            }
+            else if( tokenLemma == 'сам' ) {
+                tokenLemma = 'сами́й'
+            }
+            
+            if( tokenLemma in StressInfo.lemmasWithXp ) {
+                tokenLemma = StressInfo.adjustLemma(tokenLemma, anToken.tags)
+            }
+            
+            normalizedLemma = tokenLemma
+        }
+        
+         Map<String, List<StressInfo>> normalize2() {
+            def infByLemma = null
+            
+            if( anToken.tags =~ /ad.*:comp/ ) {
+                def normalizedLemma_ = normalizedLemma.replaceFirst(/^най/, '')
+                if( stresses[normalizedLemma_] ) {
+                    normalizedLemma = normalizedLemma_
+                    infByLemma = stresses[normalizedLemma]
+                    stressOffset += 1
+                }
+                else if( keyTag.startsWith("adv") && anToken.tags.contains(':compc') ) {
+                    normalizedLemma_ = normalizedLemma.replaceFirst(/е$/, 'ий')
+                    def normalizedTag = 'adj'
+                    def _info = stresses[normalizedLemma_]
+                    if( _info && _info[normalizedTag] ) {
+                        normalizedLemma = normalizedLemma_
+                        keyTag = normalizedTag
+                        infByLemma = _info
+                    }
+                }
+                else {
+                    normalizedLemma_ = normalizedLemma.replaceFirst(/іш(ий)/, '$1')
+                    if( stresses[normalizedLemma_] ) {
+                        normalizedLemma = normalizedLemma_
+                        infByLemma = stresses[normalizedLemma]
+                        if( normalizedLemma.startsWith('най') ) {
+                            stressOffset += 1
+                        }
+                    }
+                }
+            }
+
+            if( anToken.tags =~ /:alt|:up19/ ) {
+                if( tokenLemma.toLowerCase().contains('ґ') ) {
+                    normalizedLemma = tokenLemma.replace('Ґ', 'Г').replace('ґ', 'г')
+                    infByLemma = stresses[normalizedLemma]
+                }
+                else if( tokenLemma.toLowerCase().contains('проєкт') ) {
+                    normalizedLemma = tokenLemma.replace('роєкт', 'роект')
+                    infByLemma = stresses[normalizedLemma]
+                }
+            }
+
+            if( anToken.tags.startsWith('verb:rev') && tokenLemma.endsWith('ся') ) {
+                normalizedLemma = tokenLemma[0..-3]
+                infByLemma = stresses[normalizedLemma]
+                normalizedWord = normalizedWord[0..-3] 
+            }
+
+            return infByLemma
+        }
+        
+    }
+    
 
 	@CompileStatic
 	private String getStressed(String theToken, List<TaggedToken> analyzedTokens, Stats stats, List<TTR> sentenceTokens, int idx) {
 			
 		def words = analyzedTokens.collect { TaggedToken anToken ->
-			
-			String keyTag = Util.getTagKey(anToken.tags)
-			def tokenLemma = anToken.lemma
-			println "key: $tokenLemma $keyTag"
-			int stressOffset = 0
-
-			if( tokenLemma =~ /(?iu)^((що)?якнай|щонай).*(ий|е)$/ ) {
-				tokenLemma = tokenLemma.replaceFirst(/(?iu)^((що)?якнай|щонай)/, '')
-				stressOffset += 2
-				if( tokenLemma.toLowerCase().startsWith("щоякнай") ) {
-					stressOffset += 1
-				}
-			}
-            
-            if( tokenLemma == 'сам' ) {
-                tokenLemma = 'сами́й'
-            }
-			
-            if( tokenLemma in StressInfo.lemmasWithXp ) {
-                tokenLemma = StressInfo.adjustLemma(tokenLemma, anToken.tags)
-            }
-            
-            def infByLemma = stresses[tokenLemma]
-            def normalizedLemma = tokenLemma
+            def entry = new NormalizedWord(anToken)
+             Map<String, List<StressInfo>> infByLemma = stresses[entry.tokenLemma]
             
             // try alt
             if( ! infByLemma ) {
-
-                if( keyTag.startsWith("ad") && anToken.tags.contains(':comp') ) {
-                    def normalizedLemma_ = normalizedLemma.replaceFirst(/^най/, '')
-                    if( stresses[normalizedLemma_] ) {
-                        normalizedLemma = normalizedLemma_
-                        infByLemma = stresses[normalizedLemma]
-                        stressOffset += 1
-                    }
-                    else if( keyTag.startsWith("adv") && anToken.tags.contains(':compc') ) {
-                        normalizedLemma_ = normalizedLemma.replaceFirst(/е$/, 'ий')
-                        def normalizedTag = 'adj'
-                        def _info = stresses[normalizedLemma_]
-                        if( _info && _info[normalizedTag] ) {
-                            normalizedLemma = normalizedLemma_
-                            keyTag = normalizedTag
-                            infByLemma = _info
-                        }
-                    }
-                    else {
-                        normalizedLemma_ = normalizedLemma.replaceFirst(/іш(ий)/, '$1')
-                        if( stresses[normalizedLemma_] ) {
-                            normalizedLemma = normalizedLemma_
-                            infByLemma = stresses[normalizedLemma]
-                            if( normalizedLemma.startsWith('най') ) {
-                                stressOffset += 1
-                            }
-                        }
-                    }
+                // unknown last names with -ук/-юк
+                if( anToken.tags =~ /:lname/ 
+                    && anToken.lemma =~ /^[А-яІЇЄҐ].*[ую]к$/ ) {
+                        return anToken.value.replaceFirst(/([ую])(к)/, '$1\u0301$2' )
                 }
-
-                if( anToken.tags =~ /:alt|:up19/ ) {
-                    if( tokenLemma.toLowerCase().contains('ґ') ) {
-                        normalizedLemma = tokenLemma.replace('Ґ', 'Г').replace('ґ', 'г')
-                        infByLemma = stresses[normalizedLemma]
-                    }
-                    else if( tokenLemma.toLowerCase().contains('проєкт') ) {
-                        normalizedLemma = tokenLemma.replace('роєкт', 'роект')
-                        infByLemma = stresses[normalizedLemma]
-                    }
-                }
-
-                if( anToken.tags.startsWith('verb:rev') && tokenLemma.endsWith('ся') ) {
-                    normalizedLemma = tokenLemma[0..-3]
-                    infByLemma = stresses[normalizedLemma]
-                }
+    
+                infByLemma = entry.normalize2()
             }
             
             List<StressInfo> infos = []
 			if( infByLemma ) {
-				infos = infByLemma[keyTag] ?: infos
+				infos = infByLemma[entry.keyTag] ?: infos
 
 				if( ! infos ) {
-					if( keyTag.startsWith("verb") ) {
-						String genericTag = keyTag.replaceFirst(/:(im)?perf/, ':imperf:perf')
-                        infos = stresses[normalizedLemma][genericTag]
+					if( anToken.tags.startsWith("verb") ) {
+						String genericTag = entry.keyTag.replaceFirst(/:(im)?perf/, ':imperf:perf')
+                        infos = infByLemma[genericTag]
 					}
 //					else if( keyTag.startsWith("noun") && keyTag.contains(":+") ) {
 //						// TODO: other genders
@@ -204,11 +232,11 @@ class StressTextCore {
 				}
 
 				// get noun lemma from singular
-				if( keyTag.startsWith("noun") ) {
-                    if( keyTag.endsWith(":p") ){
+				if( entry.keyTag.startsWith("noun") ) {
+                    if( entry.keyTag.endsWith(":p") ){
         				for(String s: [":m", ":f", ":n"]) {
-        					String genderTag = keyTag.replaceFirst(/:p$/, s)
-                            def info_ = stresses[normalizedLemma][genderTag]
+        					String genderTag = entry.keyTag.replaceFirst(/:p$/, s)
+                            def info_ = stresses[entry.normalizedLemma][genderTag]
         					if( info_ ) {
         						infos += info_
         					}
@@ -228,11 +256,13 @@ class StressTextCore {
 				if( infos.size() == 2 && infos[1].offset ) {
 					return Util.applyAccents(theToken, [infos[1].base + infos[1].offset])
 				}
+                
+                println "::: " + infos.findAll { StressInfo it -> isMatch(it, entry.normalizedWord, anToken) }
 				
 				def foundForms = infos
                     .findAll { StressInfo it -> 
-						isMatch(it, theToken, anToken) 
-                            && isContextMatch(it, theToken, anToken, sentenceTokens, idx)
+						isMatch(it, entry.normalizedWord, anToken) 
+                            && isContextMatch(it, entry.normalizedWord, anToken, sentenceTokens, idx)
 					}
 					.collect{ 
 						def x = Util.stripAccent(it.word) == theToken
@@ -247,12 +277,12 @@ class StressTextCore {
 					foundForms
 				}
 				else {
-					Util.restoreAccent(infos[0].word, theToken, stressOffset)
+					Util.restoreAccent(infos[0].word, theToken, entry.stressOffset)
 				}
 			}
 			else {
-				if( Util.getSyllCount(tokenLemma) == 1 ) {
-					println "single syll lemma: $tokenLemma"
+				if( Util.getSyllCount(entry.tokenLemma) == 1 ) {
+					println "single syll lemma: $entry.tokenLemma"
 					Util.applyAccents(theToken, [1])
 				}
 				else {
@@ -284,11 +314,15 @@ class StressTextCore {
             def precond = it.comment.split('< ')[1]
             if( idx < 1 ) return false
             
-            println "precond: $precond -- $idx" //  -- ${it.comment}"
-            if( precond =~ /[a-z]/ )
-                return sentenceTokens[idx-1].tokens[0].tags ==~ precond
-            else
-                return sentenceTokens[idx-1].tokens[0].lemma ==~ precond
+            boolean precondTrue = false
+            if( precond =~ /[a-z]/ ) {
+                precondTrue = sentenceTokens[idx-1].tokens[0].tags ==~ precond
+            }
+            else {
+                precondTrue = sentenceTokens[idx-1].tokens[0].lemma ==~ precond
+            }
+            println "precond: $precond -- $idx -> $precondTrue"
+            return precondTrue
         }
         return true
     }
@@ -313,7 +347,7 @@ class StressTextCore {
 			else {
 				List<TaggedToken> analyzedTokens = wordToken.tokens
 					.findAll { TaggedToken tr -> 
-						tr.lemma 
+						tr.lemma && tr.lemma =~ /(?iu)[а-яіїєґ]/ && tr.tags != 'unclass'
                     }
 
 				if( analyzedTokens ) {
@@ -326,7 +360,7 @@ class StressTextCore {
                         def m = ~/(?iu)([а-яіїєґ']{3,})([-\u2013])([а-яіїєґ']{3,})/
                         def match = m.matcher(theToken)
                         if( match.matches() ) {
-                            List<TaggedToken> nouns = analyzedTokens.findAll { TaggedToken tr -> tr.tags.startsWith('noun') }
+                            List<TaggedToken> nouns = analyzedTokens.findAll { TaggedToken tr -> tr.tags =~ /^(noun|adv|adj|numr)/ }
                             if( nouns ) {
                                 def w1 = match.group(1)
                                 def w2 = match.group(3)
@@ -345,7 +379,7 @@ class StressTextCore {
                             }
                         }
                         else {
-                            def m2 = ~/(?iu)([0-9]+)([-\u2013])([а-яіїєґ']{3,})/
+                            def m2 = ~/(?iu)([0-9A-Za-z]+)([-\u2013])([а-яіїєґ']{3,})/
                             def match2 = m2.matcher(theToken)
                             if( match2.matches() ) {
                                 List<TaggedToken> adjs = analyzedTokens.findAll { TaggedToken tr -> tr.tags =~ /adj|noun/ }
@@ -354,9 +388,10 @@ class StressTextCore {
                                     def w2 = match2.group(3)
                                     def hyphen = match2.group(2)
                                     
-                                    if( w2 ==~ /річчя|ліття/ ) {
+                                    if( w2 =~ /^(річчя|ліття|класни)/ ) {
                                         w2 = w2.replace('річч', 'рі\u0301чч')
                                         w2 = w2.replace('літт', 'лі\u0301тт')
+                                        w2 = w2.replace('клас', 'кла\u0301с')
                                         stressed = "$w1$hyphen$w2"
                                     }
                                     else {

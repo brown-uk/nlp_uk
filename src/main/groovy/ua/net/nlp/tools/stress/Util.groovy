@@ -59,8 +59,13 @@ class Util {
     @CompileStatic
     static String restoreAccent(String lemma, String word, int offset) {
         List<Integer> accents = getAccentSyllIdxs(lemma)
-        if( offset ) {
-            accents.eachWithIndex{ int a, int i -> accents[i]+=offset }
+        if( accents ) {
+            if( offset ) {
+                accents.eachWithIndex{ int a, int i -> accents[i]+=offset }
+            }
+        }
+        else {
+            accents = [1]
         }
         println "restore for: $lemma: $accents"
         applyAccents(word, accents)

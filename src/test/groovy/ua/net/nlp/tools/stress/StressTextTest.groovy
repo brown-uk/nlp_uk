@@ -48,7 +48,7 @@ class StressTextTest {
 
 	@Test
 	public void testStressDualTags() {
-		def expected = "аналізу́є/аналізує абонува́ти ага́кало докладніше/докла́дніше"
+		def expected = "аналізу́є/аналізує абонува́ти ага́кало докла́дніше"
 		def text = "аналізує абонувати агакало докладніше"
 
 		result = stressText.stressText(text)
@@ -87,6 +87,19 @@ class StressTextTest {
 		assertEquals expected.trim(), result.tagged
 	}
     
+
+    @Test
+    public void testStressUnknown() {
+        options.disambiguate = true
+        stressText.setOptions(options)
+
+        def expected = "Ковтаню́к."
+
+        result = stressText.stressText(strip(expected))
+        assertEquals expected.trim(), result.tagged
+    }
+
+
     @Test
     public void testStressHomonymDismabig() {
         options.disambiguate = true
@@ -102,13 +115,13 @@ class StressTextTest {
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
 
-        expected = "Оле́но, Олекса́ндрович, Есто́ніє, Ґаліле́я"
+        expected = "Оле́но, Олекса́ндрович, Есто́ніє, Ґаліле́я І́ндові Протви́. ки́єво-могиля́нського. Про́тво!"
 
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
 
         // logic with tags
-        expected = "найекстрема́льніший елемента́рніший ува́жніше; реда́ктор ціє́ї кни́жки Шекспі́ра, зму́шені у ви́ді моде́лей дозво́лений проє́кт авторі́в"
+        expected = "найекстрема́льніший елемента́рніший ува́жніше найцікаві́ше; реда́ктор ціє́ї кни́жки Шекспі́ра, зму́шені у ви́ді моде́лей дозво́лений проє́кт авторі́в"
 
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
@@ -120,17 +133,17 @@ class StressTextTest {
         assertEquals expected.trim(), result.tagged
     
         // dual gender + verb:imperf/perf
-        expected = "еспера́нто дружи́на аблакту́ю"
+        expected = "еспера́нто дружи́на аблакту́юсь"
         
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
 
-        expected = "Про́стору-ча́су вче́них-я́дерників 30-кілометро́вої 30-рі́ччя"
+        expected = "Про́стору-ча́су вче́них-я́дерників до́вго-до́вго триво́жно-депреси́вних п'я́тому-шо́стому 30-кілометро́вої 30-рі́ччям 11-кла́сники ip-адре́са"
         
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
 
-        expected = "лиши́ти само́го себе́ на ме́не"
+        expected = "лиши́ти само́го себе́ на ме́не й на се́бе"
         
         result = stressText.stressText(strip(expected))
         assertEquals expected.trim(), result.tagged
@@ -142,11 +155,9 @@ class StressTextTest {
         assertEquals expected.trim(), result.tagged
 
         // TODO:
-        // найцікавіше довго-довго
         // згі́дно з його зако́ном
         // прикла́д/при́клад
         // виміря́вши/ви́мірявши - perf/imperf
-        // спасти́/спа́сти - спасти на думку - xp2
     }
     
     private static String strip(String text) {
