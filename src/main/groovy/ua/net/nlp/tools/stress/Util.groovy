@@ -67,7 +67,7 @@ class Util {
         else {
             accents = [1]
         }
-        println "restore for: $lemma: $accents"
+//        debug("restore for: $lemma: $accents")
         applyAccents(word, accents)
     }
 

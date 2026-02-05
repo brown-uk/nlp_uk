@@ -28,6 +28,16 @@ class StressTextCore {
     Stats stats = new Stats()
     StringWriter writer
 
+    File dbgOut
+    
+    void debug(txt) {
+        if( ! options.output || options.output == '-' ) return
+        
+        if( ! dbgOut ) {
+            dbgOut = new File(options.output + ".dbg")
+        }
+        dbgOut << txt << "\n"
+    }
 	
 	@Canonical
 	static class StressResult extends ResultBase {
@@ -120,7 +130,7 @@ class StressTextCore {
             this.anToken = anToken
             tokenLemma = anToken.lemma
             keyTag = Util.getTagKey(anToken.tags)
-            println "key: $anToken.lemma $keyTag"
+            debug("key: $anToken.lemma $keyTag")
             
             normalizedWord = anToken.value
             
@@ -250,14 +260,14 @@ class StressTextCore {
 //					return
 //			}
 
-			println "info: $infos"
+			debug("info: $infos")
 			if( infos ) {
 				// handle /1/ - simple offset
 				if( infos.size() == 2 && infos[1].offset ) {
 					return Util.applyAccents(theToken, [infos[1].base + infos[1].offset])
 				}
                 
-                println "::: " + infos.findAll { StressInfo it -> isMatch(it, entry.normalizedWord, anToken) }
+                debug("::: " + infos.findAll { StressInfo it -> isMatch(it, entry.normalizedWord, anToken) })
 				
 				def foundForms = infos
                     .findAll { StressInfo it -> 
@@ -282,7 +292,7 @@ class StressTextCore {
 			}
 			else {
 				if( Util.getSyllCount(entry.tokenLemma) == 1 ) {
-					println "single syll lemma: $entry.tokenLemma"
+					debug("single syll lemma: $entry.tokenLemma")
 					Util.applyAccents(theToken, [1])
 				}
 				else {
@@ -295,7 +305,7 @@ class StressTextCore {
 		.findAll{ it }
 		.unique()
 
-		println "stressed: $words"
+		debug("stressed: $words")
 
 		int stressCount = words.count { ((String)it).indexOf('\u0301') >= 0 } as int
 
@@ -309,7 +319,7 @@ class StressTextCore {
 	}
     
 	
-    static boolean isContextMatch(StressInfo it, String theToken, TaggedToken anToken, List<TTR> sentenceTokens, int idx) {
+    boolean isContextMatch(StressInfo it, String theToken, TaggedToken anToken, List<TTR> sentenceTokens, int idx) {
         if( it.comment && it.comment.startsWith('<') ) {
             def precond = it.comment.split('< ')[1]
             if( idx < 1 ) return false
@@ -321,7 +331,7 @@ class StressTextCore {
             else {
                 precondTrue = sentenceTokens[idx-1].tokens[0].lemma ==~ precond
             }
-            println "precond: $precond -- $idx -> $precondTrue"
+            debug("precond: $precond -- $idx -> $precondTrue")
             return precondTrue
         }
         return true
@@ -356,7 +366,7 @@ class StressTextCore {
                     }
 
 				if( analyzedTokens ) {
-					println "lemmas: $analyzedTokens"
+					debug("lemmas: $analyzedTokens")
 					String stressed = getStressed(theToken, analyzedTokens, stats, sentenceTokens, idx)
                     
                     // фізик-ядерник
@@ -379,7 +389,7 @@ class StressTextCore {
                                 String sentenceLine = outputStressed([token1, token2], null, stats)
                                 if( sentenceLine.contains("\u0301") ) {
                                     stressed = sentenceLine.replace(' ', match.group(2))
-                                    println "compound: $stressed"
+                                    debug("compound: $stressed")
                                 }
                             }
                         }
@@ -405,7 +415,7 @@ class StressTextCore {
                                         def sentenceLine = outputStressed([token2], null, stats)
                                         if( sentenceLine.contains("\u0301") ) {
                                             stressed = "$w1$hyphen$sentenceLine"
-                                            println "compound: $stressed"
+                                            debug("compound: $stressed")
                                         }
                                     }
                                 }
