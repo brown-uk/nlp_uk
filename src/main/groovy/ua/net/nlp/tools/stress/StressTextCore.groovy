@@ -65,9 +65,9 @@ class StressTextCore {
 		def sb = new StringBuilder((int)(text.size() * 1.10))
         int ii = 0;
 		for (TaggedSentence analyzedSentence : taggedSentences) {
-            if( ! sb.isEmpty() && ii < taggedSentences.size() - 1) {
-                sb.append(' ')
-            }
+//            if( ! sb.isEmpty() && ii < taggedSentences.size() - 1) {
+//                sb.append(' ')
+//            }
             ++ii;
             
 			List<TTR> tokens = analyzedSentence.tokens
@@ -75,7 +75,7 @@ class StressTextCore {
                 continue
             }
 
-			String sentenceLine = outputStressed(tokens, stats)
+			String sentenceLine = outputStressed(tokens, analyzedSentence, stats)
 			
 			sb.append(sentenceLine) //.append("\n");
 		}
@@ -328,15 +328,20 @@ class StressTextCore {
     }
     
     
-	private String outputStressed(List<TTR> sentenceTokens, Stats stats) {
-		StringBuilder sb = new StringBuilder()
+	private String outputStressed(List<TTR> sentenceTokens, TaggedSentence analyzedSentence, Stats stats) {
+		StringBuilder sb = new StringBuilder(1024)
 		
 		sentenceTokens.eachWithIndex { TTR wordToken, int idx ->
 			String theToken = wordToken.tokens[0].value
 
-            if( ! sb.isEmpty()
-                    && (wordToken.tokens[0].whitespaceBefore == null || wordToken.tokens[0].whitespaceBefore == true)
-                    && (idx == 0 || ! (sentenceTokens[idx-1].tokens[0].value.matches(/[«(„]/))) ) {
+            if( analyzedSentence ) {
+                def whitespace = analyzedSentence?.whitespaces?[idx]
+                if( whitespace ) {
+                    sb.append(whitespace)
+                }
+            }
+            else {
+                if( idx > 0 )
                 sb.append(' ')
             }
                 
@@ -347,7 +352,7 @@ class StressTextCore {
 			else {
 				List<TaggedToken> analyzedTokens = wordToken.tokens
 					.findAll { TaggedToken tr -> 
-						tr.lemma && tr.lemma =~ /(?iu)[а-яіїєґ]/ && tr.tags != 'unclass'
+						tr.lemma && tr.value =~ /(?iu)[аеєиіїоуюя].*[аеєиіїоуюя]/ && tr.tags != 'unclass'
                     }
 
 				if( analyzedTokens ) {
@@ -371,7 +376,7 @@ class StressTextCore {
                                 List<TaggedSentence> taggedSentences2 = tagText.tagTextCore(w2, null)
                                 TTR token2 = taggedSentences2[0].tokens[0] //.tokens.findAll{ it.tags =~ /noun/ }
 
-                                String sentenceLine = outputStressed([token1, token2], stats)
+                                String sentenceLine = outputStressed([token1, token2], null, stats)
                                 if( sentenceLine.contains("\u0301") ) {
                                     stressed = sentenceLine.replace(' ', match.group(2))
                                     println "compound: $stressed"
@@ -397,7 +402,7 @@ class StressTextCore {
                                     else {
                                         List<TaggedSentence> taggedSentences2 = tagText.tagTextCore(w2, null)
                                         TTR token2 = taggedSentences2[0].tokens[0] //.tokens.findAll{ it.tags =~ /noun/ }
-                                        def sentenceLine = outputStressed([token2], stats)
+                                        def sentenceLine = outputStressed([token2], null, stats)
                                         if( sentenceLine.contains("\u0301") ) {
                                             stressed = "$w1$hyphen$sentenceLine"
                                             println "compound: $stressed"
@@ -420,7 +425,14 @@ class StressTextCore {
 				}
 			}
 		}
-		
+        
+        def whitespace = analyzedSentence?.whitespaces?[sentenceTokens.size()]
+        if( whitespace ) {
+            sb.append(whitespace)
+        }
+
+//        println "==$sb=="
+        
 		sb.toString()
 	}
 	    

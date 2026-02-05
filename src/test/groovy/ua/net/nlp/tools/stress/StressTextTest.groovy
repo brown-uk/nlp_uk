@@ -159,7 +159,16 @@ class StressTextTest {
         // прикла́д/при́клад
         // виміря́вши/ви́мірявши - perf/imperf
     }
+
     
+    @Test
+    public void testPreserveWhiteSpace() {
+        def expected = "Подя́ки. Всім.\nБага́то люде́й: допомага́ли\n    мені́ написа́ти цю \"кни́жку\"."
+
+        result = stressText.stressText(strip(expected))
+        assertEquals expected.trim(), result.tagged
+    }
+        
     private static String strip(String text) {
         return text.replace("\u0301", "")
     }

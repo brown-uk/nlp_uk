@@ -137,6 +137,7 @@ class TagTextCore {
     static class TaggedSentence {
         public List<TTR> tokens
         public String text
+        public Map<Integer, String> whitespaces // before each token
     }
     
     
@@ -211,8 +212,17 @@ class TagTextCore {
             AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
 
             List<TTR> taggedObjects = tagAsObject(tokens, stats)
+            Map<Integer, String> whitespaces = [:]
+            int tknPos = 0
+            analyzedSentence.preDisambigTokens[1..-1].eachWithIndex { tkn, idx ->  
+                if( tkn.isWhitespace() ) 
+                    if( whitespaces[tknPos] ) whitespaces[tknPos]+=tkn.token 
+                    else whitespaces[tknPos]=tkn.token
+                else tknPos+=1
+            }
+//            println "::" + whitespaces.collect{ it.value.replace("\n", "\\n").replace("\t", "\\t") }.join('|') + "::"
 
-            List<TaggedSentence> ret = [new TaggedSentence(tokens: taggedObjects, text: analyzedSentence.text)]
+            List<TaggedSentence> ret = [new TaggedSentence(tokens: taggedObjects, text: analyzedSentence.text, whitespaces: whitespaces)]
             
             if( options.tokenFormat ) {
                 if( tokens[-1].hasPosTag(JLanguageTool.PARAGRAPH_END_TAGNAME) ) {
