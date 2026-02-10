@@ -14,15 +14,22 @@ class LatCyrModule {
     
     private static final Map<String, String> KNOWN_MIXES =
     [
-        "ТаблоID": "Табло\uE117ID",
-        "Фirtka": "Ф\uE117irtka",
-        "СхідSide": "Схід\uE117Side",
-        "ОsтаNNя": "Оsта\uE117NNя",
-        "DepоДніпро": "Depo\uE117Дніпро",
-        "DepoДніпро": "Depo\uE117Дніпро"
+        "Табло_ID",
+        "Ф_irtka",
+        "Схід_Side",
+        "Оsта_NNя",
+        "Depo_Дніпро",
+        "Depo_Дніпро",
+        "nUkra_ї_ner",
+        "Еспресо_TV",
+        "Доноp_UA",
+        "Freе_дом",
+        "Freе_Дом",
+        "Piano_бой",
+        "UA_разом"
         // ЧорнобильRenaissance
         // НашSoft
-    ]
+    ].collectEntries{ [(it.replace('_', '')): it.replace('_', '\uE117')]}
 
     private static final Map<String, String> latToCyrMap = [
         'a' : 'а',
@@ -340,9 +347,12 @@ class LatCyrModule {
 
         if( MIX_1.matcher(t0).find() ) {
             t0 = t0.replaceAll(/(?iu)([а-яіїєґ])(Fest|Train|Inform|SOS|Art|City|News|UA)/, '$1\uE117$2')
-            
-            // this does not allow to split "нашійTwitter"
-//            t0 = t0.replaceAll(/(?iu)([а-яіїєґ])([A-Z])/, '$1\uE117$2')
+
+            // DAFів
+            t0 = t0.replaceAll(/(?U)\b([A-Z]{2,})([-\u2013]?)([а-яіїє]{1,3})/, '$1$2\uE117$3')
+
+            // руZZкій
+            t0 = t0.replaceAll(/(?iu)(ру?)(zz?)(ь?к)/, '$1\uE117$2\uE117$3')
             
             KNOWN_MIXES.each { String k, String v ->
                 t0 = t0.replace(k, v)

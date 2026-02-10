@@ -222,7 +222,7 @@ class HyphenModule {
                     }
             }
             if( cnt ) {
-                out.println "\tWARNING: found $cnt suspicious hypens after space, e.g. \"$first\""
+                out.println "\tWARNING: found $cnt suspicious hyphens after space, e.g. \"$first\""
             }
         }
         

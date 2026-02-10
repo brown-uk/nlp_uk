@@ -149,6 +149,14 @@ class CleanLatCyrTest {
         assertUntouched "Xі"
         assertUntouched "Рi0" 
         assertUntouched "OАО"
+        
+        outputStream.reset()
+        assertEquals "DAFів", clean("DAFів")
+        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
+        
+        outputStream.reset()
+        assertEquals "РуZZкій", clean("РуZZкій")
+        assertFalse(new String(outputStream.toByteArray()).contains("mix"))
     }
     
     @CompileStatic
