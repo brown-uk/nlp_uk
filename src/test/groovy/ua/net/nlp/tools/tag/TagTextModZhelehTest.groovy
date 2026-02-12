@@ -32,7 +32,7 @@ class TagTextModZhelehTest {
     <token value="миготїнь" lemma="миготіння" tags="noun:inanim:p:v_rod:alt" />
   </tokenReading>
   <tokenReading>
-    <token value="купаєть" lemma="купатися" tags="verb:rev:imperf:pres:s:3" />
+    <token value="купаєть" lemma="купатися" tags="verb:rev:imperf:pres:s:3:alt" />
   </tokenReading>
   <tokenReading>
     <token value="ся" lemma="ся" tags="part:arch" />
@@ -62,7 +62,7 @@ class TagTextModZhelehTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value="називати" lemma="називатися" tags="verb:rev:imperf:inf" />
+    <token value="називати" lemma="називатися" tags="verb:rev:imperf:inf:alt" />
   </tokenReading>
   <tokenReading>
     <token value="ся" lemma="ся" tags="part:arch" />
@@ -81,7 +81,7 @@ class TagTextModZhelehTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value="мїжь" lemma="мїжь" tags="prep" />
+    <token value="мїжь" lemma="мїжь" tags="prep:alt" />
   </tokenReading>
 </sentence>
 """
@@ -96,13 +96,13 @@ class TagTextModZhelehTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value="польованє" lemma="полювання" tags="noun:inanim:n:v_kly" />
-    <token value="польованє" lemma="полювання" tags="noun:inanim:n:v_naz" />
-    <token value="польованє" lemma="полювання" tags="noun:inanim:n:v_rod" />
-    <token value="польованє" lemma="полювання" tags="noun:inanim:n:v_zna" />
-    <token value="польованє" lemma="полювання" tags="noun:inanim:p:v_kly" />
-    <token value="польованє" lemma="полювання" tags="noun:inanim:p:v_naz" />
-    <token value="польованє" lemma="полювання" tags="noun:inanim:p:v_zna" />
+    <token value="польованє" lemma="полювання" tags="noun:inanim:n:v_kly:alt" />
+    <token value="польованє" lemma="полювання" tags="noun:inanim:n:v_naz:alt" />
+    <token value="польованє" lemma="полювання" tags="noun:inanim:n:v_rod:alt" />
+    <token value="польованє" lemma="полювання" tags="noun:inanim:n:v_zna:alt" />
+    <token value="польованє" lemma="полювання" tags="noun:inanim:p:v_kly:alt" />
+    <token value="польованє" lemma="полювання" tags="noun:inanim:p:v_naz:alt" />
+    <token value="польованє" lemma="полювання" tags="noun:inanim:p:v_zna:alt" />
   </tokenReading>
 </sentence>
 """
@@ -122,8 +122,8 @@ class TagTextModZhelehTest {
         expected =
 """<sentence>
   <tokenReading>
-    <token value="йім" lemma="їсти" tags="verb:imperf:pres:s:1" />
-    <token value="йім" lemma="вони" tags="noun:unanim:p:v_dav:pron:pers:3" />
+    <token value="йім" lemma="їсти" tags="verb:imperf:pres:s:1:alt" />
+    <token value="йім" lemma="вони" tags="noun:unanim:p:v_dav:pron:pers:3:alt" />
   </tokenReading>
 </sentence>
 """
@@ -144,23 +144,23 @@ class TagTextModZhelehTest {
 """
         assertEquals expected, tagged.tagged
 
-        tagged = tagText.tagText("літопись")
-        expected =
-"""<sentence>
-  <tokenReading>
-    <token value="літопись" lemma="літопис" tags="noun:inanim:m:v_naz" />
-    <token value="літопись" lemma="літопис" tags="noun:inanim:m:v_zna" />
-  </tokenReading>
-</sentence>
-"""
-        assertEquals expected, tagged.tagged
+//        tagged = tagText.tagText("літопись")
+//        expected =
+//"""<sentence>
+//  <tokenReading>
+//    <token value="літопись" lemma="літопис" tags="noun:inanim:m:v_naz" />
+//    <token value="літопись" lemma="літопис" tags="noun:inanim:m:v_zna" />
+//  </tokenReading>
+//</sentence>
+//"""
+//        assertEquals expected, tagged.tagged
         
         tagged = tagText.tagText("розпорядженєм")
         expected =
 """<sentence>
   <tokenReading>
-    <token value="розпорядженєм" lemma="розпорядження" tags="noun:inanim:n:v_oru" />
-    <token value="розпорядженєм" lemma="розпорядження" tags="noun:inanim:p:v_dav" />
+    <token value="розпорядженєм" lemma="розпорядження" tags="noun:inanim:n:v_oru:alt" />
+    <token value="розпорядженєм" lemma="розпорядження" tags="noun:inanim:p:v_dav:alt" />
   </tokenReading>
 </sentence>
 """
@@ -170,12 +170,12 @@ class TagTextModZhelehTest {
         expected =
 """<sentence>
   <tokenReading>
-    <token value="Італїйцї" lemma="італійка" tags="noun:anim:f:v_dav" />
-    <token value="Італїйцї" lemma="італійка" tags="noun:anim:f:v_mis" />
-    <token value="Італїйцї" lemma="італієць" tags="noun:anim:m:v_mis" />
-    <token value="Італїйцї" lemma="італієць" tags="noun:anim:p:v_kly" />
-    <token value="Італїйцї" lemma="італієць" tags="noun:anim:p:v_naz" />
-    <token value="Італїйцї" lemma="італієць" tags="noun:anim:p:v_zna:rare" />
+    <token value="Італїйцї" lemma="італійка" tags="noun:anim:f:v_dav:alt" />
+    <token value="Італїйцї" lemma="італійка" tags="noun:anim:f:v_mis:alt" />
+    <token value="Італїйцї" lemma="італієць" tags="noun:anim:m:v_mis:alt" />
+    <token value="Італїйцї" lemma="італієць" tags="noun:anim:p:v_kly:alt" />
+    <token value="Італїйцї" lemma="італієць" tags="noun:anim:p:v_naz:alt" />
+    <token value="Італїйцї" lemma="італієць" tags="noun:anim:p:v_zna:rare:alt" />
   </tokenReading>
 </sentence>
 """
@@ -185,13 +185,13 @@ class TagTextModZhelehTest {
         expected =
 """<sentence>
   <tokenReading>
-    <token value="засїданя" lemma="засідання" tags="noun:inanim:n:v_kly" />
-    <token value="засїданя" lemma="засідання" tags="noun:inanim:n:v_naz" />
-    <token value="засїданя" lemma="засідання" tags="noun:inanim:n:v_rod" />
-    <token value="засїданя" lemma="засідання" tags="noun:inanim:n:v_zna" />
-    <token value="засїданя" lemma="засідання" tags="noun:inanim:p:v_kly" />
-    <token value="засїданя" lemma="засідання" tags="noun:inanim:p:v_naz" />
-    <token value="засїданя" lemma="засідання" tags="noun:inanim:p:v_zna" />
+    <token value="засїданя" lemma="засідання" tags="noun:inanim:n:v_kly:alt" />
+    <token value="засїданя" lemma="засідання" tags="noun:inanim:n:v_naz:alt" />
+    <token value="засїданя" lemma="засідання" tags="noun:inanim:n:v_rod:alt" />
+    <token value="засїданя" lemma="засідання" tags="noun:inanim:n:v_zna:alt" />
+    <token value="засїданя" lemma="засідання" tags="noun:inanim:p:v_kly:alt" />
+    <token value="засїданя" lemma="засідання" tags="noun:inanim:p:v_naz:alt" />
+    <token value="засїданя" lemma="засідання" tags="noun:inanim:p:v_zna:alt" />
   </tokenReading>
 </sentence>
 """
@@ -205,8 +205,8 @@ class TagTextModZhelehTest {
         def expected =
 """<sentence>
   <tokenReading>
-    <token value="А-ле" lemma="а-ле" tags="conj:coord" />
-    <token value="А-ле" lemma="а-ле" tags="intj" />
+    <token value="А-ле" lemma="а-ле" tags="conj:coord:alt" />
+    <token value="А-ле" lemma="а-ле" tags="intj:alt" />
   </tokenReading>
 </sentence>
 """

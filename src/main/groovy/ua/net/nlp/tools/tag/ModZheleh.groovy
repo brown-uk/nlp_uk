@@ -57,6 +57,7 @@ class ModZheleh {
             Set<String> posTags = EXTRA_WORD_MAP[lowerCleanToken]
             if( posTags ) {
                 def readings = posTags.collect { posTag ->
+                    posTag = addAlt(posTag)
                     new AnalyzedToken(origAnalyzedToken.token, posTag, lowerCleanToken)
                 }
                 return new AnalyzedTokenReadings(readings, tokenReadings.startPos)
@@ -148,9 +149,17 @@ class ModZheleh {
         for(int i=0; i<tokenReadings.getReadings().size(); i++) {
             AnalyzedToken token = tokenReadings.getReadings().get(i);
             String posTag = token.getPOSTag()
+            posTag = addAlt(posTag)
             tokenReadings.getReadings().set(i, new AnalyzedToken(origAnalyzedToken.token, posTag, token.lemma))
         }
         return tokenReadings
+    }
+
+    private String addAlt(String posTag) {
+        if( ! (posTag =~ /bad|alt|arch/ ) ) {
+            posTag += ":alt"
+        }
+        return posTag
     }
 
     private void loadExtraWords() {
