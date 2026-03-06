@@ -13,7 +13,7 @@ public class OptionsBase {
     public boolean quiet
     @Option(names= ["-h", "--help"], usageHelp= true, description= "Show this help message and exit.")
     public boolean helpRequested
-    @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt, vertical}", defaultValue = "xml")
+    @Option(names = ["-n", "--outputFormat"], arity="1", description = "Output format: {xml (default), json, txt, vertical, conllu}", defaultValue = "xml")
     public OutputFormat outputFormat = OutputFormat.xml
     public boolean singleThread = true
 

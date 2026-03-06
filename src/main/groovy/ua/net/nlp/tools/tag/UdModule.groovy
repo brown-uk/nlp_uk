@@ -51,7 +51,7 @@ class UdModule {
             
             def udPos = VESUM_TO_UD[ pos.replace('+', ':') ]
             if( ! udPos ) {
-                System.err.println "not found UD tags for $pos"
+                System.err.println "FATAL: not found UD tags for $pos"
                 System.exit(1)
             }
             
@@ -232,7 +232,7 @@ class UdModule {
         }
         
         if( ! options.quiet ) {
-            println "Got ${VESUM_TO_UD.size()} UD conversions"
+            System.err.println "Got ${VESUM_TO_UD.size()} UD conversions"
         }
         
         NEGATIVES = new File(getClass().getResource('/ua/net/nlp/tools/ud/negatives.txt').toURI()).readLines('UTF-8')

@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-
+import ua.net.nlp.tools.TextUtils.IOFiles
 import ua.net.nlp.tools.tag.TagOptions
 import ua.net.nlp.tools.tag.TagTextCore
 import ua.net.nlp.tools.tag.TagTextCore.TagResult
@@ -44,7 +44,7 @@ class TextUtilTest {
 		
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt, unknownStats: true))
         
-		tagUtils.processFileParallel(input, out, options,
+		tagUtils.processFileParallel(new IOFiles(inputStream: input, outputStream: out), options,
 			{ buffer ->  
             	return tagText.tagText(buffer)
 			}, 
@@ -69,7 +69,7 @@ class TextUtilTest {
 		
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.txt, unknownStats: true))
         
-		tagUtils.processFile(input, out, options,
+		tagUtils.processFile(new IOFiles(inputStream: input, outputStream: out), options,
 			{ buffer ->  
             	return tagText.tagText(buffer)
 			}, 

@@ -9,6 +9,7 @@ import java.util.function.Consumer
 import java.util.function.Function
 import java.util.regex.Pattern
 import java.util.stream.Collectors
+import java.util.concurrent.Future
 
 import org.languagetool.AnalyzedSentence
 import org.languagetool.AnalyzedToken
@@ -69,7 +70,7 @@ class TagTextCore {
     SemTags semTags = new SemTags()
     ModZheleh modZheleh = new ModZheleh(langTool)
     ModLesya modLesya = new ModLesya(langTool)
-    TagUnknown tagUnknown = new TagUnknown()
+    TagUnknown tagUnknown = new TagUnknown(langTool)
 
 
     @CompileStatic
@@ -83,29 +84,30 @@ class TagTextCore {
         def outputFormats = new OutputFormatter(options)
         outputFormats.init()
 
-        def sb = new StringBuilder()
+        def sb = new StringBuilder(2*1024*1024)
         
         int sentId = 1
         for(TaggedSentence taggedSent: taggedSentences) {
             if ( ! options.noTag ) {
-                if( options.outputFormat == OutputFormat.xml ) {
+                switch( options.outputFormat ) {
+                    case xml:
                     CharSequence x = outputFormats.outputSentenceXml(taggedSent.tokens)
                     sb.append(x).append("\n")
-                }
-                else if( options.outputFormat == OutputFormat.json ) {
+                    break;
+                case json:
                     if( taggedSent.tokens ) {
                         def s = outputFormats.outputSentenceJson(taggedSent.tokens)
                         if( sb.length() > 0 ) sb.append(",\n");
                         sb.append(s)
                     }
-                }
-                else if( options.outputFormat == OutputFormat.vertical ) {
+                    break;
+                case vertical:
                     verticalModule.printSentence(taggedSent, sb, sentId)
-                }
-                else if( options.outputFormat == OutputFormat.conllu ) {
+                break;
+                case conllu:
                     udModule.printSentence(taggedSent, sb, sentId)
-                }
-                else { // legacy text
+                break;
+                default: // legacy text
                     if( sb.length() > 0 ) sb.append("\n")
 
                     if( taggedSent.tokens ) {
@@ -126,6 +128,7 @@ class TagTextCore {
                             prevToken = token
                         }
                     }
+                    break;
                 }
             }
             sentId++
@@ -141,7 +144,6 @@ class TagTextCore {
     }
     
     
-    @CompileStatic
     void tagTextStream(InputStream input, OutputStream output) {
 
         def stats = new TagStats()
@@ -152,7 +154,8 @@ class TagTextCore {
         
         def printStream = new PrintStream(output, true, "UTF-8")
 
-        TextUtils.processFile(input, printStream, options, { String buffer ->
+        IOFiles ioFiles = new IOFiles(inputStream: input, outputStream: printStream)
+        TextUtils.processFile(ioFiles, options, { String buffer ->
             
             List<TaggedSentence> taggedSentences = tagTextCore(buffer, stats)
 
@@ -212,15 +215,10 @@ class TagTextCore {
             AnalyzedTokenReadings[] tokens = analyzedSentence.getTokensWithoutWhitespace()
 
             List<TTR> taggedObjects = tagAsObject(tokens, stats)
-            Map<Integer, String> whitespaces = [:]
-            int tknPos = 0
-            analyzedSentence.preDisambigTokens[1..-1].eachWithIndex { tkn, idx ->  
-                if( tkn.isWhitespace() ) 
-                    if( whitespaces[tknPos] ) whitespaces[tknPos]+=tkn.token 
-                    else whitespaces[tknPos]=tkn.token
-                else tknPos+=1
-            }
-//            println "::" + whitespaces.collect{ it.value.replace("\n", "\\n").replace("\t", "\\t") }.join('|') + "::"
+            
+            Map<Integer, String> whitespaces = options.generateWhitespacePositions
+                ? generateWhitespacePositions(analyzedSentence)
+                : null
 
             List<TaggedSentence> ret = [new TaggedSentence(tokens: taggedObjects, text: analyzedSentence.text, whitespaces: whitespaces)]
             
@@ -258,6 +256,20 @@ class TagTextCore {
         }
 
         taggedSentences
+    }
+
+    private static Map<Integer, String> generateWhitespacePositions(AnalyzedSentence analyzedSentence) {
+        Map<Integer, String> whitespaces = [:]
+        int tknPos = 0
+        if( analyzedSentence.preDisambigTokens.size() > 1 ) {
+            analyzedSentence.preDisambigTokens[1..-1].eachWithIndex { tkn, idx ->
+                if( tkn.isWhitespace() )
+                    if( whitespaces[tknPos] ) whitespaces[tknPos]+=tkn.token
+                    else whitespaces[tknPos]=tkn.token
+                else tknPos+=1
+            }
+        }
+        return whitespaces
     }
 
 
@@ -533,12 +545,9 @@ class TagTextCore {
     }
 
 
-    @CompileDynamic
-    def process() {
-//        def stats = new TagStats()
-//        stats.options = options
-        
-        def outputFile = TextUtils.processByParagraph(options, { buffer ->
+//    @CompileDynamic
+    void process() {
+        TextUtils.processByParagraph(options, { String buffer ->
             return tagText(buffer)
         },
         { TagResult result ->
@@ -547,12 +556,12 @@ class TagTextCore {
         });
     }
 
-    @CompileDynamic
-    def process(IOFiles fileInfo) {
+//    @CompileDynamic
+    void process(IOFiles fileInfo) {
         def stats = new TagStats()
         stats.options = options
 
-        def outputFile = TextUtils.processByParagraphInternal(options, fileInfo.inputFile, fileInfo.outputFile, { buffer ->
+        TextUtils.processByParagraphInternal(options, fileInfo, { String buffer ->
             return tagText(buffer)
         },
         { TagResult result ->
@@ -565,13 +574,16 @@ class TagTextCore {
         addUnknownPct(stats, fileInfo)
     }
 
-    @CompileDynamic
+//    @CompileDynamic
     def addUnknownPct(TagStats stats, IOFiles fileInfo) {
 //    println "== ${fileInfo.filename}, ${stats.knownCnt}, ${stats.unknownMap}"
-      if( fileInfo.filename
-            && ( stats.knownCnt || stats.unknownMap || stats.unclassMap ) ) {
-          def notKnownCnt = stats.unknownMap.values().sum(0) + stats.unclassMap.values().sum(0)
-          this.stats.unknownPctMap[fileInfo.filename] = [(notKnownCnt)*1000 / (stats.knownCnt + notKnownCnt), stats.knownCnt]
+      if( fileInfo.inputName
+                && ( stats.knownCnt || stats.unknownMap || stats.unclassMap ) ) {
+          Collection<Integer> c1 = stats.unknownMap.values()
+          Collection<Integer> c2 = stats.unclassMap.values()
+          int notKnownCnt = (c1.sum(0) as Integer) + (c2.sum(0) as Integer)
+          int notKnownPct = ((notKnownCnt)*1000 / (stats.knownCnt + notKnownCnt)).intValue()
+          this.stats.unknownPctMap[fileInfo.inputName] = [notKnownPct, stats.knownCnt]
       }
       if( options.progress ) {
         def sz = this.stats.unknownPctMap.size()
@@ -741,10 +753,10 @@ class TagTextCore {
     }
 
     def static printLtVersion() {
-        println("LT version: ${LtBuildInfo.OS.getVersion()}")
+        System.err.println("LT version: ${LtBuildInfo.OS.getVersion()}")
         def dictUkVersionRes = Ukrainian.class.getClassLoader().getResourceAsStream('org/languagetool/resource/uk/VERSION')
         def dictUkversion = dictUkVersionRes ? dictUkVersionRes.text : "<unknown>"
-        println("dict_uk version: ${dictUkversion}")
+        System.err.println("dict_uk version: ${dictUkversion}")
         if( Runtime.version().feature() >= 19 
                 && LtBuildInfo.OS.getVersion() == "6.5" ) {
             System.err.println("WARNING: With Java >= 19 you need to use LanguageTool 6.6-SNAPSHOT or later (otherwise tokenization may produce wrong results)")
@@ -753,16 +765,25 @@ class TagTextCore {
 
     static processFilesParallel(TagTextCore nlpUk, TagOptions options, List<String> inputFiles) {
         ExecutorService executors = Executors.newWorkStealingPool()
+        
+        List<Future> futures = []
+        
         inputFiles.forEach{ filename ->
             options.output = ""
             options.input = filename
             nlpUk.setInputOutput(options)
             IOFiles files = TextUtils.prepareInputOutput(options)
             
-            executors.submit({
+            def future = executors.submit({
+//                println ":: submitted $filename - $files"
                 nlpUk.process(files)
+//                println ":: processed $filename - $files"
             } as Runnable)
+            futures << future
         }
+        
+//        println ":: got ${futures.size()} futures"
+        futures.each{ it.get() }
         
         executors.shutdown()
         executors.awaitTermination(1, TimeUnit.DAYS)

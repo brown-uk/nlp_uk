@@ -3,6 +3,7 @@
 package ua.net.nlp.tools.tag
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -173,4 +174,29 @@ class TagTextVerticalOutputTest {
             .replaceAll(/\|TagConfidence=[0-9.]+/, '')
             .replaceAll(/TagConfidence=[0-9.]+/, '_')
     }
+    
+
+    @Test
+    public void testTagConlluFromFile() {
+        
+        File file1 = File.createTempFile("tag_input1_",".txt")
+        file1.deleteOnExit()
+        file1.setText("Слово пішло швидко.\nПроект залишився де був.", "UTF-8")
+
+        def files = [file1.path]
+        
+        options = new TagOptions(inputFiles: files, outputFormat: OutputFormat.conllu)
+        tagText.setOptions(options)
+        
+        TagTextCore.processFilesParallel(tagText, options, files)
+
+        def outFile = new File(file1.path.replace('.txt', '.tagged.conllu.txt'))
+        
+        assertTrue outFile.isFile()
+        
+        def out = outFile.getText()
+//        println out
+        assert out.contains('був\tбути\tVERB')
+    }
+
 }

@@ -81,6 +81,9 @@ public class TagOptions extends OptionsBase {
     @Option(names = ["--version"], description = "Print current version")
     boolean printVersion
 
+    // internal
+    boolean generateWhitespacePositions
+    
     enum Module { zheleh, lesya }
     
     void adjust() {
@@ -110,7 +113,7 @@ public class TagOptions extends OptionsBase {
             setLemmaForUnknown = true
             if( ! noDisambig ) {
                 disambiguate = true
-                showDisambigRate = true
+//                showDisambigRate = true
             }
             if( outputFormat == OutputFormat.conllu ) {
                 splitHyphenParts = false

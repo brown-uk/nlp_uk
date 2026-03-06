@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 import groovy.json.JsonSlurper
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import ua.net.nlp.tools.OutputFormat
 import ua.net.nlp.tools.tag.TagStats
@@ -442,6 +443,30 @@ class TagTextTest {
 		assertEquals expected, outFile.getText("UTF-8")
 	}
 
+
+    @CompileDynamic
+    @Test
+    public void testNoTagFileList() {
+        
+        File file1 = File.createTempFile("tag_input1_",".tmp")
+        file1.deleteOnExit()
+        file1.setText("Слоово швиидко.\n\nДіло.\n\nШвидко.\n\n", "UTF-8")
+
+        File file2 = File.createTempFile("tag_input2_",".tmp")
+        file2.deleteOnExit()
+        file2.setText("Слово швиидко.\n\nДіло.\n\nшвидко.\n\n", "UTF-8")
+
+        def files = [file1.path, file2.path]
+        
+        options = new TagOptions(inputFiles: files, noTag: true, unknownStats: true)
+        tagText.setOptions(options)
+        
+        TagTextCore.processFilesParallel(tagText, options, files)
+
+        assertEquals ['Слоово': 1, 'швиидко': 2], tagText.stats.unknownMap
+    }
+
+    
     @Test
     public void testSingleTokenFormatJson() {
         tagText.setOptions(new TagOptions(outputFormat: OutputFormat.json, tokenFormat: true))
