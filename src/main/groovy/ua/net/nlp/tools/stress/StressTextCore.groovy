@@ -60,6 +60,7 @@ class StressTextCore {
         def tagOptions = new TagOptions()
         tagOptions.disambiguate = options.disambiguate
         tagOptions.tagUnknown = false
+        tagOptions.generateWhitespacePositions = true
         tagText.setOptions(tagOptions)
     }
 

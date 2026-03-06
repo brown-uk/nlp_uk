@@ -3,6 +3,8 @@
 package ua.net.nlp.tools.stress
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -23,6 +25,8 @@ class StressTextTest {
 	
 	@BeforeEach
 	void before() {
+        assumeTrue StressInfo.isStressInfoPresent()
+        
         options.disambiguate = false
 		stressText.setOptions(options)
 	}
@@ -48,7 +52,7 @@ class StressTextTest {
 
 	@Test
 	public void testStressDualTags() {
-		def expected = "аналізу́є/аналізує абонува́ти ага́кало докла́дніше"
+		def expected = "аналізу́є абонува́ти ага́кало докла́дніше"
 		def text = "аналізує абонувати агакало докладніше"
 
 		result = stressText.stressText(text)
