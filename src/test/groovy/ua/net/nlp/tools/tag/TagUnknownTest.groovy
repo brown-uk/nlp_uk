@@ -11,12 +11,15 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
+import groovy.transform.CompileStatic
+import ua.net.nlp.tools.OutputFormat
 import ua.net.nlp.tools.tag.TagOptions
 import ua.net.nlp.tools.tag.TagTextCore
 import ua.net.nlp.tools.tag.TagTextCore.TagResult
 
 
-public class TagTextUnknownTest {
+//@CompileStatic
+class TagTextUnknownTest {
     final NEW_TESTS = Boolean.getBoolean("ua.net.nlp.tests.new")
 
     def options = new TagOptions()
@@ -331,7 +334,25 @@ public class TagTextUnknownTest {
 """
         assertEquals expected, tagged.tagged
     }
+
     
+    @Test
+    public void testVrodA() {
+
+        options.showTaggingLevel = true
+        options.outputFormat = OutputFormat.vertical
+        tagText.setOptions(options)
+        TagResult tagged = tagText.tagText("пристроя")
+        
+        def expected =
+"""<s>
+пристроя\tnoun:inanim:m:v_rod:subst\tпристрій
+</s>
+"""
+        assertEquals expected, tagged.tagged
+    }
+
+        
     @Test
     public void testUnknown() {
 

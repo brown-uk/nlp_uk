@@ -3,6 +3,8 @@ package ua.net.nlp.tools.tag;
 import java.util.regex.Pattern
 
 import org.languagetool.AnalyzedTokenReadings
+import org.languagetool.JLanguageTool
+import org.languagetool.tagging.uk.PosTagHelper
 import org.languagetool.tools.StringTools
 
 import groovy.transform.CompileDynamic
@@ -17,8 +19,10 @@ public class TagUnknown {
 
     Map<String, Map<WordReading, Integer>> lemmaSuffixStatsF = [:].withDefault { [:].withDefault { 0 } }
     int lemmaSuffixLenB = 4
-        
-    TagUnknown() {
+    JLanguageTool langTool
+    
+    TagUnknown(JLanguageTool langTool) {
+        this.langTool = langTool
     }
 
     @CompileDynamic
@@ -84,6 +88,19 @@ public class TagUnknown {
         if( token.length() < lemmaSuffixLen + 2 )
             return []
         
+        if( token =~ /[а-яіїєґ]{3}[ая]/ ) {
+            def adjusted = token[0..-2] + ( token[-1] == "а" ? "у" : "ю")
+            AnalyzedTokenReadings analyzed = langTool.getLanguage().getTagger().tag([adjusted]).get(0)
+            def mvrod = analyzed.getReadings()
+                .findAll{ it.getPOSTag() && it.getPOSTag() =~ /^noun:inanim:m:v_rod/ }
+                .collect{ new TaggedToken(value: token, lemma: it.getLemma(), tags: PosTagHelper.addIfNotContains(it.getPOSTag(), ":subst"), confidence: -0.6) }
+                
+            if( mvrod )
+                return mvrod
+        }
+
+        // try by suffix stats
+            
         def last3 = token[-lemmaSuffixLen..-1]
         
         List<TaggedToken> retTokens
