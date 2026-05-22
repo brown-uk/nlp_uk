@@ -121,7 +121,7 @@ eclipse {
 
 test {
     useJUnitPlatform()
-    jvmArgs '-Xmx1024m'
+    jvmArgs '-Xmx1512m'
     jvmArgs '-Dgroovy.grape.enable=false'
 }
 

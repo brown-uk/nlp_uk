@@ -20,7 +20,7 @@ import ua.net.nlp.tools.stress.StressTextCore.StressResult
 class StressTextTest {
 	StressOptions options = new StressOptions()
 
-	static StressTextCore stressText = new StressTextCore()
+	static StressTextCore stressText
 	StressResult result
 	
 	@BeforeEach
@@ -28,7 +28,10 @@ class StressTextTest {
         assumeTrue StressInfo.isStressInfoPresent()
         
         options.disambiguate = false
-		stressText.setOptions(options)
+        if( stressText == null ) {
+            stressText = new StressTextCore()
+            stressText.setOptions(options)
+        }
 	}
 
 	@AfterEach
