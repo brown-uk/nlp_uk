@@ -238,15 +238,14 @@ class LatCyrModule {
     private static Pattern TO_ALL_CYR_SYMB = ~/[aceiopxyrABCEHIKMHOPTXYáÁéÉíÍḯḮóÓúýÝ]/
     
     @CompileStatic
-    String fixToAllCyrillic(String text, int[] counts) {
-        // 2nd tier - try all Cyrillic
+    String fixToAllCyrillic(String text, int[] counts) { // 2nd tier - try all Cyrillic
         // if we convert all Latin to Cyrillic and find it in the dictionary, use the conversion
 
         text.replaceAll(/[а-яіїєґА-ЯІЇЄҐ\u0301'ʼ’a-zA-ZáÁéÉíÍḯḮóÓúýÝ-]+/, { String it ->
 
             if( TO_ALL_CYR_WORD.matcher(it) ) {
                 //            println "Found mix in: $it, known to LT: " + knownWord(it)
-                if( (it.length() >= 3 || it =~ /[ІI][ТT]|[ТT][іiеe]|[НH][іiаaуy]/) 
+                if( (it.length() >= 2 || it =~ /[ІI][ТT]|[ТT][іiеe]|[НH][іiаaуy]/) 
                         && ! ltModule.knownWord(it) ) {
                     def fixed = TO_ALL_CYR_SYMB.matcher(it).replaceAll{ MatchResult lat -> latToCyrMap[lat.group()] }
 //                    def fixedCleaned = fixed.replace('\u0301', '')
@@ -320,7 +319,7 @@ class LatCyrModule {
     }
 
 
-    static final Pattern MIX_1 = ~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúé]|[a-zA-Zóáíýúé][а-яіїєґА-ЯІЇЄҐ]/
+    static final Pattern MIX_1 = ~ /[а-яіїєґА-ЯІЇЄҐ][a-zA-Zóáíýúéḯ]|[a-zA-Zóáíýúéḯ][а-яіїєґА-ЯІЇЄҐ]/
 //    static final Pattern APO_ENDING = ~ /(?U)([a-zA-Z]+)(['’ʼ][а-яіїє]{1,5})\b/
     
     @CompileStatic

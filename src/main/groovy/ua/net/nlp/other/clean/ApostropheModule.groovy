@@ -11,7 +11,7 @@ class ApostropheModule {
 
     String fixWeirdApostrophes(String t01) {
         // fix weird apostrophes
-        t01 = t01.replaceAll(/(?iu)([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u0022\u2018\u2032\u0313\u0384\u0092´`?*]([єїюя])/, /$1'$2/) // "
+        t01 = t01.replaceAll(/(?iu)([бвгґдзкмнпрстфхш])[\"\u201D\u201F\u02BE\u02CB\u0022\u2018\uA78C\u2032\u05F3\u0313\u0384\u0092\u201B\u201C\u055A\u2018\u02C8\u1FBF\u1FBD\u02B9\u1FFD\u02BB\u2017\u0060\u00B4?*]([єїюя])/, /$1'$2/) // "
         t01 = t01.replaceAll(/(?iu)[´`]([аеєиіїоуюя])/, '\u0301$1')
 //        t0 = t0.replaceAll(/(?iu)([а-яіїєґ'\u2019\u02BC\u2013-]*)[´`]([а-яіїєґ'\u2019\u02BC\u2013-]+)/, { all, w1, w2
 //                  def fix = "$w1'$w2"

@@ -106,7 +106,9 @@ class CleanLatCyrTest {
 
         // Пальчикова і Кo
         
+        // умляути замість наголосу
         assertEquals "о\u0301ргани", clean("óргани")
+        assertEquals "її\u0301", clean("їḯ") // U+1E2F
         
         assertEquals "агітаторів", clean("ariтаторів")
         
