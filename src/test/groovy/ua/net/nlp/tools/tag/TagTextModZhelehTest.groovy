@@ -112,7 +112,7 @@ class TagTextModZhelehTest {
         expected =
 """<sentence>
   <tokenReading>
-    <token value="пізнїйше" lemma="пізнійше" tags="adv:predic:bad:alt" />
+    <token value="пізнїйше" lemma="пізнійше" tags="adv:predic:bad:err:alt" />
   </tokenReading>
 </sentence>
 """

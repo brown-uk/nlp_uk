@@ -185,15 +185,15 @@ class StressTextCore {
                 }
             }
 
-            if( anToken.tags =~ /:alt|:up19/ ) {
+            if( anToken.tags =~ /:alt/ ) {
                 if( tokenLemma.toLowerCase().contains('ґ') ) {
                     normalizedLemma = tokenLemma.replace('Ґ', 'Г').replace('ґ', 'г')
                     infByLemma = stresses[normalizedLemma]
                 }
-                else if( tokenLemma.toLowerCase().contains('проєкт') ) {
-                    normalizedLemma = tokenLemma.replace('роєкт', 'роект')
-                    infByLemma = stresses[normalizedLemma]
-                }
+            }
+            else if( tokenLemma.toLowerCase().contains('проєкт') ) {
+                normalizedLemma = tokenLemma.replace('роєкт', 'роект')
+                infByLemma = stresses[normalizedLemma]
             }
 
             if( anToken.tags.startsWith('verb:rev') && tokenLemma.endsWith('ся') ) {
