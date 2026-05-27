@@ -36,6 +36,8 @@ class StressTextTest {
 
 	@AfterEach
 	void after() {
+        assumeTrue StressInfo.isStressInfoPresent()
+        
 		println "Unknown: " + result.stats.unknown.size()
 		println "Homonym: " + result.stats.homonyms.size()
 	}
