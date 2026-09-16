@@ -107,16 +107,17 @@ class TagTextModZhelehTest {
 </sentence>
 """
         assertEquals expected, tagged.tagged
-        
-        tagged = tagText.tagText("пізнїйше")
-        expected =
-"""<sentence>
-  <tokenReading>
-    <token value="пізнїйше" lemma="пізнійше" tags="adv:predic:bad:alt" />
-  </tokenReading>
-</sentence>
-"""
-        assertEquals expected, tagged.tagged
+
+        // done in LT now        
+//        tagged = tagText.tagText("пізнїйше")
+//        expected =
+//"""<sentence>
+//  <tokenReading>
+//    <token value="пізнїйше" lemma="пізнійше" tags="adv:predic:bad:alt" />
+//  </tokenReading>
+//</sentence>
+//"""
+//        assertEquals expected, tagged.tagged
         
         tagged = tagText.tagText("йім")
         expected =
@@ -144,16 +145,17 @@ class TagTextModZhelehTest {
 """
         assertEquals expected, tagged.tagged
 
-        tagged = tagText.tagText("літопись")
-        expected =
-"""<sentence>
-  <tokenReading>
-    <token value="літопись" lemma="літопис" tags="noun:inanim:m:v_naz" />
-    <token value="літопись" lemma="літопис" tags="noun:inanim:m:v_zna" />
-  </tokenReading>
-</sentence>
-"""
-        assertEquals expected, tagged.tagged
+        // in VESUM now
+//        tagged = tagText.tagText("літопись")
+//        expected =
+//"""<sentence>
+//  <tokenReading>
+//    <token value="літопись" lemma="літопис" tags="noun:inanim:m:v_naz:arch" />
+//    <token value="літопись" lemma="літопис" tags="noun:inanim:m:v_zna:arch" />
+//  </tokenReading>
+//</sentence>
+//"""
+//        assertEquals expected, tagged.tagged
         
         tagged = tagText.tagText("розпорядженєм")
         expected =
