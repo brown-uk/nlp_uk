@@ -23,9 +23,9 @@ ext.statsJarName="${statsArtifactId}-${project.version}"
 repositories {
     mavenCentral()
     mavenLocal()
-    maven {
-        url = uri("https://repo.languagetool.org/artifactory/languagetool-os-snapshot/")
-    }
+    //maven {
+    //    url = uri("https://repo.languagetool.org/artifactory/languagetool-os-snapshot/")
+    //}
 
     if( project.hasProperty('localLib') ) {
       def jarCount = new File("${projectDir}/lib").listFiles().findAll{ it.name.endsWith('jar') }.size()
